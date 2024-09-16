@@ -20,6 +20,8 @@ To be implemented via elastic beanstalk (Not yet setup).
 # Project structure
 Models = models
 Views = templates
+Controller Views = views
 Controllers = controllers
+AWS services = services
 config.py = AWS services to be organised here, however, keys are to be stored in .env file.
 .env = Any AWS keys will be stored here, however file wil not be included in git repo for security purposes.
