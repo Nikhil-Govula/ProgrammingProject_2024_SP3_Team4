@@ -15,7 +15,12 @@ Local instance should now be running on http://127.0.0.1:5000/
 Change port number if not working as it is likely already reserved on your machine.
 
 # Cloud instance
-To be implemented via elastic beanstalk (Not yet setup).
+NOTE: run.py to be named application.py, flask instance in application.py to be initialised as application = app = create_app() and subsequently called with application (not app). 'App' folder to be renamed as anything but 'App' or 'Application' (src or project name seems to be the convention). __init__.py create_app() method to initialise flask as application = app = Flask(__name__) (same as application.py)
+
+When zipping content, do not zip the folder, rather highlight all the contents in the folder and zip this way (this allows for the files, especially application.py to be in the root of the zip rather than a folder being in the root)
+
+AWS documentation tutorial for creating beanstalk application: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/GettingStarted.CreateApp.html  
+
 
 # Project structure
 Models = models
