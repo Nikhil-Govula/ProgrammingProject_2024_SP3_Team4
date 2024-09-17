@@ -1,2 +1,2 @@
-from .user_views import users
+from .index_views import indexs
 from .job_views import jobs
