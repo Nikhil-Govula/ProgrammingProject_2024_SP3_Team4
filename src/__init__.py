@@ -1,5 +1,6 @@
 from flask import Flask
-from .controllers import users, jobs
+from .views.user_views import users
+from .views.job_views import jobs
 
 def create_app():
     application = app = Flask(__name__)
