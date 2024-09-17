@@ -24,11 +24,11 @@ AWS documentation tutorial for creating beanstalk application: https://docs.aws.
 # Deploy app via CLI setup
 1. Check if AWS CLI already installed
 > aws --version
-2. Install latest AWS CLI
-> pip install awsebcli 
+2. Install latest AWS CLI for your operating system if not installed
+https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 3. Check if Elastic Beanstalk CLI already installed
 > eb --version
-4. Install latest AWS CLI
+4. Install latest Elastic Beanstalk CLI if not installed
 > pip install awsebcli
 5. Configure AWS CLI
 i. Setup access key in AWS console.
