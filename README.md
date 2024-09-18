@@ -14,7 +14,7 @@ python run.py
 Local instance should now be running on http://127.0.0.1:5000/
 Change port number if not working as it is likely already reserved on your machine.
 
-# For running on AWS CLOUD
+# For running on AWS CLOUD -Test
 
 http://demo1.ap-southeast-2.elasticbeanstalk.com/
 
