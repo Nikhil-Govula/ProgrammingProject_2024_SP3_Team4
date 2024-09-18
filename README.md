@@ -14,6 +14,10 @@ python run.py
 Local instance should now be running on http://127.0.0.1:5000/
 Change port number if not working as it is likely already reserved on your machine.
 
+# For running on AWS CLOUD
+
+http://demo1.ap-southeast-2.elasticbeanstalk.com/
+
 # Cloud instance
 NOTE: run.py to be named application.py, flask instance in application.py to be initialised as application = app = create_app() and subsequently called with application (not app). 'App' folder to be renamed as anything but 'App' or 'Application' (src or project name seems to be the convention). __init__.py create_app() method to initialise flask as application = app = Flask(__name__) (same as application.py)
 
