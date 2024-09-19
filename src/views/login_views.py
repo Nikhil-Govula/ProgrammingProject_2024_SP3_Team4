@@ -5,11 +5,11 @@ logins = Blueprint('logins', __name__)
 
 @logins.route('/Login')
 def index_user():
-        return render_template('login_user.html')
+        return render_template('user/login.html')
 
 @logins.route('/Admin/Login')
 def index_admin():
-        return render_template('login_admin.html')
+        return render_template('admin/login.html')
     
 @logins.route('/Admin/')
 def redirect_admin():
@@ -17,7 +17,7 @@ def redirect_admin():
     
 @logins.route('/Company/Login')
 def index_company():
-        return render_template('login_admin.html')
+        return render_template('company/login.html')
     
 @logins.route('/Company/')
 def redirect_company():

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_style.css') }}">
+    {% block head %} {% endblock %}
+</head>
+
+
+<div id="nav">
+    <ul>
+        <!-- <li><a class="active" href="/Index">Index</a></li> -->
+        <li><a href="/Index">Index</a></li>
+        <li><a href="/Jobs">Jobs</a></li>
+        <li><a href="/Profile">Profile</a></li>
+        <li style="float:right"><a href="/test">USER</a></li>
+    </ul>
+</div>
+
+<body>
+    {% block body %} {% endblock %}
+
+
+</body>
+
+</html>
