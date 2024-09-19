@@ -1,11 +1,23 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
+{% block head %}
+<title>User Login</title>
+{% endblock %}
 
-{% block head %}{% endblock %}
-
-
-{% block body %} 
-<div>
-<p> login user</p>
+{% block body %}
+<div class="login-container">
+    <h2>Sign in as User</h2>
+    <form action="/login_user" method="POST">
+        <input type="email" name="email" placeholder="Email address" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <a href="#">Forgot password?</a><br><br>
+        <button type="submit">Sign in</button>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+    </form>
+    <div>
+        <p>Don’t have an account? <a href="#">Sign up</a></p>
+    </div>
 </div>
 {% endblock %}
