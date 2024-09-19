@@ -11,6 +11,14 @@ venv\Scripts\activate
 pip install -r requirements.txt
 python run.py
 
+# How to run on Mac Book
+
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python application.py
+deactivate <- Once finished
+
 Local instance should now be running on http://127.0.0.1:5000/
 Change port number if not working as it is likely already reserved on your machine.
 
