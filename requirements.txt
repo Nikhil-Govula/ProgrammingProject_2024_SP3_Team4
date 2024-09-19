@@ -3,3 +3,7 @@ Werkzeug==3.0.4
 gunicorn==20.1.0
 python-dotenv~=1.0.1
 SQLAlchemy~=2.0.34
+Boto3
+bcrypt
+python-dotenv
+awscli
