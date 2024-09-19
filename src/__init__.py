@@ -2,6 +2,7 @@ from flask import Flask
 from .views.job_views import jobs
 from .views.index_views import indexs
 from .views.login_views import logins
+from .views.register_views import registers
 import os
 print("Template folder path:", os.path.abspath('src/templates'))
 
@@ -16,5 +17,6 @@ def create_app():
     application.register_blueprint(jobs)
     application.register_blueprint(indexs)
     application.register_blueprint(logins)
+    application.register_blueprint(registers)
 
     return application
