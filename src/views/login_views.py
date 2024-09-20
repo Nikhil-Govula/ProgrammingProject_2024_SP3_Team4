@@ -141,3 +141,12 @@ def index_company():
             return render_template('company/login_company.html', error="An error occurred. Please try again.")
 
     return render_template('company/login_company.html')
+
+@logins.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        # Logic to send the reset link to the user's email
+        # ...
+        return render_template('reset_password.html', success="A reset link has been sent to your email.")
+    return render_template('reset_password.html')

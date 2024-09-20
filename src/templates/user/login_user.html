@@ -2,42 +2,104 @@
 
 {% block head %}
     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!--<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"-->
     <title>User Login</title>
+    <style>
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .popup-content {
+            text-align: center;
+        }
+
+        .close-btn {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 500;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="registration-container">
-    <div class="form-container">
-        <div class="register-card">
-            <div class="form-group">
-                <h1>Employee Signin</h1>
-            </div>
-            <form action="{{ url_for('logins.index_user') }}" method="POST">
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email address" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <a href="#" style="text-align:right;display:block;">Forgot password?</a>
-                </div>
-
-                {% if error %}
-                    <p style="color: red;">{{ error }}</p>
-                {% endif %}
-
-                <button type="submit" class="register-button">Sign in</button>
-            </form>
-            <div class="footer-links">
-                <p>Don’t have an account? <a href="{{ url_for('registers.register_user') }}">Sign up</a></p>
-            </div>
-        </div>
+<div class="login-container">
+    <h2>Sign in as User</h2>
+    <form action="{{ url_for('logins.index_user') }}" method="POST">
+        <input type="email" name="email" placeholder="Email address" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <a href="#" id="forgot-password-link">Forgot password?</a><br><br>
+        <button type="submit">Sign in</button>
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+    </form>
+    <div>
+        <p>Don’t have an account? <a href="{{ url_for('registers.register_user') }}">Sign up</a></p>
     </div>
 </div>
+
+<!-- Forgot Password Popup -->
+<div id="forgot-password-popup" class="popup">
+    <div class="popup-content">
+        <span class="close-btn" id="close-popup">&times;</span>
+        <h2>Forgot your password?</h2>
+        <p>We'll send a link to reset your password to your registered email address.</p>
+        <form action="{{ url_for('logins.reset_password') }}" method="POST">
+            <input type="email" name="email" placeholder="Email address" required>
+            <button type="submit" class="register-button">Send Link</button>
+        </form>
+    </div>
+</div>
+
+<div id="overlay"></div>
+
 {% endblock %}
 
 {% block footer %}
     {{ super() }}
 {% endblock %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const forgotPasswordPopup = document.getElementById('forgot-password-popup');
+        const closePopup = document.getElementById('close-popup');
+        const overlay = document.getElementById('overlay');
+
+        forgotPasswordLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            forgotPasswordPopup.style.display = 'block';
+            overlay.style.display = 'block';
+        });
+
+        closePopup.addEventListener('click', function() {
+            forgotPasswordPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        overlay.addEventListener('click', function() {
+            forgotPasswordPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+    });
+</script>

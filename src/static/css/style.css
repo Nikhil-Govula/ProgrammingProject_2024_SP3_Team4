@@ -125,3 +125,80 @@ body {
 .footer-links p {
     margin: 10px 0 0 0;
 }
+
+/* Forgot Password Popup */
+.popup {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+}
+
+.popup-content {
+    position: relative;
+}
+
+.popup h2 {
+    margin-bottom: 15px;
+    font-size: 24px;
+    color: #4A4A4A;
+}
+
+.popup p {
+    margin-bottom: 20px;
+    color: #4A4A4A;
+}
+
+.popup input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #7B9A87; /* Same as background color */
+    border-radius: 5px;
+}
+
+.popup button.register-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #5A7A6F;
+    border: none;
+    border-radius: 5px;
+    color: #FFFFFF;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.popup button.register-button:hover {
+    background-color: #4F6D62;
+}
+
+/* Close Button */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #4A4A4A;
+    cursor: pointer;
+}
+
+/* Overlay */
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9;
+}
