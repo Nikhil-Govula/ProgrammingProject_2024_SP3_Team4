@@ -21,7 +21,7 @@
                     <input type="password" name="password" placeholder="Password" required>
                 </div>
                 <div class="form-group">
-                    <a href="#" style="text-align:right;display:block;">Forgot password?</a>
+                    <a href="#" id="forgot-password-link" style="text-align:right;display:block;">Forgot password?</a>
                 </div>
 
                 {% if error %}
@@ -33,8 +33,40 @@
         </div>
     </div>
 </div>
+
+<!-- Forgot Password Popup -->
+<div id="forgot-password-popup" class="popup">
+    <div class="popup-content">
+        <h2>Forgot your password?</h2>
+        <p>We'll send a link to reset your password to your registered email address.</p>
+        <form action="{{ url_for('logins.reset_password') }}" method="POST">
+            <input type="email" name="email" placeholder="Email address" required>
+            <button type="submit" class="register-button">Send Link</button>
+        </form>
+    </div>
+</div>
+
+<div id="overlay"></div>
 {% endblock %}
 
 {% block footer %}
     {{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const forgotPasswordPopup = document.getElementById('forgot-password-popup');
+        const overlay = document.getElementById('overlay');
+
+        forgotPasswordLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            forgotPasswordPopup.style.display = 'block';
+            overlay.style.display = 'block';
+        });
+
+        overlay.addEventListener('click', function() {
+            forgotPasswordPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+    });
+</script>
 {% endblock %}

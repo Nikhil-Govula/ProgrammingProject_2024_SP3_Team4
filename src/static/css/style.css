@@ -69,10 +69,27 @@ body {
     display: flex;
     justify-content: space-between;
     width: 100%; /* Ensure full width of the parent */
+    flex-wrap: wrap; /* Allow elements to wrap if needed */
 }
 
-.form-group input[type="text"],
-.form-group input[type="email"],
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 5px solid #85a98c; /* Border color same as background */
+    border-radius: 10px;
+    box-sizing: border-box; /* Ensures padding and border are included in the width */
+    font-size: 15px;
+}
+.form-group input[type="email"]{
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 5px solid #85a98c; /* Border color same as background */
+    border-radius: 10px;
+    box-sizing: border-box; /* Ensures padding and border are included in the width */
+    font-size: 15px;
+}
 .form-group input[type="password"] {
     width: 100%;
     padding: 10px;
@@ -80,6 +97,7 @@ body {
     border: 5px solid #85a98c; /* Border color same as background */
     border-radius: 10px;
     box-sizing: border-box; /* Ensures padding and border are included in the width */
+    font-size: 15px;
 }
 
 /* Specific styling for the first and last name fields */
@@ -138,7 +156,7 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 400px;
+    width: 500px;
     text-align: center;
 }
 
@@ -147,22 +165,30 @@ body {
 }
 
 .popup h2 {
-    margin-bottom: 15px;
-    font-size: 24px;
+    margin: 0 0 10px 0;
+    font-size: 38px;
     color: #4A4A4A;
+    text-align: left;
 }
 
 .popup p {
-    margin-bottom: 20px;
+    margin: 0 0 20px 0;
+    font-size: 16px;
     color: #4A4A4A;
+    text-align: left;
+    max-width: 40ch; /* Limit the width based on character count */
+    overflow-wrap: break-word; /* Break words that are too long */
+    word-wrap: break-word; /* For older browsers */
+    line-height: 1.5; /* Improve readability */
 }
 
 .popup input[type="email"] {
-    width: 100%;
+    width: calc(100% - 20px); /* Adjust width to center the input field */
     padding: 10px;
     margin-bottom: 15px;
-    border: 1px solid #7B9A87; /* Same as background color */
-    border-radius: 5px;
+    border: 5px solid #85a98c; /* Border color same as background */
+    border-radius: 10px;
+    font-size: 15px;
 }
 
 .popup button.register-button {
@@ -185,7 +211,7 @@ body {
     position: absolute;
     top: 10px;
     right: 15px;
-    font-size: 18px;
+    font-size: 28px;
     font-weight: bold;
     color: #4A4A4A;
     cursor: pointer;
