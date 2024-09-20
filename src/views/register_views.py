@@ -27,7 +27,7 @@ def register_user():
         if password != confirm_password:
             error = "Passwords do not match!"
             print("Passwords do not match!")  # Add a debug print
-            return render_template('register_user.html', error=error)
+            return render_template('user/register_user.html', error=error)
 
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
@@ -40,7 +40,7 @@ def register_user():
         if 'Item' in response:
             error = "User already exists!"
             print("User already exists!")  # Add a debug print
-            return render_template('register_user.html', error=error)
+            return render_template('user/register_user.html', error=error)
 
         # Register the new user (hash password and store in DynamoDB)
         hashed_password = generate_password_hash(password)
@@ -61,4 +61,44 @@ def register_user():
         # Redirect to login page after successful registration
         return redirect(url_for('logins.login_user'))
 
-    return render_template('register_user.html')
+    return render_template('user/register_user.html')
+
+@registers.route('/EmployerRegistration', methods=['GET', 'POST'])
+def register_company():
+    if request.method == 'POST':
+        company_name = request.form['company_name']
+        contact_person = request.form['contact_person']
+        email = request.form['email']
+        phone_number = request.form['phone_number']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        # Validate form inputs
+        if password != confirm_password:
+            error = "Passwords do not match!"
+            return render_template('company/register_company.html', error=error)
+
+        # Check if company already exists in DynamoDB
+        table = dynamodb.Table('Companies')
+        response = table.get_item(Key={'email': email})
+        if 'Item' in response:
+            error = "Company already exists!"
+            return render_template('company/register_company.html', error=error)
+
+        # Register the new company (hash password and store in DynamoDB)
+        hashed_password = generate_password_hash(password)
+        table.put_item(
+            Item={
+                'company_name': company_name,
+                'contact_person': contact_person,
+                'email': email,
+                'phone_number': phone_number,
+                'password': hashed_password
+            }
+        )
+
+        # Redirect to login page after successful registration
+        return redirect(url_for('logins.index_company'))
+
+    return render_template('company/register_company.html')
+
