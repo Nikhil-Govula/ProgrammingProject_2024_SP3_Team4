@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 import secrets
 from email.mime.text import MIMEText
 
@@ -12,6 +13,8 @@ import logging
 from flask_mail import Mail, Message
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+from config import get_secret, store_secret
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -157,7 +160,11 @@ mail = Mail()
 
 def send_email(to, subject, body):
     try:
-        credentials = Credentials.from_authorized_user_file('token.json')
+        token_json = get_secret('/your-app/token')
+        if not token_json:
+            raise ValueError("No token found in SSM Parameter Store")
+
+        credentials = Credentials.from_authorized_user_info(json.loads(token_json))
         service = build('gmail', 'v1', credentials=credentials)
 
         message = MIMEText(body)
