@@ -4,14 +4,12 @@ from .views.index_views import indexs
 from .views.login_views import logins
 from .views.register_views import registers
 import os
-print("Template folder path:", os.path.abspath('src/templates'))
 
 def create_app():
-    # Specify the template folder explicitly
     template_dir = os.path.abspath('src/templates')
     application = Flask(__name__, template_folder=template_dir)
 
-    application.config['TEMPLATES_AUTO_RELOAD'] = True  # Enable template auto-reload
+    application.config['TEMPLATES_AUTO_RELOAD'] = True
 
     # Register blueprints
     application.register_blueprint(jobs)
