@@ -1,3 +1,6 @@
+import json
+
+from botocore.exceptions import ClientError
 from flask_mail import Mail
 from flask import Flask, redirect, request
 from src import create_app
@@ -12,12 +15,44 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Load environment variables from .env file
 load_dotenv()
+print(os.environ)
 
 mail = Mail()
 
-# Initialize OAuth 2.0 flow
-flow = Flow.from_client_secrets_file(
-    'client_secret_496454371490-6b99beeeqosm7p2nugf6gine00ufdprc.apps.googleusercontent.com.json',
+def get_secret(parameter_name):
+    ssm = boto3.client('ssm', region_name="ap-southeast-2")
+    try:
+        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        return response['Parameter']['Value']
+    except ClientError as e:
+        print(f"Couldn't retrieve parameter {parameter_name}: {e}")
+        return None
+
+# Use the function to get your secrets
+client_secret_str = get_secret('/your-app/client-secret')
+token_str = get_secret('/your-app/token')
+
+try:
+    client_secret = json.loads(client_secret_str)
+except json.JSONDecodeError as e:
+    print(f"Error decoding client secret JSON: {e}")
+    print(f"Raw client secret: {client_secret_str}")
+    client_secret = None
+
+try:
+    token = json.loads(token_str)
+except json.JSONDecodeError as e:
+    print(f"Error decoding token JSON: {e}")
+    print(f"Raw token: {token_str}")
+    token = None
+
+if client_secret is None or token is None:
+    print("Failed to load necessary secrets. Exiting.")
+    exit(1)
+
+# Initialize OAuth 2.0 flow using the client secret
+flow = Flow.from_client_config(
+    client_secret,
     scopes=['https://www.googleapis.com/auth/gmail.send']
 )
 flow.redirect_uri = 'http://localhost:8080/oauth2callback'
