@@ -104,43 +104,43 @@ def index_admin():
     return render_template('admin/login_admin.html')
 
 
-@logins.route('/Company/Login', methods=['GET', 'POST'])
-def index_company():
+@logins.route('/Employer/Login', methods=['GET', 'POST'])
+def index_employer():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
 
-        logging.debug(f"Attempting company login for user: {email}")
+        logging.debug(f"Attempting employer login for user: {email}")
 
-        # Retrieve company user from DynamoDB
+        # Retrieve employer user from DynamoDB
         try:
             response = users_table.get_item(
                 Key={
                     'username': email
                 }
             )
-            company = response.get('Item')
+            employer = response.get('Item')
 
-            if company:
-                logging.debug(f"Company user found: {company['username']}")
+            if employer:
+                logging.debug(f"Company user found: {employer['username']}")
             else:
-                logging.warning(f"No company user found with email: {email}")
-                return render_template('company/login_company.html', error="Invalid email or password.")
+                logging.warning(f"No employer user found with email: {email}")
+                return render_template('employer/login_employer.html', error="Invalid email or password.")
 
-            # Check if company user exists and password matches
-            if bcrypt.checkpw(password.encode('utf-8'), company['password'].encode('utf-8')):
-                logging.debug(f"Password match for company user: {email}")
-                # Redirect to the company dashboard
+            # Check if employer user exists and password matches
+            if bcrypt.checkpw(password.encode('utf-8'), employer['password'].encode('utf-8')):
+                logging.debug(f"Password match for employer user: {email}")
+                # Redirect to the employer dashboard
                 return redirect(url_for('company_dashboard'))
             else:
-                logging.warning(f"Password mismatch for company user: {email}")
-                return render_template('company/login_company.html', error="Invalid email or password.")
+                logging.warning(f"Password mismatch for employer user: {email}")
+                return render_template('employer/login_employer.html', error="Invalid email or password.")
 
         except Exception as e:
-            logging.error(f"Error during company login process for user {email}: {str(e)}")
-            return render_template('company/login_company.html', error="An error occurred. Please try again.")
+            logging.error(f"Error during employer login process for user {email}: {str(e)}")
+            return render_template('employer/login_employer.html', error="An error occurred. Please try again.")
 
-    return render_template('company/login_company.html')
+    return render_template('employer/login_employer.html')
 
 @logins.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():

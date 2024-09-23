@@ -64,7 +64,7 @@ def register_user():
     return render_template('user/register_user.html')
 
 @registers.route('/EmployerRegistration', methods=['GET', 'POST'])
-def register_company():
+def register_employer():
     if request.method == 'POST':
         company_name = request.form['company_name']
         contact_person = request.form['contact_person']
@@ -76,16 +76,16 @@ def register_company():
         # Validate form inputs
         if password != confirm_password:
             error = "Passwords do not match!"
-            return render_template('company/register_company.html', error=error)
+            return render_template('employer/register_employer.html', error=error)
 
-        # Check if company already exists in DynamoDB
+        # Check if employer already exists in DynamoDB
         table = dynamodb.Table('Companies')
         response = table.get_item(Key={'email': email})
         if 'Item' in response:
             error = "Company already exists!"
-            return render_template('company/register_company.html', error=error)
+            return render_template('employer/register_employer.html', error=error)
 
-        # Register the new company (hash password and store in DynamoDB)
+        # Register the new employer (hash password and store in DynamoDB)
         hashed_password = generate_password_hash(password)
         table.put_item(
             Item={
@@ -100,5 +100,5 @@ def register_company():
         # Redirect to login page after successful registration
         return redirect(url_for('logins.index_company'))
 
-    return render_template('company/register_company.html')
+    return render_template('employer/register_employer.html')
 
