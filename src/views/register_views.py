@@ -103,4 +103,3 @@ def register_company():
         return redirect(url_for('logins.index_company'))
 
     return render_template('company/register_company.html')
-
