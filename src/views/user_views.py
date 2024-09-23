@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template
-from models import UserModel, JobModel, ApplicationModel
+from ..models.jobs import JobModel
+from ..models.applications import ApplicationModel
+from ..models.users import UserModel
 import uuid
 
 users = Blueprint('users', __name__)
