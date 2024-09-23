@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from models import EmployerModel, JobModel, ApplicationModel
 import uuid
 
@@ -44,3 +44,8 @@ def update_application_status():
     data = request.json
     application_model.update_application_status(data['application_id'], data['application_status'])
     return jsonify({'message': 'Application status updated successfully!'})
+
+# Endpoint to render the employer dashboard
+@employers.route('/employer/dashboard/<employer_id>', methods=['GET'])
+def employer_dashboard(employer_id):
+    return render_template('employer/employer_dashboard.html', employer_id=employer_id)

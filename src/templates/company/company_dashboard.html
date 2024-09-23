@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Employer Dashboard</title>
+{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <h1>Employer Dashboard</h1>
+    <div class="jobs-section">
+        <h2>My Jobs</h2>
+        <div id="jobs-list">
+            <!-- Jobs will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <div class="create-job-section">
+        <h2>Create New Job</h2>
+        <form id="create-job-form">
+            <input type="text" name="job_title" placeholder="Job Title" required>
+            <textarea name="job_description" placeholder="Job Description" required></textarea>
+            <input type="text" name="location" placeholder="Location" required>
+            <input type="text" name="salary" placeholder="Salary" required>
+            <button type="submit">Create Job</button>
+        </form>
+    </div>
+</div>
+
+<div class="applications-section">
+    <h2>Job Applications</h2>
+    <div id="applications-list">
+        <!-- Applications will be dynamically loaded here -->
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+    {{ super() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const employerId = "{{ employer_id }}"; // Assuming employer_id is passed from the backend
+
+            // Fetch jobs posted by employer
+            fetch(`/employer/jobs/${employerId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const jobsList = document.getElementById('jobs-list');
+                    data.jobs.forEach(job => {
+                        const jobDiv = document.createElement('div');
+                        jobDiv.classList.add('job-item');
+                        jobDiv.innerHTML = `
+                            <h3>${job.job_title}</h3>
+                            <p>${job.job_description}</p>
+                            <p>Location: ${job.location}</p>
+                            <p>Salary: ${job.salary}</p>
+                            <button class="view-applications-button" data-job-id="${job.job_id}">View Applications</button>
+                        `;
+                        jobsList.appendChild(jobDiv);
+                    });
+
+                    // Add event listener to view applications buttons
+                    document.querySelectorAll('.view-applications-button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const jobId = this.getAttribute('data-job-id');
+                            // Call function to view applications for the job
+                            viewApplications(jobId);
+                        });
+                    });
+                });
+
+            // Fetch applications for a specific job
+            function viewApplications(jobId) {
+                fetch(`/employer/job_applications/${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const applicationsList = document.getElementById('applications-list');
+                        applicationsList.innerHTML = ""; // Clear previous applications
+                        data.applications.forEach(application => {
+                            const applicationDiv = document.createElement('div');
+                            applicationDiv.classList.add('application-item');
+                            applicationDiv.innerHTML = `
+                                <h3>${application.user_name}</h3>
+                                <p>${application.cover_letter}</p>
+                                <p>Status: ${application.application_status}</p>
+                                <select class="status-dropdown" data-application-id="${application.application_id}">
+                                    <option value="Pending" ${application.application_status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="Shortlisted" ${application.application_status === 'Shortlisted' ? 'selected' : ''}>Shortlisted</option>
+                                    <option value="Declined" ${application.application_status === 'Declined' ? 'selected' : ''}>Declined</option>
+                                </select>
+                            `;
+                            applicationsList.appendChild(applicationDiv);
+                        });
+
+                        // Add event listener to status dropdowns
+                        document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+                            dropdown.addEventListener('change', function() {
+                                const applicationId = this.getAttribute('data-application-id');
+                                const newStatus = this.value;
+                                // Call function to update application status
+                                updateApplicationStatus(applicationId, newStatus);
+                            });
+                        });
+                    });
+            }
+
+            // Function to update application status
+            function updateApplicationStatus(applicationId, newStatus) {
+                fetch('/employer/update_application_status', {
+                    method: 'POST',
+                    headers:
+                        {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            application_id: applicationId,
+                            application_status: newStatus
+                        })
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('Application status updated successfully!');
+                        } else {
+                            alert('Failed to update application status.');
+                        }
+                    });
+            }
+
+            // Function to create a new job
+            document.getElementById('create-job-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                const jobData = {};
+                formData.forEach((value, key) => {
+                    jobData[key] = value;
+                });
+                jobData['employer_id'] = employerId;
+
+                fetch('/employer/create_job', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jobData)
+                }).then(response => {
+                    if (response.ok) {
+                        alert('Job created successfully!');
+                        location.reload(); // Refresh the page to see the new job
+                    } else {
+                        alert('Failed to create job.');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
