@@ -22,6 +22,12 @@ def get_secret(parameter_name):
 def store_secret(parameter_name, parameter_value):
     ssm = boto3.client('ssm', region_name="ap-southeast-2")
     try:
+        # Ensure the parameter_value is a JSON string
+        if isinstance(parameter_value, dict):
+            parameter_value = json.dumps(parameter_value)
+        elif not isinstance(parameter_value, str):
+            raise ValueError("Parameter value must be a dict or a JSON string")
+
         ssm.put_parameter(
             Name=parameter_name,
             Value=parameter_value,
