@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>User Dashboard</title>
+{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <h1>User Dashboard</h1>
+    <div class="jobs-section">
+        <h2>Available Jobs</h2>
+        <div id="jobs-list">
+            <!-- Jobs will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <div class="applications-section">
+        <h2>My Applications</h2>
+        <div id="applications-list">
+            <!-- Applications will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+    {{ super() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userId = "{{ user_id }}"; // Assuming user_id is passed from the backend
+            
+            // Fetch available jobs
+            fetch('/user/jobs')
+                .then(response => response.json())
+                .then(data => {
+                    const jobsList = document.getElementById('jobs-list');
+                    data.jobs.forEach(job => {
+                        const jobDiv = document.createElement('div');
+                        jobDiv.classList.add('job-item');
+                        jobDiv.innerHTML = `
+                            <h3>${job.job_title}</h3>
+                            <p>${job.job_description}</p>
+                            <p>Location: ${job.location}</p>
+                            <p>Salary: ${job.salary}</p>
+                            <button class="apply-button" data-job-id="${job.job_id}">Apply</button>
+                        `;
+                        jobsList.appendChild(jobDiv);
+                    });
+                    
+                    // Add event listener to apply buttons
+                    document.querySelectorAll('.apply-button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const jobId = this.getAttribute('data-job-id');
+                            // Call function to apply for the job
+                            applyForJob(userId, jobId);
+                        });
+                    });
+                });
+
+            // Fetch user applications
+            fetch(`/user/applications/${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const applicationsList = document.getElementById('applications-list');
+                    data.applications.forEach(application => {
+                        const applicationDiv = document.createElement('div');
+                        applicationDiv.classList.add('application-item');
+                        applicationDiv.innerHTML = `
+                            <h3>${application.job_title}</h3>
+                            <p>Status: ${application.application_status}</p>
+                        `;
+                        applicationsList.appendChild(applicationDiv);
+                    });
+                });
+
+            // Function to apply for a job
+            function applyForJob(userId, jobId) {
+                const coverLetter = prompt("Please enter your cover letter:");
+                if (coverLetter) {
+                    fetch('/user/apply_job', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            job_id: jobId,
+                            cover_letter: coverLetter,
+                            applied_at: new Date().toISOString()
+                        })
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('Application submitted successfully!');
+                            location.reload(); // Refresh the page to see the updated application list
+                        } else {
+                            alert('Failed to apply for the job.');
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+{% endblock %}

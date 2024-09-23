@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from models import UserModel, JobModel, ApplicationModel
 import uuid
 
@@ -36,3 +36,8 @@ def apply_job():
 def view_user_applications(user_id):
     applications = application_model.get_applications_by_user(user_id)
     return jsonify({'applications': applications})
+
+# Endpoint to render the user dashboard
+@users.route('/user/dashboard/<user_id>', methods=['GET'])
+def user_dashboard(user_id):
+    return render_template('user/user_dashboard.html', user_id=user_id)
