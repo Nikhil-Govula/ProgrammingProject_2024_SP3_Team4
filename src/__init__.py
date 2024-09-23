@@ -1,5 +1,4 @@
 from flask import Flask
-from .views.job_views import jobs
 from .views.index_views import indexs
 from .views.login_views import logins
 from .views.register_views import registers
@@ -12,7 +11,6 @@ def create_app():
     application.config['TEMPLATES_AUTO_RELOAD'] = True
 
     # Register blueprints
-    application.register_blueprint(jobs)
     application.register_blueprint(indexs)
     application.register_blueprint(logins)
     application.register_blueprint(registers)

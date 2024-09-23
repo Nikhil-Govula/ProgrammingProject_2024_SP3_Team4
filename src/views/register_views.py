@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from werkzeug.security import generate_password_hash
+import bcrypt
 import boto3
 import os
 
@@ -31,6 +31,7 @@ def register_user():
 
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
+        response = {}
         try:
             response = table.get_item(Key={'email': email})
             print("DynamoDB response:", response)  # Add a debug print
@@ -43,15 +44,16 @@ def register_user():
             return render_template('user/register_user.html', error=error)
 
         # Register the new user (hash password and store in DynamoDB)
-        hashed_password = generate_password_hash(password)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         try:
             table.put_item(
                 Item={
+                    'username': email,  # Use email as the primary key
+                    'email': email,
                     'first_name': first_name,
                     'last_name': last_name,
-                    'email': email,
                     'phone_number': phone_number,
-                    'password': hashed_password
+                    'password': hashed_password.decode('utf-8')
                 }
             )
             print("User registered successfully!")  # Add a debug print
@@ -59,7 +61,7 @@ def register_user():
             print("Error inserting into DynamoDB:", e)  # Log the error
 
         # Redirect to login page after successful registration
-        return redirect(url_for('logins.login_user'))
+        return redirect(url_for('logins.index_user'))
 
     return render_template('user/register_user.html')
 
@@ -86,7 +88,7 @@ def register_company():
             return render_template('company/register_company.html', error=error)
 
         # Register the new company (hash password and store in DynamoDB)
-        hashed_password = generate_password_hash(password)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         table.put_item(
             Item={
                 'company_name': company_name,
