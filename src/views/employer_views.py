@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify, render_template
-from ..models.employers import EmployerModel
+from ..models.employer_model import Employer
 from ..models.jobs import JobModel
 from ..models.applications import ApplicationModel
 import uuid
 
 employers = Blueprint('employers', __name__)
 
-employer_model = EmployerModel()
+# employer_model = Employer()
 job_model = JobModel()
 application_model = ApplicationModel()
 

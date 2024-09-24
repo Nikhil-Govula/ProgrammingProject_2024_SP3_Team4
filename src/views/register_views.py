@@ -32,7 +32,7 @@ def register_user():
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
         try:
-            response = table.get_item(Key={'email': email})
+            response = table.get_item(Key={'username': email})
             print("DynamoDB response:", response)  # Add a debug print
         except Exception as e:
             print("Error accessing DynamoDB:", e)  # Log the error
@@ -47,6 +47,7 @@ def register_user():
         try:
             table.put_item(
                 Item={
+                    'username': email,
                     'first_name': first_name,
                     'last_name': last_name,
                     'email': email,
@@ -59,7 +60,7 @@ def register_user():
             print("Error inserting into DynamoDB:", e)  # Log the error
 
         # Redirect to login page after successful registration
-        return redirect(url_for('logins.login_user'))
+        return redirect(url_for('logins.index_user'))
 
     return render_template('user/register_user.html')
 
@@ -80,7 +81,7 @@ def register_employer():
 
         # Check if employer already exists in DynamoDB
         table = dynamodb.Table('Companies')
-        response = table.get_item(Key={'email': email})
+        response = table.get_item(Key={'username': email})
         if 'Item' in response:
             error = "Company already exists!"
             return render_template('employer/register_employer.html', error=error)

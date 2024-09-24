@@ -13,7 +13,7 @@ dynamodb = boto3.resource(
     region_name=os.getenv('AWS_DEFAULT_REGION')
 )
 
-class EmployerModel:
+class Employer:
     def __init__(self):
         self.table = dynamodb.Table('Employers')
 
