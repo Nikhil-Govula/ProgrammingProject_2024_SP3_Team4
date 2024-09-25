@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, render_template, request, redirect, url_for
 import bcrypt
 import boto3
@@ -11,9 +13,9 @@ dynamodb = boto3.resource(
     region_name="ap-southeast-2"
 )
 
-registers = Blueprint('registers', __name__)
+registers_bp = Blueprint('registers', __name__)
 
-@registers.route('/UserRegistration', methods=['GET', 'POST'])
+@registers_bp.route('/UserRegistration', methods=['GET', 'POST'])
 def register_user():
     if request.method == 'POST':
         first_name = request.form['first_name']
@@ -26,21 +28,22 @@ def register_user():
         # Validate form inputs
         if password != confirm_password:
             error = "Passwords do not match!"
-            print("Passwords do not match!")  # Add a debug print
+            logging.debug("Passwords do not match!")
             return render_template('user/register_user.html', error=error)
 
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
-        response = {}
         try:
             response = table.get_item(Key={'email': email})
-            print("DynamoDB response:", response)  # Add a debug print
+            logging.debug(f"DynamoDB response: {response}")
         except Exception as e:
-            print("Error accessing DynamoDB:", e)  # Log the error
+            logging.error(f"Error accessing DynamoDB: {e}")
+            error = "Internal server error. Please try again later."
+            return render_template('user/register_user.html', error=error)
 
         if 'Item' in response:
             error = "User already exists!"
-            print("User already exists!")  # Add a debug print
+            logging.debug("User already exists!")
             return render_template('user/register_user.html', error=error)
 
         # Register the new user (hash password and store in DynamoDB)
@@ -56,17 +59,19 @@ def register_user():
                     'password': hashed_password.decode('utf-8')
                 }
             )
-            print("User registered successfully!")  # Add a debug print
+            logging.info("User registered successfully!")
         except Exception as e:
-            print("Error inserting into DynamoDB:", e)  # Log the error
+            logging.error(f"Error inserting into DynamoDB: {e}")
+            error = "Internal server error. Please try again later."
+            return render_template('user/register_user.html', error=error)
 
         # Redirect to login page after successful registration
-        return redirect(url_for('logins.index_user'))
+        return redirect(url_for('logins.login_user'))
 
     return render_template('user/register_user.html')
 
-@registers.route('/EmployerRegistration', methods=['GET', 'POST'])
-def register_company():
+@registers_bp.route('/EmployerRegistration', methods=['GET', 'POST'])
+def register_employer():
     if request.method == 'POST':
         company_name = request.form['company_name']
         contact_person = request.form['contact_person']
@@ -78,28 +83,43 @@ def register_company():
         # Validate form inputs
         if password != confirm_password:
             error = "Passwords do not match!"
-            return render_template('company/register_company.html', error=error)
+            logging.debug("Passwords do not match!")
+            return render_template('employer/register_employer.html', error=error)
 
-        # Check if company already exists in DynamoDB
+        # Check if employer already exists in DynamoDB
         table = dynamodb.Table('Companies')
-        response = table.get_item(Key={'email': email})
+        try:
+            response = table.get_item(Key={'email': email})
+            logging.debug(f"DynamoDB response: {response}")
+        except Exception as e:
+            logging.error(f"Error accessing DynamoDB: {e}")
+            error = "Internal server error. Please try again later."
+            return render_template('employer/register_employer.html', error=error)
+
         if 'Item' in response:
             error = "Company already exists!"
-            return render_template('company/register_company.html', error=error)
+            logging.debug("Company already exists!")
+            return render_template('employer/register_employer.html', error=error)
 
-        # Register the new company (hash password and store in DynamoDB)
+        # Register the new employer (hash password and store in DynamoDB)
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        table.put_item(
-            Item={
-                'company_name': company_name,
-                'contact_person': contact_person,
-                'email': email,
-                'phone_number': phone_number,
-                'password': hashed_password
-            }
-        )
+        try:
+            table.put_item(
+                Item={
+                    'company_name': company_name,
+                    'contact_person': contact_person,
+                    'email': email,
+                    'phone_number': phone_number,
+                    'password': hashed_password.decode('utf-8')
+                }
+            )
+            logging.info("Employer registered successfully!")
+        except Exception as e:
+            logging.error(f"Error inserting into DynamoDB: {e}")
+            error = "Internal server error. Please try again later."
+            return render_template('employer/register_employer.html', error=error)
 
         # Redirect to login page after successful registration
-        return redirect(url_for('logins.index_company'))
+        return redirect(url_for('logins.login_employer'))
 
-    return render_template('company/register_company.html')
+    return render_template('employer/register_employer.html')

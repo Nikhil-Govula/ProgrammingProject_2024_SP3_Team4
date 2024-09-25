@@ -2,7 +2,7 @@ from ..services.database_service import DynamoDB
 import secrets
 import datetime
 
-class Company:
+class Employer:
     def __init__(self, company_name, email, password, contact_person, phone_number):
         self.company_name = company_name
         self.email = email
@@ -19,7 +19,7 @@ class Company:
     def get_by_email(email):
         item = DynamoDB.get_item('Companies', {'email': email})
         if item:
-            return Company(**item)
+            return Employer(**item)
         return None
 
     def generate_reset_token(self):
@@ -38,7 +38,7 @@ class Company:
                                  FilterExpression='reset_token = :token',
                                  ExpressionAttributeValues={':token': token})
         if response['Items']:
-            return Company(**response['Items'][0])
+            return Employer(**response['Items'][0])
         return None
 
     def update_password(self, new_password):

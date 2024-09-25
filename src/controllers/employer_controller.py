@@ -1,10 +1,10 @@
-from ..models.company_model import Company
+from ..models.employer_model import Employer
 import bcrypt
 
-class CompanyController:
+class EmployerController:
     @staticmethod
     def login(email, password):
-        company = Company.get_by_email(email)
+        company = Employer.get_by_email(email)
         if company and bcrypt.checkpw(password.encode('utf-8'), company.password.encode('utf-8')):
             return company
         return None

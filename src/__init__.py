@@ -33,12 +33,10 @@ def create_app(config_class=Config):
     app.flow = flow  # Attach flow to app for access in views
 
     # Register blueprints
-    from .views.index_views import indexs
-    from .views.login_views import logins
-    from .views.register_views import registers
-    app.register_blueprint(indexs)
-    app.register_blueprint(logins)
-    app.register_blueprint(registers)
+    from .views import index_bp, logins_bp, registers_bp
+    app.register_blueprint(index_bp)
+    app.register_blueprint(logins_bp)
+    app.register_blueprint(registers_bp)
 
     # Additional setup (e.g., error handlers) can be added here
 

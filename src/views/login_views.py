@@ -9,58 +9,58 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 
-from ..controllers.user_controller import UserController
-from ..controllers.company_controller import CompanyController
-from ..controllers.admin_controller import AdminController
+from ..controllers import UserController, EmployerController, AdminController
+from ..services import send_reset_email
 
 
 
-logins = Blueprint('logins', __name__)
+
+logins_bp = Blueprint('logins', __name__)
 
 
-@logins.route('/Login', methods=['GET', 'POST'])
-def index_user():
+@logins_bp.route('/Login', methods=['GET', 'POST'])
+def login_user():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         user = UserController.login(email, password)
         if user:
-            # Set session or JWT token here
+            # TODO: Implement session management or JWT token issuance
             return redirect(url_for('index.index'))
         else:
             return render_template('user/login_user.html', error="Invalid email or password.")
     return render_template('user/login_user.html')
 
 
-@logins.route('/Admin/Login', methods=['GET', 'POST'])
-def index_admin():
+@logins_bp.route('/Admin/Login', methods=['GET', 'POST'])
+def login_admin():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         admin = AdminController.login(email, password)
         if admin:
-            # Set admin session or JWT token here
+            # TODO: Implement admin session management or JWT token issuance
             return redirect(url_for('admin_dashboard'))
         else:
             return render_template('admin/login_admin.html', error="Invalid email or password.")
     return render_template('admin/login_admin.html')
 
 
-@logins.route('/Company/Login', methods=['GET', 'POST'])
-def index_company():
+@logins_bp.route('/Employer/Login', methods=['GET', 'POST'])
+def login_employer():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        company = CompanyController.login(email, password)
-        if company:
-            # Set company session or JWT token here
-            return redirect(url_for('company_dashboard'))
+        employer = EmployerController.login(email, password)
+        if employer:
+            # TODO: Implement employer session management or JWT token issuance
+            return redirect(url_for('employer_dashboard'))
         else:
-            return render_template('company/login_company.html', error="Invalid email or password.")
-    return render_template('company/login_company.html')
+            return render_template('employer/login_employer.html', error="Invalid email or password.")
+    return render_template('employer/login_employer.html')
 
 
-@logins.route('/reset_password', methods=['GET', 'POST'])
+@logins_bp.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
     if request.method == 'POST':
         email = request.form['email']
@@ -69,7 +69,7 @@ def reset_password():
     return render_template('reset_password.html')
 
 
-@logins.route('/reset/<token>', methods=['GET', 'POST'])
+@logins_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
     if request.method == 'POST':
         new_password = request.form['new_password']
@@ -80,14 +80,14 @@ def reset_with_token(token):
 
         success, message = UserController.reset_password_with_token(token, new_password)
         if success:
-            return redirect(url_for('logins.index_user', message="Password updated successfully"))
+            return redirect(url_for('logins.login_user', message="Password updated successfully"))
         else:
             return render_template('reset_with_token.html', error=message, token=token)
 
     return render_template('reset_with_token.html', token=token)
 
 # Test function for token refresh
-@logins.route('/refresh_token', methods=['GET'])
+@logins_bp.route('/refresh_token', methods=['GET'])
 def refresh_token():
     try:
         credentials = check_and_refresh_token()
