@@ -1,12 +1,6 @@
+# src/controllers/index_controller.py
+
 from ..models.user_model import User
 
-def get_user():
-    # This is just a placeholder. In a real application, you'd fetch the user from the database or session.
-    return User(
-        username='test_user',
-        email='test@example.com',
-        password='placeholder_password',  # In reality, you'd never store plain text passwords
-        first_name='Test',
-        last_name='User',
-        phone_number='1234567890'
-    )
+def get_user_by_id(user_email):
+    return User.get_by_email(user_email)

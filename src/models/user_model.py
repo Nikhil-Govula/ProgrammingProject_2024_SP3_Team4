@@ -20,11 +20,10 @@ class User:
 
     @staticmethod
     def get_by_email(email):
-        response = DynamoDB.scan('Users',
-                                 FilterExpression='email = :email',
-                                 ExpressionAttributeValues={':email': email})
-        if response and 'Items' in response and response['Items']:
-            return User(**response['Items'][0])
+        # Use 'username' as the primary key, which is set to email
+        item = DynamoDB.get_item('Users', {'username': email})
+        if item:
+            return User(**item)
         return None
 
     def generate_reset_token(self):

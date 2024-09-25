@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, current_app
+# src/views/login_views.py
+
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
 import bcrypt
 import json
 import base64
@@ -12,14 +14,11 @@ from google.auth.transport.requests import Request
 
 from config import get_secret, store_secret
 from ..controllers import UserController, EmployerController, AdminController
-from ..services import send_reset_email
+from ..services import send_reset_email, SessionManager
 
-
-
-
+from ..services.session_service import SessionManager  # Ensure correct import
 
 logins_bp = Blueprint('logins', __name__)
-
 
 @logins_bp.route('/Login', methods=['GET', 'POST'])
 def login_user():
@@ -28,12 +27,19 @@ def login_user():
         password = request.form['password']
         user = UserController.login(email, password)
         if user:
-            # TODO: Implement session management or JWT token issuance
-            return redirect(url_for('index.index'))
+            # Create a session
+            session_id = SessionManager.create_session(user.email)  # Using email as user_id
+            if session_id:
+                response = make_response(redirect(url_for('index.index')))
+                # Set the session cookie (HttpOnly and Secure flags are recommended)
+                response.set_cookie('session_id', session_id, httponly=True, secure=True, samesite='Lax')
+                return response
+            else:
+                error = "Failed to create session. Please try again."
+                return render_template('user/login_user.html', error=error)
         else:
             return render_template('user/login_user.html', error="Invalid email or password.")
     return render_template('user/login_user.html')
-
 
 @logins_bp.route('/Admin/Login', methods=['GET', 'POST'])
 def login_admin():
@@ -48,7 +54,6 @@ def login_admin():
             return render_template('admin/login_admin.html', error="Invalid email or password.")
     return render_template('admin/login_admin.html')
 
-
 @logins_bp.route('/Employer/Login', methods=['GET', 'POST'])
 def login_employer():
     if request.method == 'POST':
@@ -62,7 +67,6 @@ def login_employer():
             return render_template('employer/login_employer.html', error="Invalid email or password.")
     return render_template('employer/login_employer.html')
 
-
 @logins_bp.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
     if request.method == 'POST':
@@ -70,7 +74,6 @@ def reset_password():
         success, message = UserController.reset_password(email)
         return render_template('reset_password.html', success=success, message=message)
     return render_template('reset_password.html')
-
 
 @logins_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
@@ -89,7 +92,17 @@ def reset_with_token(token):
 
     return render_template('reset_with_token.html', token=token)
 
-# Test function for token refresh
+# Logout Route
+@logins_bp.route('/logout', methods=['GET'])
+def logout():
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        SessionManager.delete_session(session_id)
+    response = make_response(redirect(url_for('logins.login_user')))
+    response.set_cookie('session_id', '', expires=0)
+    return response
+
+# Test function for token refresh (optional)
 @logins_bp.route('/refresh_token', methods=['GET'])
 def refresh_token():
     try:
@@ -99,10 +112,6 @@ def refresh_token():
         import traceback
         error_traceback = traceback.format_exc()
         return f"Error refreshing token: {str(e)}\n\nTraceback:\n{error_traceback}", 500
-
-
-
-
 
 
 def send_email(to, subject, body):
@@ -158,5 +167,3 @@ def check_and_refresh_token():
             raise ValueError("Refresh token not available. Re-authentication required.")
 
     return credentials
-
-
