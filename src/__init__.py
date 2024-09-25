@@ -1,18 +1,45 @@
 from flask import Flask
-from .views.index_views import indexs
-from .views.login_views import logins
-from .views.register_views import registers
+from flask_mail import Mail
+from config import Config
 import os
 
-def create_app():
-    template_dir = os.path.abspath('src/templates')
-    application = Flask(__name__, template_folder=template_dir)
+# Initialize extensions without binding to app
+mail = Mail()
 
-    application.config['TEMPLATES_AUTO_RELOAD'] = True
+def create_app(config_class=Config):
+    # Initialize configurations (load secrets from AWS SSM)
+    config_class.init_app()
+
+    app = Flask(__name__,
+                template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
+                static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
+    # Load configuration
+    app.config.from_object(config_class)
+
+    # Initialize extensions with app
+    mail.init_app(app)
+
+    # Set environment variable for OAuth
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1')
+
+    # Initialize OAuth 2.0 flow
+    from google_auth_oauthlib.flow import Flow
+    flow = Flow.from_client_config(
+        app.config['CLIENT_SECRET'],
+        scopes=['https://www.googleapis.com/auth/gmail.send']
+    )
+    flow.redirect_uri = app.config.get('OAUTH_REDIRECT_URI', 'http://localhost:8080/oauth2callback')
+    app.flow = flow  # Attach flow to app for access in views
 
     # Register blueprints
-    application.register_blueprint(indexs)
-    application.register_blueprint(logins)
-    application.register_blueprint(registers)
+    from .views.index_views import indexs
+    from .views.login_views import logins
+    from .views.register_views import registers
+    app.register_blueprint(indexs)
+    app.register_blueprint(logins)
+    app.register_blueprint(registers)
 
-    return application
+    # Additional setup (e.g., error handlers) can be added here
+
+    return app

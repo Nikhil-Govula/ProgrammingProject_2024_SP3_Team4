@@ -5,12 +5,12 @@ import json
 import logging
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from config import get_secret
+from config import get_secret  # Ensure this imports the module-level function
 
 def send_reset_email(email, token):
     logging.info("send_reset_email in email_service called")
     try:
-        token_json = get_secret('/your-app/token')
+        token_json = get_secret('/your-app/token')  # Fetch the token using the module-level function
         if not token_json:
             raise ValueError("No token found in SSM Parameter Store")
 

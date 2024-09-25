@@ -7,56 +7,66 @@ from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env
 
 class Config:
-    SECRET_KEY = 'secret_key'
-    DEBUG = True
+    SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
+    DEBUG = os.getenv('DEBUG', 'False') == 'True'
+    AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_REGION = os.getenv('AWS_DEFAULT_REGION', 'ap-southeast-2')
+    OAUTHLIB_INSECURE_TRANSPORT = os.getenv('OAUTHLIB_INSECURE_TRANSPORT', '1')
+    OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:8080/oauth2callback')
 
+    # Load secrets from AWS SSM Parameter Store
+    CLIENT_SECRET = None
+    TOKEN = None
+
+    @classmethod
+    def init_app(cls):
+        ssm = boto3.client('ssm', region_name=cls.AWS_REGION)
+        try:
+            client_secret_str = cls.get_secret(ssm, '/your-app/client-secret')
+            cls.CLIENT_SECRET = json.loads(client_secret_str)
+        except Exception as e:
+            print(f"Error loading CLIENT_SECRET: {e}")
+
+        try:
+            token_str = cls.get_secret(ssm, '/your-app/token')
+            cls.TOKEN = json.loads(token_str) if token_str else None
+        except Exception as e:
+            print(f"Error loading TOKEN: {e}")
+
+    @staticmethod
+    def get_secret(ssm_client, parameter_name):
+        try:
+            response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
+            return response['Parameter']['Value']
+        except ClientError as e:
+            print(f"Couldn't retrieve parameter {parameter_name}: {e}")
+            return None
+
+    @staticmethod
+    def store_secret(ssm_client, parameter_name, parameter_value):
+        try:
+            # Ensure the parameter_value is a JSON string
+            if isinstance(parameter_value, dict):
+                parameter_value = json.dumps(parameter_value)
+            elif not isinstance(parameter_value, str):
+                raise ValueError("Parameter value must be a dict or a JSON string")
+
+            ssm_client.put_parameter(
+                Name=parameter_name,
+                Value=parameter_value,
+                Type='SecureString',
+                Overwrite=True
+            )
+            print(f"Successfully stored parameter {parameter_name}")
+        except ClientError as e:
+            print(f"Couldn't store parameter {parameter_name}: {e}")
+
+# Expose get_secret and store_secret as module-level functions for external access
 def get_secret(parameter_name):
-    ssm = boto3.client('ssm', region_name="ap-southeast-2")
-    try:
-        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
-        return response['Parameter']['Value']
-    except ClientError as e:
-        print(f"Couldn't retrieve parameter {parameter_name}: {e}")
-        return None
+    ssm = boto3.client('ssm', region_name=os.getenv('AWS_DEFAULT_REGION', 'ap-southeast-2'))
+    return Config.get_secret(ssm, parameter_name)
 
 def store_secret(parameter_name, parameter_value):
-    ssm = boto3.client('ssm', region_name="ap-southeast-2")
-    try:
-        # Ensure the parameter_value is a JSON string
-        if isinstance(parameter_value, dict):
-            parameter_value = json.dumps(parameter_value)
-        elif not isinstance(parameter_value, str):
-            raise ValueError("Parameter value must be a dict or a JSON string")
-
-        ssm.put_parameter(
-            Name=parameter_name,
-            Value=parameter_value,
-            Type='SecureString',
-            Overwrite=True
-        )
-        print(f"Successfully stored parameter {parameter_name}")
-    except ClientError as e:
-        print(f"Couldn't store parameter {parameter_name}: {e}")
-
-# AWS credentials
-AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_REGION = os.getenv('AWS_DEFAULT_REGION')
-
-# OAuth configuration
-client_secret_str = get_secret('/your-app/client-secret')
-token_str = get_secret('/your-app/token')
-
-try:
-    CLIENT_SECRET = json.loads(client_secret_str)
-except json.JSONDecodeError as e:
-    print(f"Error decoding client secret JSON: {e}")
-    print(f"Raw client secret: {client_secret_str}")
-    CLIENT_SECRET = None
-
-try:
-    TOKEN = json.loads(token_str) if token_str else None
-except json.JSONDecodeError as e:
-    print(f"Error decoding token JSON: {e}")
-    print(f"Raw token: {token_str}")
-    TOKEN = None
+    ssm = boto3.client('ssm', region_name=os.getenv('AWS_DEFAULT_REGION', 'ap-southeast-2'))
+    return Config.store_secret(ssm, parameter_name, parameter_value)

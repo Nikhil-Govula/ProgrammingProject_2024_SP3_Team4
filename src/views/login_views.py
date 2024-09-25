@@ -1,23 +1,13 @@
-import base64
-import datetime
-import json
-import secrets
-from email.mime.text import MIMEText
-
-from botocore.exceptions import ClientError
-from dateutil import parser
-from flask import Blueprint, render_template, request, redirect, url_for
-import boto3
+from flask import Blueprint, render_template, request, redirect, url_for, current_app
 import bcrypt
+import json
+import base64
 import logging
 
-from flask_mail import Mail, Message
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-
-from config import get_secret, store_secret, CLIENT_SECRET
+from email.mime.text import MIMEText
 
 from ..controllers.user_controller import UserController
 from ..controllers.company_controller import CompanyController
@@ -25,64 +15,6 @@ from ..controllers.admin_controller import AdminController
 
 
 
-logins = Blueprint('logins', __name__)
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-
-# Specify the region when initializing the boto3 clients
-ssm = boto3.client('ssm', region_name='ap-southeast-2')
-dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-2')
-
-# Connect to DynamoDB table
-users_table = dynamodb.Table('Users')
-
-
-# Initialize OAuth 2.0 flow using the client secret
-flow = Flow.from_client_config(
-    CLIENT_SECRET,
-    scopes=['https://www.googleapis.com/auth/gmail.send']
-)
-flow.redirect_uri = 'http://localhost:8080/oauth2callback'
-
-@logins.route('/authorize')
-def authorize():
-    authorization_url, _ = flow.authorization_url(prompt='consent')
-    return redirect(authorization_url)
-
-@logins.route('/oauth2callback')
-def oauth2callback():
-    flow.fetch_token(authorization_response=request.url)
-    credentials = flow.credentials
-
-    # Format the token data as a dictionary
-    token_data = {
-        "token": credentials.token,
-        "refresh_token": credentials.refresh_token,
-        "token_uri": credentials.token_uri,
-        "client_id": credentials.client_id,
-        "client_secret": credentials.client_secret,
-        "scopes": credentials.scopes,
-        "expiry": credentials.expiry.isoformat() if credentials.expiry else None
-    }
-
-    # Store the formatted token data in SSM
-    store_secret('/your-app/token', json.dumps(token_data))
-    return 'Authentication successful'
-
-# Retrieve password from Parameter Store
-def get_db_password():
-    try:
-        parameter = ssm.get_parameter(Name='/project/db_password', WithDecryption=True)
-        logging.debug(f"Successfully retrieved parameter: {parameter['Parameter']['Name']}")
-        return parameter['Parameter']['Value']
-    except Exception as e:
-        logging.error(f"Failed to access Parameter Store: {str(e)}")
-        return None
-
-# Login view for users
 logins = Blueprint('logins', __name__)
 
 
@@ -169,7 +101,6 @@ def refresh_token():
 
 
 
-mail = Mail()
 
 def send_email(to, subject, body):
     print("send_email in login_views called")
@@ -195,13 +126,9 @@ def send_email(to, subject, body):
         return False
 
 def send_reset_email(email, token):
-    print("send_reset_email in login_views called")
     try:
-        token_json = get_secret('/your-app/token')
-        if not token_json:
-            raise ValueError("No token found in SSM Parameter Store")
-
-        credentials = Credentials.from_authorized_user_info(json.loads(token_json))
+        flow = current_app.flow
+        credentials = Credentials.from_authorized_user_info(current_app.config['TOKEN'])
         service = build('gmail', 'v1', credentials=credentials)
 
         reset_link = url_for('logins.reset_with_token', token=token, _external=True)
