@@ -34,7 +34,7 @@ def register_user():
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
         try:
-            response = table.get_item(Key={'email': email})
+            response = table.get_item(Key={'username': email})
             logging.debug(f"DynamoDB response: {response}")
         except Exception as e:
             logging.error(f"Error accessing DynamoDB: {e}")
