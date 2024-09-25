@@ -8,9 +8,12 @@ from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
+from google.auth.transport.requests import Request
 
+from config import get_secret, store_secret
 from ..controllers import UserController, EmployerController, AdminController
 from ..services import send_reset_email
+
 
 
 
@@ -125,32 +128,6 @@ def send_email(to, subject, body):
         logging.exception("Full traceback:")
         return False
 
-def send_reset_email(email, token):
-    try:
-        flow = current_app.flow
-        credentials = Credentials.from_authorized_user_info(current_app.config['TOKEN'])
-        service = build('gmail', 'v1', credentials=credentials)
-
-        reset_link = url_for('logins.reset_with_token', token=token, _external=True)
-        subject = 'Password Reset Request'
-        body = f'''To reset your password, visit the following link:
-{reset_link}
-
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-
-        message = MIMEText(body)
-        message['to'] = email
-        message['subject'] = subject
-        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-
-        service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
-        logging.info("Email sent successfully via Gmail API")
-        return True
-    except Exception as e:
-        logging.error(f"Error sending email via Gmail API: {str(e)}")
-        return False
-
 
 def check_and_refresh_token():
     print("check_and_refresh_token in login_views called")
@@ -158,9 +135,6 @@ def check_and_refresh_token():
     token_json = get_secret('/your-app/token')
     if not token_json:
         raise ValueError("No token found in SSM Parameter Store")
-
-    # token_data = json.loads(token_json)
-    # logging.info(f"Token data retrieved: {token_data}")
 
     credentials = Credentials.from_authorized_user_info(json.loads(token_json))
     logging.info(f"Credentials created. Valid: {credentials.valid}, Expired: {credentials.expired}")
@@ -184,6 +158,5 @@ def check_and_refresh_token():
             raise ValueError("Refresh token not available. Re-authentication required.")
 
     return credentials
-
 
 
