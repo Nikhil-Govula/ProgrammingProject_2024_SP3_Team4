@@ -46,11 +46,20 @@ class Config:
     @staticmethod
     def store_secret(ssm_client, parameter_name, parameter_value):
         try:
-            # Ensure the parameter_value is a JSON string
+            # If parameter_value is a dict, convert it to a formatted JSON string
             if isinstance(parameter_value, dict):
-                parameter_value = json.dumps(parameter_value)
+                parameter_value = json.dumps(parameter_value, indent=2)
             elif not isinstance(parameter_value, str):
                 raise ValueError("Parameter value must be a dict or a JSON string")
+
+            # If parameter_value is a string, try to parse it as JSON and reformat it
+            else:
+                try:
+                    json_obj = json.loads(parameter_value)
+                    parameter_value = json.dumps(json_obj, indent=2)
+                except json.JSONDecodeError:
+                    # If it's not valid JSON, keep it as is
+                    pass
 
             ssm_client.put_parameter(
                 Name=parameter_name,
