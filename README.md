@@ -52,7 +52,19 @@ Elastic Beanstalk CLI now fully configured and .elasticbeanstalk directory shoul
 
 
 # Zane's personal elastic load balancing cloud deployment link
-https://awseb--awseb-iu5dngxjboe9-1543411380.ap-southeast-2.elb.amazonaws.com/reset/aSZo1KnZgG2byEQ3pScsNgRKEVFLVBpITPkfTW1uTqw
+https://awseb--awseb-iu5dngxjboe9-1543411380.ap-southeast-2.elb.amazonaws.com/
+
+# Shared elastic load balancing cloud deployment link
+https://awseb--awseb-gymdhb1jspyu-1677074321.ap-southeast-2.elb.amazonaws.com/
+
+
+# Setup EB Load Balancer
+openssl genrsa -out my-self-signed.key 2048  
+openssl req -x509 -key my-self-signed.key -out my-self-signed.crt -days 365                                                               
+aws iam upload-server-certificate --server-certificate-name mySelfSignedCert --certificate-body file://my-self-signed.crt --private-key file://my-self-signed.key 
+aws iam list-server-certificates
+Auto Scaling Group - Load balanced
+Security Groups - Add inbound rule https
 
 
 # Project structure
