@@ -51,6 +51,8 @@ Elastic Beanstalk CLI now fully configured and .elasticbeanstalk directory shoul
 > eb deploy
 
 
+# Zane's personal elastic load balancing cloud deployment link
+https://awseb--awseb-iu5dngxjboe9-1543411380.ap-southeast-2.elb.amazonaws.com/reset/aSZo1KnZgG2byEQ3pScsNgRKEVFLVBpITPkfTW1uTqw
 
 
 # Project structure
