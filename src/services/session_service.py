@@ -87,7 +87,6 @@ class SessionManager:
 
     @classmethod
     def cleanup_expired_sessions(cls):
-        # Optional: Implement a cleanup job to remove expired sessions
         table = DynamoDB.dynamodb.Table(cls.SESSION_TABLE)
         try:
             response = table.scan(

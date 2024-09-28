@@ -13,11 +13,11 @@ class Employer:
         self.token_expiration = None
 
     def save(self):
-        DynamoDB.put_item('Companies', self.__dict__)
+        DynamoDB.put_item('Employers', self.__dict__)
 
     @staticmethod
     def get_by_email(email):
-        item = DynamoDB.get_item('Companies', {'email': email})
+        item = DynamoDB.get_item('Employers', {'email': email})
         if item:
             return Employer(**item)
         return None
@@ -25,7 +25,7 @@ class Employer:
     def generate_reset_token(self):
         token = secrets.token_urlsafe()
         expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        DynamoDB.update_item('Companies',
+        DynamoDB.update_item('Employers',
                              {'email': self.email},
                              {'reset_token': token, 'token_expiration': expiration.isoformat()})
         self.reset_token = token
@@ -34,7 +34,7 @@ class Employer:
 
     @staticmethod
     def get_by_reset_token(token):
-        response = DynamoDB.scan('Companies',
+        response = DynamoDB.scan('Employers',
                                  FilterExpression='reset_token = :token',
                                  ExpressionAttributeValues={':token': token})
         if response['Items']:
@@ -42,7 +42,7 @@ class Employer:
         return None
 
     def update_password(self, new_password):
-        DynamoDB.update_item('Companies',
+        DynamoDB.update_item('Employers',
                              {'email': self.email},
                              {'password': new_password, 'reset_token': None, 'token_expiration': None})
         self.password = new_password

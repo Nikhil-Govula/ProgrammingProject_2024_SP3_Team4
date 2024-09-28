@@ -6,8 +6,10 @@ import secrets
 import datetime
 
 class User:
-    def __init__(self, user_id, email, password, first_name, last_name, phone_number, reset_token=None, token_expiration=None):
-        self.user_id = user_id or str(uuid.uuid4())  # Generate a UUID if not provided
+    def __init__(self, user_id, email, password, first_name, last_name, phone_number,
+                 reset_token=None, token_expiration=None, failed_login_attempts=0,
+                 account_locked=False):
+        self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
         self.first_name = first_name
@@ -15,9 +17,40 @@ class User:
         self.phone_number = phone_number
         self.reset_token = reset_token
         self.token_expiration = token_expiration
+        self.failed_login_attempts = failed_login_attempts
+        self.account_locked = account_locked
 
     def save(self):
         DynamoDB.put_item('Users', self.__dict__)
+
+    def increment_failed_attempts(self):
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= 5:
+            self.account_locked = True
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'failed_login_attempts': self.failed_login_attempts,
+                              'account_locked': self.account_locked})
+
+    def reset_failed_attempts(self):
+        self.failed_login_attempts = 0
+        self.account_locked = False
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'failed_login_attempts': 0, 'account_locked': False})
+
+    def lock_account(self):
+        self.account_locked = True
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'account_locked': True})
+
+    def unlock_account(self):
+        self.account_locked = False
+        self.failed_login_attempts = 0
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'account_locked': False, 'failed_login_attempts': 0})
 
     @staticmethod
     def get_by_email(email):

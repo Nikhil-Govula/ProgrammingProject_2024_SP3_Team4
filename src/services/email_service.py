@@ -7,10 +7,10 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from config import get_secret  # Ensure this imports the module-level function
 
-def send_reset_email(email, token):
+def send_reset_email(email, token, was_locked):
     logging.info("send_reset_email in email_service called")
     try:
-        token_json = get_secret('/your-app/token')  # Fetch the token using the module-level function
+        token_json = get_secret('/your-app/token')
         if not token_json:
             raise ValueError("No token found in SSM Parameter Store")
 
@@ -19,7 +19,8 @@ def send_reset_email(email, token):
 
         reset_link = url_for('logins.reset_with_token', token=token, _external=True)
         subject = 'Password Reset Request'
-        body = f'''To reset your password, visit the following link:
+        unlock_message = " and unlock your account" if was_locked else ""
+        body = f'''To reset your password{unlock_message}, visit the following link:
 {reset_link}
 
 If you did not make this request then simply ignore this email and no changes will be made.

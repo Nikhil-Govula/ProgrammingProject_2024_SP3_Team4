@@ -6,6 +6,7 @@ import bcrypt
 import boto3
 import os
 
+from src.controllers import UserController
 from src.services import DynamoDB
 
 # Initialize DynamoDB resource
@@ -34,43 +35,20 @@ def register_user():
             logging.debug("Passwords do not match!")
             return render_template('user/register_user.html', error=error)
 
-        # Check if user already exists in DynamoDB
-        table = dynamodb.Table('Users')
-        try:
-            # Use the query_by_email method instead of get_item
-            existing_users = DynamoDB.query_by_email('Users', email)
-            if existing_users:
-                error = "User with this email already exists!"
-                logging.debug("User already exists!")
-                return render_template('user/register_user.html', error=error)
-        except Exception as e:
-            logging.error(f"Error accessing DynamoDB: {e}")
-            error = "Internal server error. Please try again later."
-            return render_template('user/register_user.html', error=error)
+        # Validate password
+        is_valid, message = UserController.validate_password(password)
+        if not is_valid:
+            logging.debug(f"Password validation failed: {message}")
+            return render_template('user/register_user.html', error=message)
 
-        user_id = str(uuid.uuid4())
-
-        # Register the new user (hash password and store in DynamoDB)
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        try:
-            table.put_item(
-                Item={
-                    'user_id': user_id,
-                    'email': email,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'phone_number': phone_number,
-                    'password': hashed_password.decode('utf-8')
-                }
-            )
+        # Register the new user
+        success, message = UserController.register_user(email, password, first_name, last_name, phone_number)
+        if success:
             logging.info("User registered successfully!")
-        except Exception as e:
-            logging.error(f"Error inserting into DynamoDB: {e}")
-            error = "Internal server error. Please try again later."
-            return render_template('user/register_user.html', error=error)
-
-        # Redirect to login page after successful registration
-        return redirect(url_for('logins.login_user'))
+            return redirect(url_for('logins.login_user'))
+        else:
+            logging.error(f"User registration failed: {message}")
+            return render_template('user/register_user.html', error=message)
 
     return render_template('user/register_user.html')
 

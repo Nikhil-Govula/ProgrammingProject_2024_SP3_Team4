@@ -25,10 +25,9 @@ def login_user():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = UserController.login(email, password)
+        user, error_message = UserController.login(email, password)
         if user:
-            # Create a session
-            session_id = SessionManager.create_session(user.user_id)  # Use user_id instead of email
+            session_id = SessionManager.create_session(user.user_id)
             if session_id:
                 response = make_response(redirect(url_for('index.index')))
                 response.set_cookie('session_id', session_id, httponly=True, secure=True, samesite='Lax')
@@ -37,7 +36,7 @@ def login_user():
                 error = "Failed to create session. Please try again."
                 return render_template('user/login_user.html', error=error)
         else:
-            return render_template('user/login_user.html', error="Invalid email or password.")
+            return render_template('user/login_user.html', error=error_message)
     return render_template('user/login_user.html')
 
 @logins_bp.route('/Admin/Login', methods=['GET', 'POST'])
@@ -70,8 +69,8 @@ def login_employer():
 def reset_password():
     if request.method == 'POST':
         email = request.form['email']
-        success, message = UserController.reset_password(email)
-        return render_template('reset_password.html', success=success, message=message)
+        success, message, was_locked = UserController.reset_password(email)
+        return render_template('reset_password.html', success=success, message=message, was_locked=was_locked)
     return render_template('reset_password.html')
 
 @logins_bp.route('/reset/<token>', methods=['GET', 'POST'])
@@ -83,9 +82,9 @@ def reset_with_token(token):
         if new_password != confirm_password:
             return render_template('reset_with_token.html', error="Passwords do not match", token=token)
 
-        success, message = UserController.reset_password_with_token(token, new_password)
+        success, message, was_locked = UserController.reset_password_with_token(token, new_password)
         if success:
-            return redirect(url_for('logins.login_user', message="Password updated successfully"))
+            return redirect(url_for('logins.login_user', message=message))
         else:
             return render_template('reset_with_token.html', error=message, token=token)
 
