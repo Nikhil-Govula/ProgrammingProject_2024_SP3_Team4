@@ -57,3 +57,17 @@ class DynamoDB:
         except ClientError as e:
             logging.error(f"Error scanning table {table_name}: {str(e)}")
             return None
+
+    @classmethod
+    def query_by_email(cls, table_name, email):
+        table = cls.dynamodb.Table(table_name)
+        try:
+            response = table.query(
+                IndexName='email-index',  # You'll need to create this secondary index
+                KeyConditionExpression='email = :email',
+                ExpressionAttributeValues={':email': email}
+            )
+            return response.get('Items')
+        except ClientError as e:
+            logging.error(f"Error querying {table_name} by email: {str(e)}")
+            return None

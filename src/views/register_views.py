@@ -1,9 +1,12 @@
 import logging
+import uuid
 
 from flask import Blueprint, render_template, request, redirect, url_for
 import bcrypt
 import boto3
 import os
+
+from src.services import DynamoDB
 
 # Initialize DynamoDB resource
 dynamodb = boto3.resource(
@@ -34,24 +37,25 @@ def register_user():
         # Check if user already exists in DynamoDB
         table = dynamodb.Table('Users')
         try:
-            response = table.get_item(Key={'username': email})
-            logging.debug(f"DynamoDB response: {response}")
+            # Use the query_by_email method instead of get_item
+            existing_users = DynamoDB.query_by_email('Users', email)
+            if existing_users:
+                error = "User with this email already exists!"
+                logging.debug("User already exists!")
+                return render_template('user/register_user.html', error=error)
         except Exception as e:
             logging.error(f"Error accessing DynamoDB: {e}")
             error = "Internal server error. Please try again later."
             return render_template('user/register_user.html', error=error)
 
-        if 'Item' in response:
-            error = "User already exists!"
-            logging.debug("User already exists!")
-            return render_template('user/register_user.html', error=error)
+        user_id = str(uuid.uuid4())
 
         # Register the new user (hash password and store in DynamoDB)
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         try:
             table.put_item(
                 Item={
-                    'username': email,  # Use email as the primary key
+                    'user_id': user_id,
                     'email': email,
                     'first_name': first_name,
                     'last_name': last_name,

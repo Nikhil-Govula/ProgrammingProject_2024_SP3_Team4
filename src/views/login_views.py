@@ -28,10 +28,9 @@ def login_user():
         user = UserController.login(email, password)
         if user:
             # Create a session
-            session_id = SessionManager.create_session(user.email)  # Using email as user_id
+            session_id = SessionManager.create_session(user.user_id)  # Use user_id instead of email
             if session_id:
                 response = make_response(redirect(url_for('index.index')))
-                # Set the session cookie (HttpOnly and Secure flags are recommended)
                 response.set_cookie('session_id', session_id, httponly=True, secure=True, samesite='Lax')
                 return response
             else:
