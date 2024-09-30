@@ -44,7 +44,7 @@
 {% block body %}
 <div class="login-container">
     <h2>Sign in as User</h2>
-    <form action="{{ url_for('logins.login_user') }}" method="POST">
+    <form action="{{ url_for('user_views.login_user') }}" method="POST">
         <input type="email" name="email" placeholder="Email address" required>
         <input type="password" name="password" placeholder="Password" required>
         <a href="#" id="forgot-password-link">Forgot password?</a><br><br>
@@ -54,7 +54,7 @@
         {% endif %}
     </form>
     <div>
-        <p>Don’t have an account? <a href="{{ url_for('registers.register_user') }}">Sign up</a></p>
+        <p>Don’t have an account? <a href="{{ url_for('user_views.register_user') }}">Sign up</a></p>
     </div>
 </div>
 
@@ -64,7 +64,7 @@
         <span class="close-btn" id="close-popup">&times;</span>
         <h2>Forgot your password?</h2>
         <p>We'll send a link to reset your password to your registered email address.</p>
-        <form action="{{ url_for('logins.reset_password') }}" method="POST">
+        <form action="{{ url_for('user_views.reset_password') }}" method="POST">
             <input type="email" name="email" placeholder="Email address" required>
             <button type="submit" class="register-button">Send Link</button>
         </form>

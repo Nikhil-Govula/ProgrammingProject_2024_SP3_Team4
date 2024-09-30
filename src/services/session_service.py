@@ -6,7 +6,6 @@ import json
 from flask import request, g
 import hmac
 
-
 from .database_service import DynamoDB
 
 class SessionManager:
@@ -14,9 +13,9 @@ class SessionManager:
     SESSION_DURATION_HOURS = 24  # Session valid for 24 hours
 
     @classmethod
-    def create_session(cls, user_id):
-        # First, remove any existing sessions for this user
-        cls.remove_existing_sessions(user_id)
+    def create_session(cls, user_id, user_type):
+        # Remove existing sessions if needed
+        cls.remove_existing_sessions(user_id, user_type)
 
         session_id = str(uuid.uuid4())
         created_at = datetime.datetime.utcnow()
@@ -25,9 +24,10 @@ class SessionManager:
         session_data = {
             'session_id': session_id,
             'user_id': user_id,
+            'user_type': user_type,  # Store user type
             'created_at': created_at.isoformat(),
             'expires_at': expires_at.isoformat(),
-            'data': {}  # Additional session data can be stored here
+            'data': {}  # Additional session data
         }
 
         success = DynamoDB.put_item(cls.SESSION_TABLE, session_data)
@@ -36,12 +36,15 @@ class SessionManager:
         return None
 
     @classmethod
-    def remove_existing_sessions(cls, user_id):
+    def remove_existing_sessions(cls, user_id, user_type):
         table = DynamoDB.dynamodb.Table(cls.SESSION_TABLE)
         try:
             response = table.scan(
-                FilterExpression='user_id = :uid',
-                ExpressionAttributeValues={':uid': user_id}
+                FilterExpression='user_id = :uid AND user_type = :utype',
+                ExpressionAttributeValues={
+                    ':uid': user_id,
+                    ':utype': user_type
+                }
             )
             for item in response.get('Items', []):
                 cls.delete_session(item['session_id'])

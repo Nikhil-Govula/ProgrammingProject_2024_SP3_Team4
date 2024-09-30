@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Employer Dashboard</title>
+{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <h1>Welcome, {{ employer.contact_person }}</h1>
+    <p>Company: {{ employer.company_name }}</p>
+    <p>Email: {{ employer.email }}</p>
+    <a href="{{ url_for('employer_views.logout') }}">Logout</a>
+</div>
+{% endblock %}

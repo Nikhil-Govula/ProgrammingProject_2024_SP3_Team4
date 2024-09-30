@@ -13,7 +13,7 @@
             <div class="form-group">
                 <h1>Employer Signin</h1>
             </div>
-            <form action="{{ url_for('logins.index_company') }}" method="POST">
+            <form action="{{ url_for('employer_views.login_employer') }}" method="POST">
                 <div class="form-group">
                     <input type="email" name="email" placeholder="Email address" required>
                 </div>
@@ -31,7 +31,7 @@
                 <button type="submit" class="register-button">Sign in</button>
             </form>
             <div class="footer-links">
-                <p>Don’t have an account? <a href="{{ url_for('registers.register_company') }}">Sign up</a></p>
+                <p>Don’t have an account? <a href="{{ url_for('employer_views.register_employer') }}">Sign up</a></p>
             </div>
         </div>
     </div>

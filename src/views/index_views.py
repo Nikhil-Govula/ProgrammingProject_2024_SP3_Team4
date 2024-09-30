@@ -1,26 +1,23 @@
 from flask import Blueprint, render_template, redirect, url_for, g
 
-from .. import get_user_by_id
+from ..controllers.index_controller import get_user
 from ..decorators.auth_required import auth_required
 
-index_bp = Blueprint('index', __name__)
+index_bp = Blueprint('index_bp', __name__)
 
 @index_bp.route('/Index')
-@auth_required
+@auth_required()  # Using the updated decorator without specifying user_type
 def index():
-    user = get_user_by_id(g.user.user_id)  # Pass user_id instead of email
+    user = get_user(g.user.user_id, g.user_type)  # Fetch user based on user_type
     if user:
-        # Pass only specific user details to the template
-        user_info = {
-            'user_id': user.user_id,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name
-        }
+        user_info = user.to_dict()
         return render_template('index.html', user=user_info)
     else:
-        return redirect(url_for('logins.login_user'))
+        return redirect(url_for('landing.landing'))
 
-@index_bp.route('/')
-def redirect_index():
-    return redirect("/Index", code=302)
+# @index_bp.route('/')
+# def root():
+#     if g.user:
+#         return redirect(url_for('index_bp.index'))
+#     else:
+#         return redirect(url_for('landing.landing'))

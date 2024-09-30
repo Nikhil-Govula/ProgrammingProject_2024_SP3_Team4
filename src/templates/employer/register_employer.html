@@ -14,7 +14,7 @@
                 <h2>Employer Registeration</h2>
                 <a href="/Login">Are you an employee?</a>
             </div>
-            <form action="{{ url_for('registers.register_company') }}" method="POST">
+            <form action="{{ url_for('employer_views.register_employer') }}" method="POST">
                 <div class="form-group split">
                     <input type="text" name="first_name" placeholder="First name" required>
                     <input type="text" name="last_name" placeholder="Last name" required>

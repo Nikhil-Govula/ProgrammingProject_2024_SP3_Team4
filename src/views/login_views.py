@@ -1,6 +1,6 @@
 # src/views/login_views.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
 import bcrypt
 import json
 import base64
@@ -14,81 +14,11 @@ from google.auth.transport.requests import Request
 
 from config import get_secret, store_secret
 from ..controllers import UserController, EmployerController, AdminController
-from ..services import send_reset_email, SessionManager
+from ..services import send_reset_email, SessionManager, GoogleAuthService
 
 from ..services.session_service import SessionManager  # Ensure correct import
 
 logins_bp = Blueprint('logins', __name__)
-
-@logins_bp.route('/Login', methods=['GET', 'POST'])
-def login_user():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        user, error_message = UserController.login(email, password)
-        if user:
-            session_id = SessionManager.create_session(user.user_id)
-            if session_id:
-                response = make_response(redirect(url_for('index.index')))
-                response.set_cookie('session_id', session_id, httponly=True, secure=True, samesite='Lax')
-                return response
-            else:
-                error = "Failed to create session. Please try again."
-                return render_template('user/login_user.html', error=error)
-        else:
-            return render_template('user/login_user.html', error=error_message)
-    return render_template('user/login_user.html')
-
-@logins_bp.route('/Admin/Login', methods=['GET', 'POST'])
-def login_admin():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        admin = AdminController.login(email, password)
-        if admin:
-            # TODO: Implement admin session management or JWT token issuance
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return render_template('admin/login_admin.html', error="Invalid email or password.")
-    return render_template('admin/login_admin.html')
-
-@logins_bp.route('/Employer/Login', methods=['GET', 'POST'])
-def login_employer():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        employer = EmployerController.login(email, password)
-        if employer:
-            # TODO: Implement employer session management or JWT token issuance
-            return redirect(url_for('employer_dashboard'))
-        else:
-            return render_template('employer/login_employer.html', error="Invalid email or password.")
-    return render_template('employer/login_employer.html')
-
-@logins_bp.route('/reset_password', methods=['GET', 'POST'])
-def reset_password():
-    if request.method == 'POST':
-        email = request.form['email']
-        success, message, was_locked = UserController.reset_password(email)
-        return render_template('reset_password.html', success=success, message=message, was_locked=was_locked)
-    return render_template('reset_password.html')
-
-@logins_bp.route('/reset/<token>', methods=['GET', 'POST'])
-def reset_with_token(token):
-    if request.method == 'POST':
-        new_password = request.form['new_password']
-        confirm_password = request.form['confirm_password']
-
-        if new_password != confirm_password:
-            return render_template('reset_with_token.html', error="Passwords do not match", token=token)
-
-        success, message, was_locked = UserController.reset_password_with_token(token, new_password)
-        if success:
-            return redirect(url_for('logins.login_user', message=message))
-        else:
-            return render_template('reset_with_token.html', error=message, token=token)
-
-    return render_template('reset_with_token.html', token=token)
 
 # Logout Route
 @logins_bp.route('/logout', methods=['GET'])
@@ -100,11 +30,11 @@ def logout():
     response.set_cookie('session_id', '', expires=0)
     return response
 
-# Test function for token refresh (optional)
+# Test function for token refresh
 @logins_bp.route('/refresh_token', methods=['GET'])
 def refresh_token():
     try:
-        credentials = check_and_refresh_token()
+        credentials = GoogleAuthService.get_credentials()
         return f"Token refreshed successfully. New expiry: {credentials.expiry}", 200
     except Exception as e:
         import traceback
@@ -165,3 +95,27 @@ def check_and_refresh_token():
             raise ValueError("Refresh token not available. Re-authentication required.")
 
     return credentials
+
+
+@logins_bp.route('/oauth2callback')
+def oauth2callback():
+    flow = current_app.flow
+    flow.fetch_token(authorization_response=request.url)
+
+    if 'state' not in session or session['state'] != request.args['state']:
+        return 'Invalid state parameter', 400
+
+    credentials = flow.credentials
+    session['credentials'] = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+
+    # Store the credentials in AWS SSM
+    store_secret('/your-app/token', json.dumps(session['credentials']))
+
+    return redirect(url_for('user_views.dashboard'))

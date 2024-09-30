@@ -14,7 +14,7 @@
                 <h1>Employee Registeration</h1>
                 <a href="/Employer/Login">Are you an employer?</a>
             </div>
-            <form action="{{ url_for('registers.register_user') }}" method="POST">
+            <form action="{{ url_for('user_views.register_user') }}" method="POST">
                 <div class="form-group split">
                     <input type="text" name="first_name" placeholder="First name" required>
                     <input type="text" name="last_name" placeholder="Last name" required>
@@ -40,7 +40,7 @@
             </form>
             <div class="footer-links">
                 <hr>
-                <p>Already have an account? <a href="{{ url_for('logins.login_user') }}">Log in</a></p>
+                <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
             </div>
         </div>
     </div>

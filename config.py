@@ -13,11 +13,17 @@ class Config:
     AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     AWS_REGION = os.getenv('AWS_DEFAULT_REGION', 'ap-southeast-2')
     OAUTHLIB_INSECURE_TRANSPORT = os.getenv('OAUTHLIB_INSECURE_TRANSPORT', '1')
-    OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:8080/oauth2callback')
+    OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:8080/user/oauth2callback')
 
     # Load secrets from AWS SSM Parameter Store
     CLIENT_SECRET = None
     TOKEN = None
+
+    if CLIENT_SECRET is None:
+        print(f"Failed to load CLIENT_SECRET from SSM. Raw response: ")
+
+    if TOKEN is None:
+        print(f"Failed to load TOKEN from SSM. Raw response: ")
 
     @classmethod
     def init_app(cls):

@@ -90,13 +90,14 @@
 <body>
     <div id="nav">
         <ul>
-            <li><a href="/Index">Index</a></li>
-            <li><a href="/Jobs">Jobs</a></li>
-            <li><a href="/Profile">Profile</a></li>
+            <li><a href="{{ url_for('landing.landing') }}">Home</a></li>
+            <li><a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a></li>
+            <li><a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a></li>
+            <li><a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a></li>
             {% if g.user %}
-                <li style="float:right"><a href="{{ url_for('logins.logout') }}">Logout</a></li>
+                <li style="float:right"><a href="{{ url_for('user_views.logout') }}">Logout</a></li>
             {% else %}
-                <li style="float:right"><a href="/test">TEST</a></li>
+                <li style="float:right"><a href="{{ url_for('landing.landing') }}">Login</a></li>
             {% endif %}
         </ul>
     </div>

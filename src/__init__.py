@@ -1,15 +1,30 @@
 # src/__init__.py
 
-from flask import Flask, request, g
+import logging
+from flask import Flask, request, g, render_template
 from flask_mail import Mail
+from google_auth_oauthlib.flow import Flow
+
 from config import Config
 import os
 
-from .controllers.index_controller import get_user_by_id
+from .controllers.index_controller import get_user
 from .services import SessionManager
+
+from .views import index_bp, landing_bp, user_bp, employer_bp, admin_bp
+# from .services.google_auth_service import GoogleAuthService
 
 # Initialize extensions without binding to app
 mail = Mail()
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 def create_app(config_class=Config):
     # Initialize configurations (load secrets from AWS SSM)
@@ -33,37 +48,38 @@ def create_app(config_class=Config):
             session = SessionManager.get_session(session_id)
             if session:
                 user_id = session.get('user_id')
-                user = get_user_by_id(user_id)
-                if user:
+                user_type = session.get('user_type')
+                user = get_user(user_id, user_type)
+                if user and user_type:
                     g.user = user
-                    g.session = session
+                    g.user_type = user_type
                 else:
                     g.user = None
-                    g.session = None
+                    g.user_type = None
             else:
                 g.user = None
-                g.session = None
+                g.user_type = None
         else:
             g.user = None
-            g.session = None
+            g.user_type = None
 
     # Set environment variable for OAuth
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '0')
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1')
 
     # Initialize OAuth 2.0 flow
-    from google_auth_oauthlib.flow import Flow
     flow = Flow.from_client_config(
         app.config['CLIENT_SECRET'],
         scopes=['https://www.googleapis.com/auth/gmail.send']
     )
-    flow.redirect_uri = app.config.get('OAUTH_REDIRECT_URI', 'http://localhost:8080/oauth2callback')
+    flow.redirect_uri = app.config.get('OAUTH_REDIRECT_URI', 'http://localhost:8080/user/oauth2callback')
     app.flow = flow  # Attach flow to app for access in views
 
     # Register blueprints
-    from .views import index_bp, logins_bp, registers_bp
     app.register_blueprint(index_bp)
-    app.register_blueprint(logins_bp)
-    app.register_blueprint(registers_bp)
+    app.register_blueprint(landing_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(employer_bp)
+    app.register_blueprint(admin_bp)
 
     # Middleware to handle session expiration or refresh if needed
     @app.after_request
@@ -71,4 +87,18 @@ def create_app(config_class=Config):
         # Optionally, extend session expiration or perform other tasks
         return response
 
+    # Register error handlers
+    register_error_handlers(app)
+
     return app
+
+def register_error_handlers(app):
+    @app.errorhandler(404)
+    def page_not_found(e):
+        logging.error(f"404 Error: {e}")
+        return render_template('404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        logging.error(f"500 Error: {e}")
+        return render_template('500.html'), 500
