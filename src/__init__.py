@@ -1,5 +1,3 @@
-# src/__init__.py
-
 import logging
 from flask import Flask, request, g, render_template
 from flask_mail import Mail

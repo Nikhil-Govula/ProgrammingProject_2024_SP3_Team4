@@ -6,7 +6,7 @@
     <form action="{{ url_for('user_views.reset_with_token', token=token) }}" method="POST">
         <input type="password" name="new_password" placeholder="New Password" required>
         <input type="password" name="confirm_password" placeholder="Confirm New Password" required>
-        <button type="submit">Reset Password</button>
+        <button type="submit" class="register-button">Reset Password</button>
     </form>
     {% if error %}
         <p style="color: red;">{{ error }}</p>

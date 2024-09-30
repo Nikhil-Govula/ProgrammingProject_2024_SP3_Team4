@@ -1,5 +1,3 @@
-# src/controllers/admin_controller.py
-
 from ..models.admin_model import Admin
 import bcrypt
 

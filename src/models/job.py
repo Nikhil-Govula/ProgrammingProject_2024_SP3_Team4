@@ -1,5 +1,3 @@
-# Sample model
-
 class Job:
     def __init__(self, title, description, company, location, salary):
         self.title = title

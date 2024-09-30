@@ -1,5 +1,3 @@
-# src/services/session_service.py
-
 import uuid
 import datetime
 import json

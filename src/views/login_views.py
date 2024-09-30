@@ -1,5 +1,3 @@
-# src/views/login_views.py
-
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
 import bcrypt
 import json

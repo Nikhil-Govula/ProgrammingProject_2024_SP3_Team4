@@ -1,5 +1,3 @@
-# src/views/admin_views.py
-
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
 from functools import wraps
 import bcrypt

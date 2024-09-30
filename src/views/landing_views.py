@@ -1,5 +1,3 @@
-# src/views/landing_views.py
-
 from flask import Blueprint, render_template
 
 landing_bp = Blueprint('landing', __name__)

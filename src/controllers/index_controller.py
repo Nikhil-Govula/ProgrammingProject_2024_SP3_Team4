@@ -1,5 +1,3 @@
-# src/controllers/index_controller.py
-
 from ..models.user_model import User
 from ..models.employer_model import Employer
 from ..models.admin_model import Admin

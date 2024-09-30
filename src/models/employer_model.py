@@ -1,5 +1,3 @@
-# src/models/employer_model.py
-
 from ..services.database_service import DynamoDB
 import secrets
 import datetime

@@ -1,4 +1,3 @@
-# src/models/user_model.py
 import uuid
 
 from ..services.database_service import DynamoDB

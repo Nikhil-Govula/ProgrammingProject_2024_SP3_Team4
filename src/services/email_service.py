@@ -1,5 +1,3 @@
-# src/services/email_service.py
-
 from flask import url_for
 from email.mime.text import MIMEText
 import base64
@@ -50,3 +48,4 @@ If you did not make this request then simply ignore this email and no changes wi
         logging.error(f"Error sending email via Gmail API: {str(e)}")
         logging.exception("Full traceback:")
         return False
+

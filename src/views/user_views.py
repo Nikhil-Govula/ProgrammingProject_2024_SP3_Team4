@@ -1,4 +1,3 @@
-# src/views/user_views.py
 import json
 
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
@@ -81,8 +80,8 @@ def reset_password():
     if request.method == 'POST':
         email = request.form['email']
         success, message, was_locked = UserController.reset_password(email)
-        return render_template('reset_password.html', success=success, message=message, was_locked=was_locked)
-    return render_template('reset_password.html')
+        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked)
+    return render_template('user/reset_password.html')
 
 @user_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
@@ -91,15 +90,15 @@ def reset_with_token(token):
         confirm_password = request.form['confirm_password']
 
         if new_password != confirm_password:
-            return render_template('reset_with_token.html', error="Passwords do not match", token=token)
+            return render_template('user/reset_with_token.html', error="Passwords do not match", token=token)
 
         success, message, was_locked = UserController.reset_password_with_token(token, new_password)
         if success:
             return redirect(url_for('user_views.login_user', message=message))
         else:
-            return render_template('reset_with_token.html', error=message, token=token)
+            return render_template('user/reset_with_token.html', error=message, token=token)
 
-    return render_template('reset_with_token.html', token=token)
+    return render_template('user/reset_with_token.html', token=token)
 
 
 # Test function for token refresh

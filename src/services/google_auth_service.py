@@ -1,5 +1,3 @@
-# src/services/google_auth_service.py
-
 import json
 import logging
 from google.auth.exceptions import RefreshError

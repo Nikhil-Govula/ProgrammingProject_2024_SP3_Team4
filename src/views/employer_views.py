@@ -1,5 +1,3 @@
-# src/views/employer_views.py
-
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
 from functools import wraps
 import bcrypt
@@ -95,3 +93,4 @@ def reset_with_token(token):
             return render_template('employer/reset_with_token.html', error=message, token=token)
 
     return render_template('employer/reset_with_token.html', token=token)
+
