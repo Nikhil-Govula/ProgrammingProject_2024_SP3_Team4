@@ -17,8 +17,9 @@ def login_employer():
         password = request.form['password']
         employer, error_message = EmployerController.login(email, password)
         if employer:
-            session_id = SessionManager.create_session(employer.email, 'employer')
+            session_id = SessionManager.create_session(employer.employer_id, 'employer')
             if session_id:
+                print(f"Employer logged in successfully: {employer.employer_id}")  # Debug log
                 response = make_response(redirect(url_for('employer_views.dashboard')))
                 response.set_cookie('session_id', session_id, httponly=True, secure=True, samesite='Lax')
                 return response
@@ -54,7 +55,7 @@ def register_employer():
     return render_template('employer/register_employer.html')
 
 @employer_bp.route('/dashboard', methods=['GET'])
-@auth_required
+@auth_required(user_type='employer')
 def dashboard():
     employer = g.user
     return render_template('employer/dashboard.html', employer=employer)
@@ -67,3 +68,30 @@ def logout():
     response = make_response(redirect(url_for('landing.landing')))
     response.set_cookie('session_id', '', expires=0)
     return response
+
+# **New Routes for Password Reset**
+
+@employer_bp.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        success, message, was_locked = EmployerController.reset_password(email)
+        return render_template('employer/reset_password.html', success=success, message=message, was_locked=was_locked)
+    return render_template('employer/reset_password.html')
+
+@employer_bp.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_with_token(token):
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            return render_template('employer/reset_with_token.html', error="Passwords do not match", token=token)
+
+        success, message, was_locked = EmployerController.reset_password_with_token(token, new_password)
+        if success:
+            return redirect(url_for('employer_views.login_employer', message=message))
+        else:
+            return render_template('employer/reset_with_token.html', error=message, token=token)
+
+    return render_template('employer/reset_with_token.html', token=token)

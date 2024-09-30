@@ -50,18 +50,22 @@ def create_app(config_class=Config):
                 user_id = session.get('user_id')
                 user_type = session.get('user_type')
                 user = get_user(user_id, user_type)
-                if user and user_type:
+                if user:
                     g.user = user
                     g.user_type = user_type
+                    print(f"Session loaded for {user_type}: {user_id}")  # Debug log
                 else:
                     g.user = None
                     g.user_type = None
+                    print(f"User not found for session: {user_id}, {user_type}")  # Debug log
             else:
                 g.user = None
                 g.user_type = None
+                print("No valid session found")  # Debug log
         else:
             g.user = None
             g.user_type = None
+            print("No session ID in cookie")  # Debug log
 
     # Set environment variable for OAuth
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1')
