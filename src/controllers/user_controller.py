@@ -15,13 +15,12 @@ class UserController:
             if user.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
             if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-                user.failed_login_attempts = 0
+                user.reset_failed_attempts()
                 user.unlock_account()
                 return user, None
             else:
-                user.failed_login_attempts += 1
-                if user.failed_login_attempts >= 5:
-                    user.lock_account()
+                user.increment_failed_attempts()
+                if user.account_locked:
                     return None, "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
                 return None, "Invalid email or password."
         return None, "Invalid email or password."
@@ -61,15 +60,6 @@ class UserController:
 
     @staticmethod
     def validate_password(password):
-        """
-        Validate the password against the security requirements.
-
-        Requirements:
-        - Minimum 8 characters
-        - Contains both uppercase and lowercase letters
-        - Contains numbers
-        - Contains special characters
-        """
         if len(password) < 8:
             return False, "Password must be at least 8 characters long."
 

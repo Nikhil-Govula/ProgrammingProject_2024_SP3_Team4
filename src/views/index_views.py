@@ -14,10 +14,3 @@ def index():
         return render_template('index.html', user=user_info)
     else:
         return redirect(url_for('landing.landing'))
-
-# @index_bp.route('/')
-# def root():
-#     if g.user:
-#         return redirect(url_for('index_bp.index'))
-#     else:
-#         return redirect(url_for('landing.landing'))
