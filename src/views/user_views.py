@@ -1,11 +1,8 @@
 import json
 
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
-from functools import wraps
-import bcrypt
 from google.auth.transport import requests
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import Flow
 
 from config import store_secret
 from ..controllers import UserController
@@ -80,7 +77,7 @@ def reset_password():
     if request.method == 'POST':
         email = request.form['email']
         success, message, was_locked = UserController.reset_password(email)
-        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked)
+        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked, email=email)
     return render_template('user/reset_password.html')
 
 @user_bp.route('/reset/<token>', methods=['GET', 'POST'])
@@ -122,11 +119,11 @@ def setup_oauth():
 
 @user_bp.route('/start_oauth_flow')
 def start_oauth_flow():
-    flow = current_app.flow  # Ensure you're getting the flow from the app context
+    flow = current_app.flow  # Getting the flow from the app context
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'  # Force consent to receive a new refresh_token
+        prompt='consent'  # Force consent to receive a new refresh_token. Fewer token errors with this enabled
     )
     session['state'] = state  # Store state in the session
     return redirect(authorization_url)

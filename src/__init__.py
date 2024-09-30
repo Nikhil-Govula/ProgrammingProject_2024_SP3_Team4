@@ -83,24 +83,4 @@ def create_app(config_class=Config):
     app.register_blueprint(employer_bp)
     app.register_blueprint(admin_bp)
 
-    # Middleware to handle session expiration or refresh if needed
-    @app.after_request
-    def save_session(response):
-        # Optionally, extend session expiration or perform other tasks
-        return response
-
-    # Register error handlers
-    register_error_handlers(app)
-
     return app
-
-def register_error_handlers(app):
-    @app.errorhandler(404)
-    def page_not_found(e):
-        logging.error(f"404 Error: {e}")
-        return render_template('404.html'), 404
-
-    @app.errorhandler(500)
-    def internal_error(e):
-        logging.error(f"500 Error: {e}")
-        return render_template('500.html'), 500

@@ -1,6 +1,4 @@
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
-from functools import wraps
-import bcrypt
 
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
@@ -74,7 +72,7 @@ def reset_password():
     if request.method == 'POST':
         email = request.form['email']
         success, message, was_locked = EmployerController.reset_password(email)
-        return render_template('employer/reset_password.html', success=success, message=message, was_locked=was_locked)
+        return render_template('employer/reset_password.html', success=success, message=message, was_locked=was_locked, email=email)
     return render_template('employer/reset_password.html')
 
 @employer_bp.route('/reset/<token>', methods=['GET', 'POST'])

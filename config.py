@@ -19,12 +19,6 @@ class Config:
     CLIENT_SECRET = None
     TOKEN = None
 
-    if CLIENT_SECRET is None:
-        print(f"Failed to load CLIENT_SECRET from SSM. Raw response: ")
-
-    if TOKEN is None:
-        print(f"Failed to load TOKEN from SSM. Raw response: ")
-
     @classmethod
     def init_app(cls):
         ssm = boto3.client('ssm', region_name=cls.AWS_REGION)
