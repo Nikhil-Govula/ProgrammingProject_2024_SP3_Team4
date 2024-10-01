@@ -11,8 +11,8 @@
     <div class="form-container">
         <div class="register-card">
             <div class="form-group">
-                <h1>Employee Registeration</h1>
-                <a href="/Employer/Login">Are you an employer?</a>
+                <h1>User Registration</h1>
+                <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
             </div>
             <form action="{{ url_for('user_views.register_user') }}" method="POST">
                 <div class="form-group split">
