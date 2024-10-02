@@ -2,43 +2,8 @@
 
 {% block head %}
     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
-    <!--<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <title>User Login</title>
-    <style>
-        .popup {
-            display: none;
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-        }
-
-        .popup-content {
-            text-align: center;
-        }
-
-        .close-btn {
-            float: right;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 500;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}

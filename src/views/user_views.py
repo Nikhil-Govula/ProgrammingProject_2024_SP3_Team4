@@ -56,7 +56,7 @@ def register_user():
     return render_template('user/register_user.html')
 
 @user_bp.route('/dashboard', methods=['GET'])
-@auth_required()
+@auth_required(user_type='user')
 def dashboard():
     user = g.user
     return render_template('user/dashboard.html', user=user)
