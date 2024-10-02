@@ -51,11 +51,11 @@ def create_app(config_class=Config):
                 if user:
                     g.user = user
                     g.user_type = user_type
-                    print(f"Session loaded for {user_type}: {user_id}")  # Debug log
+                    print(f"Session loaded for {user_type}: {user_id}")
                 else:
                     g.user = None
                     g.user_type = None
-                    print(f"User not found for session: {user_id}, {user_type}")  # Debug log
+                    print(f"User not found for session: {user_id}, {user_type}")
             else:
                 g.user = None
                 g.user_type = None
