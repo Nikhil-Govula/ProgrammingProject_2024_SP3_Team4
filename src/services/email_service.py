@@ -5,13 +5,6 @@ import logging
 from .google_auth_service import GoogleAuthService
 
 def send_reset_email(email, token, was_locked, role='user'):
-    """
-    Send a password reset email using the Gmail API.
-    :param email: Recipient's email address.
-    :param token: Reset token.
-    :param was_locked: Boolean indicating if the account was locked.
-    :param role: 'user' or 'employer' to customize the reset link.
-    """
     logging.info("send_reset_email in email_service called")
     try:
         service = GoogleAuthService.get_gmail_service()
@@ -23,6 +16,10 @@ def send_reset_email(email, token, was_locked, role='user'):
         elif role == 'employer':
             reset_link = url_for('employer_views.reset_with_token', token=token, _external=True)
             subject = 'Employer Password Reset Request'
+            prefix = "To reset your password"
+        elif role == 'admin':
+            reset_link = url_for('admin_views.reset_with_token', token=token, _external=True)
+            subject = 'Admin Password Reset Request'
             prefix = "To reset your password"
         else:
             reset_link = url_for('landing.landing', _external=True)

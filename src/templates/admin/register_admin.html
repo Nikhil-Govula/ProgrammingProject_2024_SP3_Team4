@@ -3,7 +3,7 @@
 {% block head %}
     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>Sign in as Admin</title>
+    <title>Register New Admin</title>
 {% endblock %}
 
 {% block body %}
@@ -11,24 +11,30 @@
     <div class="form-container">
         <div class="register-card">
             <div class="form-group">
-                <h1>Admin Login</h1>
+                <h2>Register New Admin</h2>
             </div>
-            <form action="{{ url_for('admin_views.login_admin') }}" method="POST">
+            <form action="{{ url_for('admin_views.register_admin') }}" method="POST">
                 <div class="form-group">
-                    <input type="email" name="email" placeholder="Email address" required>
+                    <input type="text" name="first_name" placeholder="First Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="last_name" placeholder="Last Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Email Address" required>
                 </div>
                 <div class="form-group">
                     <input type="password" name="password" placeholder="Password" required>
                 </div>
                 <div class="form-group">
-                    <a href="{{ url_for('admin_views.reset_password') }}" style="text-align:right;display:block;">Forgot password?</a>
+                    <input type="password" name="confirm_password" placeholder="Confirm Password" required>
                 </div>
 
                 {% if error %}
                     <p style="color: red;">{{ error }}</p>
                 {% endif %}
 
-                <button type="submit" class="register-button">Sign in</button>
+                <button type="submit" class="register-button">Register Admin</button>
             </form>
         </div>
     </div>
