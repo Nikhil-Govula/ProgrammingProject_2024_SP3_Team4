@@ -1,26 +1,27 @@
 import uuid
-
 from ..services.database_service import DynamoDB
 import secrets
 import datetime
 
 class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
-                 reset_token=None, token_expiration=None, failed_login_attempts=0,
-                 account_locked=False):
+                 profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
+                 failed_login_attempts=0, account_locked=False):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
         self.first_name = first_name
         self.last_name = last_name
         self.phone_number = phone_number
+        self.profile_picture_url = profile_picture_url
+        self.certifications = certifications or []
         self.reset_token = reset_token
         self.token_expiration = token_expiration
         self.failed_login_attempts = failed_login_attempts
         self.account_locked = account_locked
 
     def save(self):
-        DynamoDB.put_item('Users', self.__dict__)
+        DynamoDB.put_item('Users', self.to_dict())
 
     def increment_failed_attempts(self):
         self.failed_login_attempts += 1
@@ -92,11 +93,30 @@ class User:
         self.reset_token = None
         self.token_expiration = None
 
+    def add_certification(self, cert_id, url, filename):
+        cert = {'id': cert_id, 'url': url, 'filename': filename}
+        if cert not in self.certifications:
+            self.certifications.append(cert)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'certifications': self.certifications})
+
+    def remove_certification(self, url):
+        self.certifications = [cert for cert in self.certifications if cert['url'] != url]
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'certifications': self.certifications})
+
     def to_dict(self):
         return {
             'user_id': self.user_id,
             'email': self.email,
+            'password': self.password,
             'first_name': self.first_name,
             'last_name': self.last_name,
-            'phone_number': self.phone_number
+            'phone_number': self.phone_number,
+            'profile_picture_url': self.profile_picture_url,
+            'certifications': self.certifications,
+            'reset_token': self.reset_token,
+            'token_expiration': self.token_expiration
         }

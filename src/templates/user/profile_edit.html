@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Edit Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery for simplicity -->
+    <script>
+        $(document).ready(function() {
+            // Handle profile picture upload
+            $('#profile-picture-input').on('change', function() {
+                var formData = new FormData();
+                var file = this.files[0];
+                formData.append('profile_picture', file);
+
+                $.ajax({
+                    url: "{{ url_for('user_views.upload_profile_picture') }}",
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        if(response.success) {
+                            $('#profile-picture').attr('src', response.profile_picture_url);
+                            showNotification('Profile picture updated successfully.');
+                        } else {
+                            showNotification(response.message);
+                        }
+                    },
+                    error: function() {
+                        showNotification('An error occurred while uploading the profile picture.');
+                    }
+                });
+            });
+
+            // Handle certification upload
+            $('#certifications-input').on('change', function() {
+                var formData = new FormData();
+                var files = this.files;
+                $.each(files, function(i, file) {
+                    formData.append('certifications', file);
+                });
+
+                $.ajax({
+                    url: "{{ url_for('user_views.upload_certification') }}",
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        if(response.success) {
+                            // Clear any existing "No certifications uploaded" message
+                            if($('#certifications-list').length === 0) {
+                                $('.form-group:contains("Existing Certifications")').html('<label>Existing Certifications:</label><ul id="certifications-list"></ul>');
+                            }
+
+                            $.each(response.certifications, function(i, cert) {
+                                $('#certifications-list').append(
+                                    `<li id="cert-${cert.id}">
+                                        <a href="${cert.url}" target="_blank">${cert.filename}</a>
+                                        <button type="button" class="delete-cert-button" data-id="${cert.id}">Delete</button>
+                                    </li>`
+                                );
+                            });
+                            // Clear the file input
+                            $('#certifications-input').val('');
+                        } else {
+                            showNotification(response.message);
+                        }
+                    },
+                });
+            });
+
+            // Handle certification deletion
+            $(document).on('click', '.delete-cert-button', function() {
+                var certId = $(this).data('id');
+                if(confirm('Are you sure you want to delete this certification?')) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.delete_certification') }}",
+                        type: 'POST',
+                        data: JSON.stringify({cert_id: certId}),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            if(response.success) {
+                                $(`#cert-${certId}`).remove();
+                            } else {
+                                showNotification(response.message);
+                            }
+                        },
+                        error: function() {
+                            showNotification('An error occurred while deleting the certification.');
+                        }
+                    });
+                }
+            });
+
+            // Handle individual field updates
+            $('.update-field-button').on('click', function() {
+                var field = $(this).data('field');
+                var value = $(`#${field}-input`).val();
+
+                $.ajax({
+                    url: "{{ url_for('user_views.update_profile_field') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({field: field, value: value}),
+                    success: function(response) {
+                        if(response.success) {
+                            showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`);
+                        } else {
+                            showNotification(response.message);
+                        }
+                    },
+                    error: function() {
+                        showNotification('An error occurred while updating the field.');
+                    }
+                });
+            });
+
+            // Capitalize function for alert messages
+            String.prototype.capitalize = function() {
+                return this.charAt(0).toUpperCase() + this.slice(1);
+            }
+        });
+
+        function showNotification(message, type = 'success') {
+    const notificationContainer = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notificationContainer.appendChild(notification);
+
+    // Trigger a reflow before adding the opacity to ensure the transition works
+    notification.offsetHeight;
+    notification.style.opacity = '1';
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notificationContainer.removeChild(notification);
+        }, 500); // Wait for fade out transition to complete before removing
+    }, 3000); // Show for 3 seconds
+}
+    </script>
+{% endblock %}
+
+{% block body %}
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+<div class="registration-container">
+    <div class="form-container">
+        <div class="register-card">
+            <h2>Edit Profile</h2>
+
+            <!-- Success Message -->
+            {% if request.args.get('success') %}
+                <p style="color: green;">{{ request.args.get('success') }}</p>
+            {% endif %}
+
+            <!-- Error Message -->
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+
+            <form id="profile-form" enctype="multipart/form-data">
+                <!-- Profile Picture -->
+                <div class="form-group">
+                    <label>Profile Picture:</label><br>
+                    <img src="{{ user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" id="profile-picture" class="profile-picture">
+                    <input type="file" id="profile-picture-input" accept="image/*">
+                </div>
+
+                <!-- First Name -->
+                <div class="form-group">
+                    <label for="first_name-input">First Name:</label><br>
+                    <input type="text" id="first_name-input" name="first_name" placeholder="First Name" value="{{ user.first_name }}" required>
+                    <button type="button" class="update-field-button" data-field="first_name">Update</button>
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-group">
+                    <label for="last_name-input">Last Name:</label><br>
+                    <input type="text" id="last_name-input" name="last_name" placeholder="Last Name" value="{{ user.last_name }}" required>
+                    <button type="button" class="update-field-button" data-field="last_name">Update</button>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email-input">Email Address:</label><br>
+                    <input type="email" id="email-input" name="email" placeholder="Email Address" value="{{ user.email }}" required>
+                    <button type="button" class="update-field-button" data-field="email">Update</button>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="form-group">
+                    <label for="phone_number-input">Phone Number:</label><br>
+                    <input type="text" id="phone_number-input" name="phone_number" placeholder="Phone Number" value="{{ user.phone_number }}" required>
+                    <button type="button" class="update-field-button" data-field="phone_number">Update</button>
+                </div>
+
+                <!-- Certifications Upload -->
+                <div class="form-group">
+                    <label for="certifications">Upload New Certifications:</label><br>
+                    <input type="file" id="certifications-input" name="certifications" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.doc,.xlsx,.xls" multiple>
+                </div>
+
+                <!-- Existing Certifications -->
+                <div class="form-group">
+                    <label>Existing Certifications:</label>
+                    {% if user.certifications %}
+                        <ul id="certifications-list">
+                            {% for cert in user.certifications %}
+                                <li id="cert-{{ cert.id }}">
+                                    <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a>
+                                    <button type="button" class="delete-cert-button" data-id="{{ cert.id }}">Delete</button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p id="no-certs-message">No certifications uploaded.</p>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+    {{ super() }}
+{% endblock %}

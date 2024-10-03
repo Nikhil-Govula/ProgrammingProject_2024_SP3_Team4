@@ -67,3 +67,13 @@ body {
 #nav ul li a:hover {
     background-color: #575757;
 }
+
+.nav-profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 5px;
+    cursor: pointer;
+    border: 2px solid #FFFFFF;
+}

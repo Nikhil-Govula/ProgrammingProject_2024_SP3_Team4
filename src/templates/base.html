@@ -18,7 +18,18 @@
             <li><a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a></li>
             <li><a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a></li>
             {% if g.user %}
-                <li style="float:right"><a href="{{ url_for('user_views.logout') }}">Logout</a></li>
+                {% if g.user_type == 'user' %}
+                    <li><a href="{{ url_for('user_views.view_profile') }}">My Profile</a></li>
+                {% elif g.user_type == 'employer' %}
+                    <li><a href="{{ url_for('employer_views.view_profile') }}">My Profile</a></li>
+                {% elif g.user_type == 'admin' %}
+                    <li><a href="{{ url_for('admin_views.view_profile') }}">My Profile</a></li>
+                {% endif %}
+                <li style="float:right; list-style: none;">
+                    <a href="{{ url_for('user_views.view_profile') }}">
+                        <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="nav-profile-picture">
+                    </a>
+                </li>
             {% else %}
                 <li style="float:right"><a href="{{ url_for('landing.landing') }}">Login</a></li>
             {% endif %}

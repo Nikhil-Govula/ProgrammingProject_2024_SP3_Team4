@@ -1,10 +1,15 @@
 import json
+import uuid
 
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
+import boto3
+from botocore.exceptions import ClientError
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
+    jsonify
 from google.auth.transport import requests
 from google.oauth2.credentials import Credentials
+from werkzeug.utils import secure_filename
 
-from config import store_secret
+from config import store_secret, Config
 from ..controllers import UserController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
@@ -171,3 +176,154 @@ def revoke():
         return 'Credentials successfully revoked.'
     else:
         return 'An error occurred.'
+
+
+@user_bp.route('/profile', methods=['GET'])
+@auth_required(user_type='user')
+def view_profile():
+    user = g.user
+    return render_template('user/profile.html', user=user)
+
+@user_bp.route('/profile/edit', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def edit_profile():
+    user = g.user
+    if request.method == 'POST':
+        first_name = request.form.get('first_name').strip()
+        last_name = request.form.get('last_name').strip()
+        email = request.form.get('email').strip()
+        phone_number = request.form.get('phone_number').strip()
+        profile_picture = request.files.get('profile_picture')
+        certifications = request.files.getlist('certifications')
+
+        success, message = UserController.update_profile(
+            user_id=user.user_id,
+            user_type='user',
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone_number=phone_number,
+            profile_picture=profile_picture,
+            certifications=certifications
+        )
+
+        if success:
+            return redirect(url_for('user_views.view_profile', success=message))
+        else:
+            return render_template('user/profile_edit.html', user=user, error=message)
+
+    return render_template('user/profile_edit.html', user=user)
+
+@user_bp.route('/upload_profile_picture', methods=['POST'])
+@auth_required(user_type='user')
+def upload_profile_picture():
+    user = g.user
+    if 'profile_picture' not in request.files:
+        return jsonify({'success': False, 'message': 'No profile picture file in the request.'}), 400
+
+    file = request.files['profile_picture']
+    if file and UserController.allowed_image_file(file.filename):
+        new_profile_picture_url, error = UserController.update_profile_picture(user, file)
+        if error:
+            return jsonify({'success': False, 'message': error}), 400
+        user.profile_picture_url = new_profile_picture_url
+        user.save()
+        return jsonify({'success': True, 'profile_picture_url': new_profile_picture_url}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Invalid file type for profile picture.'}), 400
+
+@user_bp.route('/upload_certification', methods=['POST'])
+@auth_required(user_type='user')
+def upload_certification():
+    user = g.user
+    if 'certifications' not in request.files:
+        return jsonify({'success': False, 'message': 'No certification files part in the request.'}), 400
+
+    files = request.files.getlist('certifications')
+    uploaded_certs = []
+    for file in files:
+        if file and UserController.allowed_certification_file(file.filename):
+            cert_url, original_filename, error = UserController.upload_certification(user, file)
+            if error:
+                return jsonify({'success': False, 'message': error}), 400
+            # Assuming each certification has a unique identifier
+            cert_id = str(uuid.uuid4())
+            user.add_certification(cert_id, cert_url, original_filename)
+            uploaded_certs.append({'id': cert_id, 'url': cert_url, 'filename': original_filename})
+        else:
+            return jsonify({'success': False, 'message': 'Invalid file type for certifications.'}), 400
+
+    user.save()  # Save updated certifications
+    return jsonify({'success': True, 'certifications': uploaded_certs}), 200
+
+@user_bp.route('/delete_certification', methods=['POST'])
+@auth_required(user_type='user')
+def delete_certification():
+    user = g.user
+    data = request.get_json()
+    cert_id = data.get('cert_id')
+
+    if not cert_id:
+        return jsonify({'success': False, 'message': 'No certification ID provided.'}), 400
+
+    cert_to_delete = next((cert for cert in user.certifications if cert.get('id') == cert_id), None)
+    if not cert_to_delete:
+        return jsonify({'success': False, 'message': 'Certification not found.'}), 404
+
+    # Remove from S3
+    success = UserController.delete_certification(user.user_id, cert_to_delete['url'])
+    if not success:
+        return jsonify({'success': False, 'message': 'Failed to delete certification from storage.'}), 500
+
+    # Remove from user certifications
+    user.certifications = [cert for cert in user.certifications if cert.get('id') != cert_id]
+    user.save()
+
+    return jsonify({'success': True, 'message': 'Certification deleted successfully.'}), 200
+
+@user_bp.route('/update_field', methods=['POST'])
+@auth_required(user_type='user')
+def update_profile_field():
+    data = request.get_json()
+    field = data.get('field')
+    value = data.get('value')
+
+    if not field or value is None:
+        return jsonify({'success': False, 'message': 'Invalid request parameters.'}), 400
+
+    allowed_fields = {'first_name', 'last_name', 'email', 'phone_number'}
+    if field not in allowed_fields:
+        return jsonify({'success': False, 'message': 'Field not allowed to update.'}), 400
+
+    user = g.user
+
+    # Update the field using the UserController
+    success, message = UserController.update_profile_field(user.user_id, field, value)
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/change_password', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def change_password():
+    user = g.user
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        success, message = UserController.change_password(
+            user_id=user.user_id,
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+
+        if success:
+            return redirect(url_for('user_views.view_profile', success=message))
+        else:
+            return render_template('user/change_password.html', error=message)
+
+    return render_template('user/change_password.html')

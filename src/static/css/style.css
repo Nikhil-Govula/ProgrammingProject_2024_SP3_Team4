@@ -278,3 +278,81 @@ body {
     padding: 10px 0;
     margin-top: auto;
 }
+
+/* Profile Picture in Profile Section */
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 2px solid #85a98c;
+}
+
+/* Profile Picture in Navbar */
+.nav-profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 5px;
+    cursor: pointer;
+    border: 2px solid #FFFFFF;
+}
+
+/* Certifications List */
+#certifications-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#certifications-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#certifications-list li a {
+    flex-grow: 1;
+    text-decoration: none;
+    color: #333;
+}
+
+#certifications-list li a:hover {
+    text-decoration: underline;
+}
+
+.delete-cert-button {
+    background-color: #e74c3c;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    margin-left: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.delete-cert-button:hover {
+    background-color: #c0392b;
+}
+
+.notification {
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: white;
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.notification.success {
+    background-color: #4CAF50;
+}
+
+.notification.error {
+    background-color: #f44336;
+}
