@@ -17,3 +17,4 @@ protobuf~=5.28.1
 flask_mail
 Flask-Mail
 Flask-WTF~=1.1.0
+requests~=2.32.3

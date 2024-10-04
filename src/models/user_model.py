@@ -6,7 +6,7 @@ import datetime
 class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
-                 failed_login_attempts=0, account_locked=False):
+                 failed_login_attempts=0, account_locked=False, city=None, country=None):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -18,7 +18,8 @@ class User:
         self.reset_token = reset_token
         self.token_expiration = token_expiration
         self.failed_login_attempts = failed_login_attempts
-        self.account_locked = account_locked
+        self.city = city
+        self.country = country
 
     def save(self):
         DynamoDB.put_item('Users', self.to_dict())
@@ -118,5 +119,6 @@ class User:
             'profile_picture_url': self.profile_picture_url,
             'certifications': self.certifications,
             'reset_token': self.reset_token,
-            'token_expiration': self.token_expiration
+            'city': self.city,
+            'country': self.country
         }

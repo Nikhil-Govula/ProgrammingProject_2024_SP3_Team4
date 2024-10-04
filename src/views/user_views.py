@@ -1,11 +1,12 @@
 import json
 import uuid
+import requests
 
 import boto3
 from botocore.exceptions import ClientError
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
     jsonify
-from google.auth.transport import requests
+from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
 from werkzeug.utils import secure_filename
 
@@ -195,6 +196,7 @@ def edit_profile():
         phone_number = request.form.get('phone_number').strip()
         profile_picture = request.files.get('profile_picture')
         certifications = request.files.getlist('certifications')
+        location = request.form.get('location').strip()
 
         success, message = UserController.update_profile(
             user_id=user.user_id,
@@ -204,7 +206,8 @@ def edit_profile():
             email=email,
             phone_number=phone_number,
             profile_picture=profile_picture,
-            certifications=certifications
+            certifications=certifications,
+            location=location  # Ensure this parameter is now accepted
         )
 
         if success:
@@ -291,7 +294,7 @@ def update_profile_field():
     if not field or value is None:
         return jsonify({'success': False, 'message': 'Invalid request parameters.'}), 400
 
-    allowed_fields = {'first_name', 'last_name', 'email', 'phone_number'}
+    allowed_fields = {'first_name', 'last_name', 'email', 'phone_number', 'location'}
     if field not in allowed_fields:
         return jsonify({'success': False, 'message': 'Field not allowed to update.'}), 400
 
@@ -327,3 +330,23 @@ def change_password():
             return render_template('user/change_password.html', error=message)
 
     return render_template('user/change_password.html')
+
+@user_bp.route('/city_suggestions', methods=['GET'])
+def city_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://7uxon0wdkd.execute-api.ap-southeast-2.amazonaws.com/prod/city_suggestions'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data['suggestions']}), 200
+        else:
+            current_app.logger.error(f"API Gateway error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling CitySuggestionsAPI: {e}")
+        return jsonify({'suggestions': []}), 200

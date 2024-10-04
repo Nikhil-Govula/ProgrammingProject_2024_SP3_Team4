@@ -109,7 +109,7 @@ class UserController:
 
     @staticmethod
     def update_profile(user_id, user_type, first_name, last_name, email, phone_number, profile_picture, certifications,
-                       delete_certs=None):
+                       location=None, delete_certs=None):
         user = User.get_by_id(user_id)
         if not user:
             return False, "User not found."
@@ -143,6 +143,18 @@ class UserController:
             for cert_url in delete_certs:
                 user.remove_certification(cert_url)
                 UserController.delete_file_from_s3(cert_url)
+
+        # Handle location
+        if location:
+            # Assuming location is in "City, Country" format
+            try:
+                city, country = map(str.strip, location.split(',', 1))
+                if not city or not country:
+                    return False, "Both city and country must be provided in the location."
+                user.city = city
+                user.country = country
+            except ValueError:
+                return False, "Invalid location format. Please use 'City, Country'."
 
         # Update user details
         user.first_name = first_name
@@ -308,7 +320,26 @@ class UserController:
             if not value.strip():
                 return False, f"{field.replace('_', ' ').capitalize()} cannot be empty."
 
-        # Update the field
-        setattr(user, field, value)
+
+        elif field == 'location':
+            # Split the location into city and country
+            try:
+                city, country = value.split(',')
+                city = city.strip()
+                country = country.strip()
+            except ValueError:
+                return False, "Invalid location format. Please use 'City, Country'."
+
+            if not city or not country:
+                return False, "Both city and country must be provided."
+
+            user.city = city
+            user.country = country
+        else:
+            return False, "Invalid field."
+
+            # Update the field
+        if field != 'location':  # location is handled separately
+            setattr(user, field, value)
         user.save()
         return True, f"{field.replace('_', ' ').capitalize()} updated successfully."
