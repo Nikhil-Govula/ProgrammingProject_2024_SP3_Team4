@@ -350,3 +350,79 @@ def city_suggestions():
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling CitySuggestionsAPI: {e}")
         return jsonify({'suggestions': []}), 200
+
+
+@user_bp.route('/work_history', methods=['GET'])
+@auth_required(user_type='user')
+def view_work_history():
+    user = g.user
+    return render_template('user/work_history.html', user=user)
+
+@user_bp.route('/add_work_history', methods=['POST'])
+@auth_required(user_type='user')
+def add_work_history():
+    data = request.get_json()
+    job_title = data.get('job_title')
+    company = data.get('company')
+    description = data.get('description', '')
+    date_from = data.get('date_from')
+    date_to = data.get('date_to', '')
+
+    success, message = UserController.add_work_history(
+        user_id=g.user.user_id,
+        job_title=job_title,
+        company=company,
+        description=description,
+        date_from=date_from,
+        date_to=date_to
+    )
+
+    if success:
+        # Refresh the user object to get the updated work history
+        updated_user = UserController.get_user_by_id(g.user.user_id)
+        if updated_user and updated_user.work_history:
+            latest_work = updated_user.work_history[-1]
+            return jsonify({'success': True, 'work_history': latest_work}), 200
+        else:
+            return jsonify({'success': False, 'message': 'Work history added but unable to retrieve it.'}), 500
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/delete_work_history', methods=['POST'])
+@auth_required(user_type='user')
+def delete_work_history():
+    data = request.get_json()
+    work_id = data.get('work_id')
+
+    if not work_id:
+        return jsonify({'success': False, 'message': 'No work history ID provided.'}), 400
+
+    success, message = UserController.delete_work_history(
+        user_id=g.user.user_id,
+        work_id=work_id
+    )
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/get_occupation_suggestions', methods=['GET'])
+def get_occupation_suggestions():
+    query = request.args.get('query', '').strip().lower()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://eee2yrz13b.execute-api.ap-southeast-2.amazonaws.com/occupation'  # Your API endpoint
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Occupation API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling OccupationAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200

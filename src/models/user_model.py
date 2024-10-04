@@ -6,7 +6,8 @@ import datetime
 class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
-                 failed_login_attempts=0, account_locked=False, city=None, country=None):
+                 failed_login_attempts=0, account_locked=False, city=None, country=None,
+                 work_history=None):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -21,6 +22,7 @@ class User:
         self.account_locked = account_locked
         self.city = city
         self.country = country
+        self.work_history = work_history or []
 
     def save(self):
         DynamoDB.put_item('Users', self.to_dict())
@@ -109,6 +111,26 @@ class User:
                              {'user_id': self.user_id},
                              {'certifications': self.certifications})
 
+    def add_work_history(self, job_title, company, description, date_from, date_to):
+        work_entry = {
+            'id': str(uuid.uuid4()),
+            'job_title': job_title,
+            'company': company,
+            'description': description,
+            'date_from': date_from,
+            'date_to': date_to
+        }
+        self.work_history.append(work_entry)
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'work_history': self.work_history})
+
+    def delete_work_history(self, work_id):
+        self.work_history = [work for work in self.work_history if work['id'] != work_id]
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'work_history': self.work_history})
+
     def to_dict(self):
         return {
             'user_id': self.user_id,
@@ -122,5 +144,6 @@ class User:
             'reset_token': self.reset_token,
             'account_locked': self.account_locked,
             'city': self.city,
-            'country': self.country
+            'country': self.country,
+            'work_history': self.work_history
         }

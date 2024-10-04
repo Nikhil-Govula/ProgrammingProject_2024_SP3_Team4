@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Work History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Include jQuery and jQuery UI for Autocomplete -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize datepickers
+            $('.date-picker').datepicker({
+                dateFormat: 'yy-mm-dd'
+            });
+
+            // Initialize occupation autocomplete
+            $('#job_title').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.get_occupation_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response(data.suggestions);
+                        },
+                        error: function() {
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 2, // Minimum characters before autocomplete starts
+                select: function(event, ui) {
+                    console.log("Selected: " + ui.item.value);
+                }
+            });
+
+            // Handle adding work history
+            $('#add-work-history-form').on('submit', function(e) {
+                e.preventDefault();
+                var formData = {
+                    job_title: $('#job_title').val(),
+                    company: $('#company').val(),
+                    description: $('#description').val(),
+                    date_from: $('#date_from').val(),
+                    date_to: $('#date_to').val()
+                };
+
+                $.ajax({
+                    url: "{{ url_for('user_views.add_work_history') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if(response.success) {
+                            // Append the new work history entry to the list
+                            $('#work-history-list').append(`
+                                <li id="work-${response.work_history.id}">
+                                    <strong>${response.work_history.job_title}</strong> at <em>${response.work_history.company}</em><br>
+                                    ${response.work_history.description}<br>
+                                    <small>${response.work_history.date_from} - ${response.work_history.date_to || 'Present'}</small>
+                                    <button type="button" class="delete-work-button" data-id="${response.work_history.id}">Delete</button>
+                                </li>
+                            `);
+                            // Clear the form
+                            $('#add-work-history-form')[0].reset();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while adding work history.');
+                    }
+                });
+            });
+
+            // Handle deleting work history
+            $(document).on('click', '.delete-work-button', function() {
+                var workId = $(this).data('id');
+                if(confirm('Are you sure you want to delete this work history entry?')) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.delete_work_history') }}",
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ work_id: workId }),
+                        success: function(response) {
+                            if(response.success) {
+                                $(`#work-${workId}`).remove();
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('An error occurred while deleting work history.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Work History</h2>
+
+    <!-- Add Work History Form -->
+    <div class="form-container">
+        <form id="add-work-history-form">
+            <div class="form-group">
+                <label for="job_title">Occupation / Job Title<span style="color: red;">*</span>:</label>
+                <input type="text" id="job_title" name="job_title" required>
+            </div>
+            <div class="form-group">
+                <label for="company">Company<span style="color: red;">*</span>:</label>
+                <input type="text" id="company" name="company" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="date_from">Date From<span style="color: red;">*</span>:</label>
+                <input type="text" id="date_from" name="date_from" class="date-picker" required>
+            </div>
+            <div class="form-group">
+                <label for="date_to">Date To:</label>
+                <input type="text" id="date_to" name="date_to" class="date-picker">
+            </div>
+            <button type="submit" class="btn">Add to Work History</button>
+        </form>
+    </div>
+
+    <!-- Display Work History List -->
+    <div class="work-history-list">
+        <h3>Your Work History</h3>
+        {% if user.work_history %}
+            <ul id="work-history-list">
+                {% for work in user.work_history %}
+                    <li id="work-{{ work.id }}">
+                        <strong>{{ work.job_title }}</strong> at <em>{{ work.company }}</em><br>
+                        {{ work.description }}<br>
+                        <small>{{ work.date_from }} - {{ work.date_to or 'Present' }}</small>
+                        <button type="button" class="delete-work-button" data-id="{{ work.id }}">Delete</button>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No work history entries yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

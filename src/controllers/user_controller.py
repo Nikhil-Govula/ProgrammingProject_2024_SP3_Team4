@@ -343,3 +343,36 @@ class UserController:
             setattr(user, field, value)
         user.save()
         return True, f"{field.replace('_', ' ').capitalize()} updated successfully."
+
+    @staticmethod
+    def add_work_history(user_id, job_title, company, description, date_from, date_to):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        # Basic validation
+        if not all([job_title, company, date_from]):
+            return False, "Job Title, Company, and Date From are required."
+
+        # Optionally, add more validation for dates
+
+        user.add_work_history(job_title, company, description, date_from, date_to)
+        return True, "Work history added successfully."
+
+    @staticmethod
+    def delete_work_history(user_id, work_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        # Check if the work_id exists
+        work_entry = next((work for work in user.work_history if work['id'] == work_id), None)
+        if not work_entry:
+            return False, "Work history entry not found."
+
+        user.delete_work_history(work_id)
+        return True, "Work history deleted successfully."
+
+    @staticmethod
+    def get_user_by_id(user_id):
+        return User.get_by_id(user_id)
