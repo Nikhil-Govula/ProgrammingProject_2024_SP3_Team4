@@ -3,7 +3,10 @@
 {% block head %}
     <title>Edit Profile</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery for simplicity -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script>
         $(document).ready(function() {
             // Handle profile picture upload
@@ -94,33 +97,81 @@
             });
 
             // Handle individual field updates
-            $('.update-field-button').on('click', function() {
-                var field = $(this).data('field');
-                var value = $(`#${field}-input`).val();
+        $('.update-field-button').on('click', function() {
+            var field = $(this).data('field');
+            var value = $(`#${field}-input`).val();
 
-                $.ajax({
-                    url: "{{ url_for('user_views.update_profile_field') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({field: field, value: value}),
-                    success: function(response) {
-                        if(response.success) {
-                            showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`);
-                        } else {
-                            showNotification(response.message);
-                        }
-                    },
-                    error: function() {
-                        showNotification('An error occurred while updating the field.');
-                    }
-                });
+            $.ajax({
+                url: "{{ url_for('user_views.update_profile_field') }}",
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({field: field, value: value}),
+                success: function(response) {
+    if(response.success) {
+        showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
+    } else {
+        showNotification(response.message, 'error');
+    }
+},
+error: function() {
+    showNotification('An error occurred while updating the field.', 'error');
+}
             });
+        });
 
             // Capitalize function for alert messages
             String.prototype.capitalize = function() {
                 return this.charAt(0).toUpperCase() + this.slice(1);
             }
         });
+
+        $(document).ready(function() {
+    $('#location-input').autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: "{{ url_for('user_views.city_suggestions') }}",
+                data: { query: request.term },
+                success: function(data) {
+                    console.log("Received suggestions:", data.suggestions);
+                    response($.map(data.suggestions, function(item) {
+                        return item.city + ', ' + item.country;
+                    }));
+                }
+            });
+        },
+        minLength: 3
+    });
+});
+
+
+        // Initialize autocomplete for location input
+        $('#location-input').autocomplete({
+    source: function(request, response) {
+        $.ajax({
+            url: "{{ url_for('user_views.city_suggestions') }}",
+            type: 'GET',
+            data: { query: request.term },
+            success: function(data) {
+                console.log("Received suggestions:", data.suggestions);
+                response($.map(data.suggestions, function(item) {
+                    return {
+                        label: item.city + ', ' + item.country,
+                        value: item.city + ', ' + item.country
+                    };
+                }));
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching suggestions:", error);
+                response([]);
+            }
+        });
+    },
+    minLength: 3,
+    select: function(event, ui) {
+        console.log("Selected: " + ui.item.value);
+    }
+});
+
 
         function showNotification(message, type = 'success') {
     const notificationContainer = document.getElementById('notification-container');
@@ -195,6 +246,14 @@
                     <input type="text" id="phone_number-input" name="phone_number" placeholder="Phone Number" value="{{ user.phone_number }}" required>
                     <button type="button" class="update-field-button" data-field="phone_number">Update</button>
                 </div>
+
+                <!-- Location Field -->
+                <div class="form-group">
+    <label for="location-input">Location:</label><br>
+    <input type="text" id="location-input" name="location" placeholder="Enter your city, country" value="{{ user.city + ', ' + user.country if user.city and user.country else '' }}" required>
+    <button type="button" class="update-field-button" data-field="location">Update</button>
+</div>
+
 
                 <!-- Certifications Upload -->
                 <div class="form-group">

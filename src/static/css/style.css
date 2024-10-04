@@ -356,3 +356,15 @@ body {
 .notification.error {
     background-color: #f44336;
 }
+
+.ui-autocomplete {
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.ui-menu-item {
+    padding: 5px;
+    cursor: pointer;
+}
