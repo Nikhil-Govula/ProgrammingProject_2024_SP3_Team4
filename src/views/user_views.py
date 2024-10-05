@@ -337,7 +337,7 @@ def city_suggestions():
     if not query:
         return jsonify({'suggestions': []}), 200
 
-    api_gateway_url = 'https://7uxon0wdkd.execute-api.ap-southeast-2.amazonaws.com/prod/city_suggestions'
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/city'
 
     try:
         response = requests.get(api_gateway_url, params={'query': query}, timeout=10)
@@ -413,7 +413,7 @@ def get_occupation_suggestions():
     if not query:
         return jsonify({'suggestions': []}), 200
 
-    api_gateway_url = 'https://eee2yrz13b.execute-api.ap-southeast-2.amazonaws.com/occupation'  # Your API endpoint
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/occupation'
 
     try:
         response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
