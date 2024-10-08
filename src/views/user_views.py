@@ -239,25 +239,39 @@ def upload_profile_picture():
 @auth_required(user_type='user')
 def upload_certification():
     user = g.user
-    if 'certifications' not in request.files:
-        return jsonify({'success': False, 'message': 'No certification files part in the request.'}), 400
+    cert_file = request.files.get('certifications')
+    cert_type = request.form.get('cert_type')
 
-    files = request.files.getlist('certifications')
-    uploaded_certs = []
-    for file in files:
-        if file and UserController.allowed_certification_file(file.filename):
-            cert_url, original_filename, error = UserController.upload_certification(user, file)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            # Assuming each certification has a unique identifier
-            cert_id = str(uuid.uuid4())
-            user.add_certification(cert_id, cert_url, original_filename)
-            uploaded_certs.append({'id': cert_id, 'url': cert_url, 'filename': original_filename})
-        else:
-            return jsonify({'success': False, 'message': 'Invalid file type for certifications.'}), 400
+    # Validate presence of both file and certification type
+    if not cert_file:
+        return jsonify({'success': False, 'message': 'No certification file provided.'}), 400
 
-    user.save()  # Save updated certifications
-    return jsonify({'success': True, 'certifications': uploaded_certs}), 200
+    if not cert_type or cert_type.strip() == "":
+        return jsonify({'success': False, 'message': 'Certification type is required.'}), 400
+
+    if not UserController.allowed_certification_file(cert_file.filename):
+        return jsonify({'success': False, 'message': 'Invalid file type for certification.'}), 400
+
+    cert_type = cert_type.strip()
+
+    # Upload the certification
+    cert_url, original_filename, cert_id, error = UserController.upload_certification(user, cert_file, cert_type)
+
+    if error:
+        return jsonify({'success': False, 'message': error}), 400
+
+    # Return the newly added certification details
+    return jsonify({
+        'success': True,
+        'certifications': [{
+            'id': cert_id,
+            'url': cert_url,
+            'filename': original_filename,
+            'type': cert_type
+        }]
+    }), 200
+
+
 
 @user_bp.route('/delete_certification', methods=['POST'])
 @auth_required(user_type='user')
@@ -425,4 +439,24 @@ def get_occupation_suggestions():
             return jsonify({'suggestions': []}), 200
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling OccupationAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200
+
+@user_bp.route('/certification_suggestions', methods=['GET'])
+def certification_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/certifications'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Certification API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling CertificationAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200

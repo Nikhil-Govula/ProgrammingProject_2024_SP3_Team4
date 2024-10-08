@@ -43,16 +43,18 @@
                 <p>{{ user.phone_number }}</p>
             </div>
             <div class="form-group">
-    <label>Location:</label>
-    <p>{{ user.city }}, {{ user.country }}</p>
-</div>
+                <label>Location:</label>
+                <p>{{ user.city }}, {{ user.country }}</p>
+            </div>
 
             <div class="form-group">
                 <label>Certifications:</label>
                 {% if user.certifications %}
                     <ul>
                         {% for cert in user.certifications %}
-                            <li><a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a></li>
+                            <li>
+                                <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
+                            </li>
                         {% endfor %}
                     </ul>
                 {% else %}

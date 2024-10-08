@@ -5,7 +5,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -24,24 +23,21 @@
                     success: function(response) {
                         if(response.success) {
                             $('#profile-picture').attr('src', response.profile_picture_url);
-                            showNotification('Profile picture updated successfully.');
+                            showNotification('Profile picture updated successfully.', 'success');
                         } else {
-                            showNotification(response.message);
+                            showNotification(response.message, 'error');
                         }
                     },
                     error: function() {
-                        showNotification('An error occurred while uploading the profile picture.');
+                        showNotification('An error occurred while uploading the profile picture.', 'error');
                     }
                 });
             });
 
-            // Handle certification upload
-            $('#certifications-input').on('change', function() {
-                var formData = new FormData();
-                var files = this.files;
-                $.each(files, function(i, file) {
-                    formData.append('certifications', file);
-                });
+            // Handle adding a new certification
+            $('#add-certification-form').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
 
                 $.ajax({
                     url: "{{ url_for('user_views.upload_certification') }}",
@@ -51,25 +47,23 @@
                     processData: false,
                     success: function(response) {
                         if(response.success) {
-                            // Clear any existing "No certifications uploaded" message
-                            if($('#certifications-list').length === 0) {
-                                $('.form-group:contains("Existing Certifications")').html('<label>Existing Certifications:</label><ul id="certifications-list"></ul>');
-                            }
-
-                            $.each(response.certifications, function(i, cert) {
-                                $('#certifications-list').append(
-                                    `<li id="cert-${cert.id}">
-                                        <a href="${cert.url}" target="_blank">${cert.filename}</a>
-                                        <button type="button" class="delete-cert-button" data-id="${cert.id}">Delete</button>
-                                    </li>`
-                                );
-                            });
-                            // Clear the file input
-                            $('#certifications-input').val('');
+                            // Append the new certification to the list
+                            $('#certifications-list').append(`
+                                <li id="cert-${response.certifications[0].id}">
+                                    <a href="${response.certifications[0].url}" target="_blank">${response.certifications[0].filename}</a> (${response.certifications[0].type})
+                                    <button type="button" class="delete-cert-button" data-id="${response.certifications[0].id}">Delete</button>
+                                </li>
+                            `);
+                            // Clear the form
+                            $('#add-certification-form')[0].reset();
+                            showNotification('Certification added successfully.', 'success');
                         } else {
-                            showNotification(response.message);
+                            showNotification(response.message, 'error');
                         }
                     },
+                    error: function() {
+                        showNotification('An error occurred while adding the certification.', 'error');
+                    }
                 });
             });
 
@@ -80,118 +74,126 @@
                     $.ajax({
                         url: "{{ url_for('user_views.delete_certification') }}",
                         type: 'POST',
-                        data: JSON.stringify({cert_id: certId}),
                         contentType: 'application/json',
+                        data: JSON.stringify({ cert_id: certId }),
                         success: function(response) {
                             if(response.success) {
                                 $(`#cert-${certId}`).remove();
+                                showNotification('Certification deleted successfully.', 'success');
                             } else {
-                                showNotification(response.message);
+                                showNotification(response.message, 'error');
                             }
                         },
                         error: function() {
-                            showNotification('An error occurred while deleting the certification.');
+                            showNotification('An error occurred while deleting the certification.', 'error');
                         }
                     });
                 }
             });
 
             // Handle individual field updates
-        $('.update-field-button').on('click', function() {
-            var field = $(this).data('field');
-            var value = $(`#${field}-input`).val();
+            $('.update-field-button').on('click', function() {
+                var field = $(this).data('field');
+                var value = $(`#${field}-input`).val();
 
-            $.ajax({
-                url: "{{ url_for('user_views.update_profile_field') }}",
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({field: field, value: value}),
-                success: function(response) {
-    if(response.success) {
-        showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
-    } else {
-        showNotification(response.message, 'error');
-    }
-},
-error: function() {
-    showNotification('An error occurred while updating the field.', 'error');
-}
+                $.ajax({
+                    url: "{{ url_for('user_views.update_profile_field') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ field: field, value: value }),
+                    success: function(response) {
+                        if(response.success) {
+                            showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('An error occurred while updating the field.', 'error');
+                    }
+                });
             });
-        });
+
+            // Initialize autocomplete for location input
+            $('#location-input').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.city_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response($.map(data.suggestions, function(item) {
+                                return {
+                                    label: item.city + ', ' + item.country,
+                                    value: item.city + ', ' + item.country
+                                };
+                            }));
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching suggestions:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 3,
+                select: function(event, ui) {
+                    console.log("Selected: " + ui.item.value);
+                }
+            });
+
+            // Initialize autocomplete for certification type input
+            $('#cert_type').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.certification_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response($.map(data.suggestions, function(item) {
+                                return {
+                                    label: item, // Assuming item is a string
+                                    value: item
+                                };
+                            }));
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching certification suggestions:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 2, // Minimum characters before autocomplete starts
+                select: function(event, ui) {
+                    console.log("Selected: " + ui.item.value);
+                }
+            });
+
+            // Notification Function
+            function showNotification(message, type = 'success') {
+                const notificationContainer = document.getElementById('notification-container');
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                notificationContainer.appendChild(notification);
+
+                // Trigger a reflow before adding the opacity to ensure the transition works
+                notification.offsetHeight;
+                notification.style.opacity = '1';
+
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notificationContainer.removeChild(notification);
+                    }, 500); // Wait for fade out transition to complete before removing
+                }, 3000); // Show for 3 seconds
+            }
 
             // Capitalize function for alert messages
             String.prototype.capitalize = function() {
                 return this.charAt(0).toUpperCase() + this.slice(1);
             }
-        });
-
-        $(document).ready(function() {
-    $('#location-input').autocomplete({
-        source: function(request, response) {
-            $.ajax({
-                url: "{{ url_for('user_views.city_suggestions') }}",
-                data: { query: request.term },
-                success: function(data) {
-                    console.log("Received suggestions:", data.suggestions);
-                    response($.map(data.suggestions, function(item) {
-                        return item.city + ', ' + item.country;
-                    }));
-                }
             });
-        },
-        minLength: 3
-    });
-});
-
-
-        // Initialize autocomplete for location input
-        $('#location-input').autocomplete({
-    source: function(request, response) {
-        $.ajax({
-            url: "{{ url_for('user_views.city_suggestions') }}",
-            type: 'GET',
-            data: { query: request.term },
-            success: function(data) {
-                console.log("Received suggestions:", data.suggestions);
-                response($.map(data.suggestions, function(item) {
-                    return {
-                        label: item.city + ', ' + item.country,
-                        value: item.city + ', ' + item.country
-                    };
-                }));
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching suggestions:", error);
-                response([]);
-            }
-        });
-    },
-    minLength: 3,
-    select: function(event, ui) {
-        console.log("Selected: " + ui.item.value);
-    }
-});
-
-
-        function showNotification(message, type = 'success') {
-    const notificationContainer = document.getElementById('notification-container');
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notificationContainer.appendChild(notification);
-
-    // Trigger a reflow before adding the opacity to ensure the transition works
-    notification.offsetHeight;
-    notification.style.opacity = '1';
-
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            notificationContainer.removeChild(notification);
-        }, 500); // Wait for fade out transition to complete before removing
-    }, 3000); // Show for 3 seconds
-}
-    </script>
+        </script>
 {% endblock %}
 
 {% block body %}
@@ -211,6 +213,7 @@ error: function() {
                 <p style="color: red;">{{ error }}</p>
             {% endif %}
 
+            <!-- Profile Information and Update Forms -->
             <form id="profile-form" enctype="multipart/form-data">
                 <!-- Profile Picture -->
                 <div class="form-group">
@@ -249,35 +252,44 @@ error: function() {
 
                 <!-- Location Field -->
                 <div class="form-group">
-    <label for="location-input">Location:</label><br>
-    <input type="text" id="location-input" name="location" placeholder="Enter your city, country" value="{{ user.city + ', ' + user.country if user.city and user.country else '' }}" required>
-    <button type="button" class="update-field-button" data-field="location">Update</button>
-</div>
-
-
-                <!-- Certifications Upload -->
-                <div class="form-group">
-                    <label for="certifications">Upload New Certifications:</label><br>
-                    <input type="file" id="certifications-input" name="certifications" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.doc,.xlsx,.xls" multiple>
-                </div>
-
-                <!-- Existing Certifications -->
-                <div class="form-group">
-                    <label>Existing Certifications:</label>
-                    {% if user.certifications %}
-                        <ul id="certifications-list">
-                            {% for cert in user.certifications %}
-                                <li id="cert-{{ cert.id }}">
-                                    <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a>
-                                    <button type="button" class="delete-cert-button" data-id="{{ cert.id }}">Delete</button>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p id="no-certs-message">No certifications uploaded.</p>
-                    {% endif %}
+                    <label for="location-input">Location:</label><br>
+                    <input type="text" id="location-input" name="location" placeholder="Enter your city, country" value="{{ user.city + ', ' + user.country if user.city and user.country else '' }}" required>
+                    <button type="button" class="update-field-button" data-field="location">Update</button>
                 </div>
             </form>
+
+            <!-- Add Certification Form -->
+            <div class="form-group">
+                <h3>Add Certification</h3>
+                <form id="add-certification-form" enctype="multipart/form-data">
+                    <label for="cert_type">Certification Type:</label><br>
+                    <input type="text" id="cert_type" name="cert_type" placeholder="e.g., Certificate IV in Accounting" required><br><br>
+
+                    <label for="cert_file">Certification File:</label><br>
+                    <input type="file" id="cert_file" name="certifications" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.doc,.xlsx,.xls" required><br><br>
+
+                    <button type="submit" class="register-button">Add Certification</button>
+                </form>
+            </div>
+
+            <!-- Existing Certifications -->
+            <div class="form-group">
+                <label>Existing Certifications:</label>
+                {% if user.certifications %}
+                    <ul id="certifications-list">
+                        {% for cert in user.certifications %}
+                            <li id="cert-{{ cert.id }}">
+                                <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
+                                <button type="button" class="delete-cert-button" data-id="{{ cert.id }}">Delete</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p id="no-certs-message">No certifications uploaded.</p>
+                {% endif %}
+            </div>
+
+            <hr>
             <a href="{{ url_for('user_views.view_work_history') }}" class="btn">Manage Work History</a>
         </div>
     </div>

@@ -16,5 +16,6 @@ python-dateutil~=2.9.0.post0
 protobuf~=5.28.1
 flask_mail
 Flask-Mail
+awsebcli
 Flask-WTF~=1.1.0
 requests~=2.32.3

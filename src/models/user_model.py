@@ -97,8 +97,8 @@ class User:
         self.reset_token = None
         self.token_expiration = None
 
-    def add_certification(self, cert_id, url, filename):
-        cert = {'id': cert_id, 'url': url, 'filename': filename}
+    def add_certification(self, cert_id, url, filename, cert_type):
+        cert = {'id': cert_id, 'url': url, 'filename': filename, 'type': cert_type}
         if cert not in self.certifications:
             self.certifications.append(cert)
             DynamoDB.update_item('Users',

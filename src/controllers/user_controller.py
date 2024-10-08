@@ -108,7 +108,7 @@ class UserController:
         return True, "User registered successfully."
 
     @staticmethod
-    def update_profile(user_id, user_type, first_name, last_name, email, phone_number, profile_picture, certifications,
+    def update_profile(user_id, user_type, first_name, last_name, email, phone_number, profile_picture,
                        location=None, delete_certs=None):
         user = User.get_by_id(user_id)
         if not user:
@@ -126,17 +126,6 @@ class UserController:
             if error:
                 return False, error
             user.profile_picture_url = new_profile_picture_url
-
-        # Handle certifications upload
-        if certifications:
-            for certification in certifications:
-                if certification and UserController.allowed_certification_file(certification.filename):
-                    new_cert_url, original_filename, error = UserController.upload_certification(user, certification)
-                    if error:
-                        return False, error
-                    user.add_certification(new_cert_url, original_filename)
-                else:
-                    return False, "Invalid file type for certifications."
 
         # Handle certification deletion if any
         if delete_certs:
@@ -242,7 +231,7 @@ class UserController:
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
     @staticmethod
-    def upload_certification(user, certification_file):
+    def upload_certification(user, certification_file, cert_type):
         s3 = boto3.client('s3',
                           region_name=Config.S3_REGION,
                           aws_access_key_id=Config.AWS_ACCESS_KEY,
@@ -263,10 +252,12 @@ class UserController:
                 }
             )
             cert_url = f"https://{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/{unique_filename}"
-            return cert_url, filename, None
+            cert_id = str(uuid.uuid4())
+            user.add_certification(cert_id, cert_url, filename, cert_type)
+            return cert_url, filename, cert_id, None
         except ClientError as e:
             print(f"Error uploading certification to S3: {e}")
-            return None, None, "Failed to upload certification. Please try again."
+            return None, None, None, "Failed to upload certification. Please try again."
 
     @staticmethod
     def delete_certification(user_id, cert_url):
