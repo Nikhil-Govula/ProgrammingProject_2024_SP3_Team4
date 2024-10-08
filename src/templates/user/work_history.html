@@ -134,9 +134,9 @@
     <!-- Display Work History List -->
     <div class="work-history-list">
         <h3>Your Work History</h3>
-        {% if user.work_history %}
+        {% if work_history %}
             <ul id="work-history-list">
-                {% for work in user.work_history %}
+                {% for work in work_history %}
                     <li id="work-{{ work.id }}">
                         <strong>{{ work.job_title }}</strong> at <em>{{ work.company }}</em><br>
                         {{ work.description }}<br>

@@ -370,7 +370,15 @@ def city_suggestions():
 @auth_required(user_type='user')
 def view_work_history():
     user = g.user
-    return render_template('user/work_history.html', user=user)
+
+    # Sort work history by 'date_from' in descending order (most recent first)
+    sorted_work_history = sorted(
+        user.work_history,
+        key=lambda x: x.get('date_to', ''),
+        reverse=True  # Set to False for ascending order
+    )
+
+    return render_template('user/work_history.html', user=user, work_history=sorted_work_history)
 
 @user_bp.route('/add_work_history', methods=['POST'])
 @auth_required(user_type='user')
