@@ -278,3 +278,187 @@ body {
     padding: 10px 0;
     margin-top: auto;
 }
+
+/* Profile Picture in Profile Section */
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 2px solid #85a98c;
+}
+
+/* Profile Picture in Navbar */
+.nav-profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 5px;
+    cursor: pointer;
+    border: 2px solid #FFFFFF;
+}
+
+/* Certifications List */
+#certifications-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#certifications-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#certifications-list li a {
+    flex-grow: 1;
+    text-decoration: none;
+    color: #333;
+}
+
+#certifications-list li a:hover {
+    text-decoration: underline;
+}
+
+.delete-cert-button {
+    background-color: #e74c3c;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    margin-left: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.delete-cert-button:hover {
+    background-color: #c0392b;
+}
+
+/*Update notification*/
+
+.notification {
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: white;
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.notification.success {
+    background-color: #4CAF50;
+}
+
+.notification.error {
+    background-color: #f44336;
+}
+
+.ui-autocomplete {
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.ui-menu-item {
+    padding: 5px;
+    cursor: pointer;
+}
+
+/*Work history*/
+
+.btn:hover {
+    background-color: #45a049;
+}
+
+.work-history-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.work-history-list li {
+    background-color: #f9f9f9;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.delete-work-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.delete-work-button:hover {
+    background-color: #d32f2f;
+}
+
+/* Certification List */
+#certifications-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#certifications-list li {
+    margin-bottom: 10px;
+}
+
+.delete-cert-button {
+    margin-left: 10px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.delete-cert-button:hover {
+    background-color: #ff1a1a;
+}
+
+/* Add Certification Form */
+#add-certification-form {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+#add-certification-form label {
+    font-weight: bold;
+}
+
+#add-certification-form input[type="text"],
+#add-certification-form input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.register-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.register-button:hover {
+    background-color: #45a049;
+}

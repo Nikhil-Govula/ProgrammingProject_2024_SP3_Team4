@@ -1,10 +1,16 @@
 import json
+import uuid
+import requests
 
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session
-from google.auth.transport import requests
+import boto3
+from botocore.exceptions import ClientError
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
+    jsonify
+from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
+from werkzeug.utils import secure_filename
 
-from config import store_secret
+from config import store_secret, Config
 from ..controllers import UserController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
@@ -171,3 +177,348 @@ def revoke():
         return 'Credentials successfully revoked.'
     else:
         return 'An error occurred.'
+
+
+@user_bp.route('/profile', methods=['GET'])
+@auth_required(user_type='user')
+def view_profile():
+    user = g.user
+    return render_template('user/profile.html', user=user)
+
+@user_bp.route('/profile/edit', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def edit_profile():
+    user = g.user
+    if request.method == 'POST':
+        first_name = request.form.get('first_name').strip()
+        last_name = request.form.get('last_name').strip()
+        email = request.form.get('email').strip()
+        phone_number = request.form.get('phone_number').strip()
+        profile_picture = request.files.get('profile_picture')
+        certifications = request.files.getlist('certifications')
+        location = request.form.get('location').strip()
+
+        success, message = UserController.update_profile(
+            user_id=user.user_id,
+            user_type='user',
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            phone_number=phone_number,
+            profile_picture=profile_picture,
+            certifications=certifications,
+            location=location  # Ensure this parameter is now accepted
+        )
+
+        if success:
+            return redirect(url_for('user_views.view_profile', success=message))
+        else:
+            return render_template('user/profile_edit.html', user=user, error=message)
+
+    return render_template('user/profile_edit.html', user=user)
+
+@user_bp.route('/upload_profile_picture', methods=['POST'])
+@auth_required(user_type='user')
+def upload_profile_picture():
+    user = g.user
+    if 'profile_picture' not in request.files:
+        return jsonify({'success': False, 'message': 'No profile picture file in the request.'}), 400
+
+    file = request.files['profile_picture']
+    if file and UserController.allowed_image_file(file.filename):
+        new_profile_picture_url, error = UserController.update_profile_picture(user, file)
+        if error:
+            return jsonify({'success': False, 'message': error}), 400
+        user.profile_picture_url = new_profile_picture_url
+        user.save()
+        return jsonify({'success': True, 'profile_picture_url': new_profile_picture_url}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Invalid file type for profile picture.'}), 400
+
+@user_bp.route('/upload_certification', methods=['POST'])
+@auth_required(user_type='user')
+def upload_certification():
+    user = g.user
+    cert_file = request.files.get('certifications')
+    cert_type = request.form.get('cert_type')
+
+    # Validate presence of both file and certification type
+    if not cert_file:
+        return jsonify({'success': False, 'message': 'No certification file provided.'}), 400
+
+    if not cert_type or cert_type.strip() == "":
+        return jsonify({'success': False, 'message': 'Certification type is required.'}), 400
+
+    if not UserController.allowed_certification_file(cert_file.filename):
+        return jsonify({'success': False, 'message': 'Invalid file type for certification.'}), 400
+
+    cert_type = cert_type.strip()
+
+    # Upload the certification
+    cert_url, original_filename, cert_id, error = UserController.upload_certification(user, cert_file, cert_type)
+
+    if error:
+        return jsonify({'success': False, 'message': error}), 400
+
+    # Return the newly added certification details
+    return jsonify({
+        'success': True,
+        'certifications': [{
+            'id': cert_id,
+            'url': cert_url,
+            'filename': original_filename,
+            'type': cert_type
+        }]
+    }), 200
+
+
+
+@user_bp.route('/delete_certification', methods=['POST'])
+@auth_required(user_type='user')
+def delete_certification():
+    user = g.user
+    data = request.get_json()
+    cert_id = data.get('cert_id')
+
+    if not cert_id:
+        return jsonify({'success': False, 'message': 'No certification ID provided.'}), 400
+
+    cert_to_delete = next((cert for cert in user.certifications if cert.get('id') == cert_id), None)
+    if not cert_to_delete:
+        return jsonify({'success': False, 'message': 'Certification not found.'}), 404
+
+    # Remove from S3
+    success = UserController.delete_certification(user.user_id, cert_to_delete['url'])
+    if not success:
+        return jsonify({'success': False, 'message': 'Failed to delete certification from storage.'}), 500
+
+    # Remove from user certifications
+    user.certifications = [cert for cert in user.certifications if cert.get('id') != cert_id]
+    user.save()
+
+    return jsonify({'success': True, 'message': 'Certification deleted successfully.'}), 200
+
+@user_bp.route('/update_field', methods=['POST'])
+@auth_required(user_type='user')
+def update_profile_field():
+    data = request.get_json()
+    field = data.get('field')
+    value = data.get('value')
+
+    if not field or value is None:
+        return jsonify({'success': False, 'message': 'Invalid request parameters.'}), 400
+
+    allowed_fields = {'first_name', 'last_name', 'email', 'phone_number', 'location'}
+    if field not in allowed_fields:
+        return jsonify({'success': False, 'message': 'Field not allowed to update.'}), 400
+
+    user = g.user
+
+    # Update the field using the UserController
+    success, message = UserController.update_profile_field(user.user_id, field, value)
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/change_password', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def change_password():
+    user = g.user
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        success, message = UserController.change_password(
+            user_id=user.user_id,
+            current_password=current_password,
+            new_password=new_password,
+            confirm_password=confirm_password
+        )
+
+        if success:
+            return redirect(url_for('user_views.view_profile', success=message))
+        else:
+            return render_template('user/change_password.html', error=message)
+
+    return render_template('user/change_password.html')
+
+@user_bp.route('/city_suggestions', methods=['GET'])
+def city_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/city'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data['suggestions']}), 200
+        else:
+            current_app.logger.error(f"API Gateway error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling CitySuggestionsAPI: {e}")
+        return jsonify({'suggestions': []}), 200
+
+
+@user_bp.route('/work_history', methods=['GET'])
+@auth_required(user_type='user')
+def view_work_history():
+    user = g.user
+
+    # Sort work history by 'date_from' in descending order (most recent first)
+    sorted_work_history = sorted(
+        user.work_history,
+        key=lambda x: x.get('date_to', ''),
+        reverse=True  # Set to False for ascending order
+    )
+
+    return render_template('user/work_history.html', user=user, work_history=sorted_work_history)
+
+@user_bp.route('/add_work_history', methods=['POST'])
+@auth_required(user_type='user')
+def add_work_history():
+    data = request.get_json()
+    job_title = data.get('job_title')
+    company = data.get('company')
+    description = data.get('description', '')
+    date_from = data.get('date_from')
+    date_to = data.get('date_to', '')
+
+    success, message = UserController.add_work_history(
+        user_id=g.user.user_id,
+        job_title=job_title,
+        company=company,
+        description=description,
+        date_from=date_from,
+        date_to=date_to
+    )
+
+    if success:
+        # Refresh the user object to get the updated work history
+        updated_user = UserController.get_user_by_id(g.user.user_id)
+        if updated_user and updated_user.work_history:
+            latest_work = updated_user.work_history[-1]
+            return jsonify({'success': True, 'work_history': latest_work}), 200
+        else:
+            return jsonify({'success': False, 'message': 'Work history added but unable to retrieve it.'}), 500
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/delete_work_history', methods=['POST'])
+@auth_required(user_type='user')
+def delete_work_history():
+    data = request.get_json()
+    work_id = data.get('work_id')
+
+    if not work_id:
+        return jsonify({'success': False, 'message': 'No work history ID provided.'}), 400
+
+    success, message = UserController.delete_work_history(
+        user_id=g.user.user_id,
+        work_id=work_id
+    )
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/get_occupation_suggestions', methods=['GET'])
+def get_occupation_suggestions():
+    query = request.args.get('query', '').strip().lower()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/occupation'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Occupation API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling OccupationAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200
+
+@user_bp.route('/certification_suggestions', methods=['GET'])
+def certification_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/certification'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Certification API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling CertificationAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200
+
+@user_bp.route('/skills', methods=['GET'])
+@auth_required(user_type='user')
+def view_skills():
+    user = g.user
+    return render_template('user/skills.html', user=user)
+
+@user_bp.route('/add_skill', methods=['POST'])
+@auth_required(user_type='user')
+def add_skill():
+    user = g.user
+    data = request.get_json()
+    skill_text = data.get('skill')
+
+    success, skill_data, error = UserController.add_skill(user.user_id, skill_text)
+
+    if success:
+        return jsonify({'success': True, 'skill': skill_data}), 200
+    else:
+        return jsonify({'success': False, 'message': error}), 400
+
+@user_bp.route('/delete_skill', methods=['POST'])
+@auth_required(user_type='user')
+def delete_skill():
+    user = g.user
+    data = request.get_json()
+    skill_id = data.get('skill_id')
+
+    success, message, error = UserController.delete_skill(user.user_id, skill_id)
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/skill_suggestions', methods=['GET'])
+def skill_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/skill'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Skill API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling SkillAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200
