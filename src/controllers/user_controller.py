@@ -345,8 +345,6 @@ class UserController:
         if not all([job_title, company, date_from]):
             return False, "Job Title, Company, and Date From are required."
 
-        # Optionally, add more validation for dates
-
         user.add_work_history(job_title, company, description, date_from, date_to)
         return True, "Work history added successfully."
 
@@ -367,3 +365,30 @@ class UserController:
     @staticmethod
     def get_user_by_id(user_id):
         return User.get_by_id(user_id)
+
+    @staticmethod
+    def add_skill(user_id, skill_text):
+        if not skill_text or not skill_text.strip():
+            return False, "Skill cannot be empty."
+
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        skill_id = user.add_skill(skill_text.strip())
+        if skill_id:
+            return True, {"id": skill_id, "skill": skill_text.strip()}, None
+        else:
+            return False, "Skill already exists.", None
+
+    @staticmethod
+    def delete_skill(user_id, skill_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        success = user.remove_skill(skill_id)
+        if success:
+            return True, "Skill deleted successfully.", None
+        else:
+            return False, "Skill not found.", None

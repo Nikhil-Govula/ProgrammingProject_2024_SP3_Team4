@@ -447,7 +447,7 @@ def certification_suggestions():
     if not query:
         return jsonify({'suggestions': []}), 200
 
-    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/certifications'
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/certification'
 
     try:
         response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
@@ -459,4 +459,58 @@ def certification_suggestions():
             return jsonify({'suggestions': []}), 200
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling CertificationAutocompleteAPI: {e}")
+        return jsonify({'suggestions': []}), 200
+
+@user_bp.route('/skills', methods=['GET'])
+@auth_required(user_type='user')
+def view_skills():
+    user = g.user
+    return render_template('user/skills.html', user=user)
+
+@user_bp.route('/add_skill', methods=['POST'])
+@auth_required(user_type='user')
+def add_skill():
+    user = g.user
+    data = request.get_json()
+    skill_text = data.get('skill')
+
+    success, skill_data, error = UserController.add_skill(user.user_id, skill_text)
+
+    if success:
+        return jsonify({'success': True, 'skill': skill_data}), 200
+    else:
+        return jsonify({'success': False, 'message': error}), 400
+
+@user_bp.route('/delete_skill', methods=['POST'])
+@auth_required(user_type='user')
+def delete_skill():
+    user = g.user
+    data = request.get_json()
+    skill_id = data.get('skill_id')
+
+    success, message, error = UserController.delete_skill(user.user_id, skill_id)
+
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@user_bp.route('/skill_suggestions', methods=['GET'])
+def skill_suggestions():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'suggestions': []}), 200
+
+    api_gateway_url = 'https://w6z5elzk0b.execute-api.ap-southeast-2.amazonaws.com/skill'
+
+    try:
+        response = requests.get(api_gateway_url, params={'query': query}, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({'suggestions': data.get('suggestions', [])}), 200
+        else:
+            current_app.logger.error(f"Skill API error: {response.status_code} - {response.text}")
+            return jsonify({'suggestions': []}), 200
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error calling SkillAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200

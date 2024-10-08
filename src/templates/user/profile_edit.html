@@ -168,6 +168,93 @@
                 }
             });
 
+            $('#add-skill-form').on('submit', function(e) {
+                e.preventDefault();
+                var skill = $('#skill-input').val().trim();
+
+                if(skill === "") {
+                    showNotification('Skill cannot be empty.', 'error');
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ url_for('user_views.add_skill') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ skill: skill }),
+                    success: function(response) {
+                        if(response.success) {
+                            // Append the new skill to the list
+                            $('#skills-list').append(`
+                                <li id="skill-${response.skill.id}">
+                                    ${response.skill.skill}
+                                    <button type="button" class="delete-skill-button" data-id="${response.skill.id}">Delete</button>
+                                </li>
+                            `);
+                            // Clear the input
+                            $('#skill-input').val('');
+                            showNotification('Skill added successfully.', 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('An error occurred while adding the skill.', 'error');
+                    }
+                });
+            });
+
+            // Handle skill deletion
+            $(document).on('click', '.delete-skill-button', function() {
+                var skillId = $(this).data('id');
+                if(confirm('Are you sure you want to delete this skill?')) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.delete_skill') }}",
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ skill_id: skillId }),
+                        success: function(response) {
+                            if(response.success) {
+                                $(`#skill-${skillId}`).remove();
+                                showNotification('Skill deleted successfully.', 'success');
+                            } else {
+                                showNotification(response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            showNotification('An error occurred while deleting the skill.', 'error');
+                        }
+                    });
+                }
+            });
+
+            // Initialize autocomplete for skill input
+            $('#skill-input').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.skill_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response($.map(data.suggestions, function(item) {
+                                return {
+                                    label: item, // Assuming item is a string
+                                    value: item
+                                };
+                            }));
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching skill suggestions:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    console.log("Selected: " + ui.item.value);
+                }
+            });
+
             // Notification Function
             function showNotification(message, type = 'success') {
                 const notificationContainer = document.getElementById('notification-container');
@@ -286,6 +373,33 @@
                     </ul>
                 {% else %}
                     <p id="no-certs-message">No certifications uploaded.</p>
+                {% endif %}
+            </div>
+
+            <!-- New Skills Section -->
+            <div class="form-group">
+                <h3>Skills</h3>
+                <form id="add-skill-form">
+                    <label for="skill-input">Add a Skill:</label><br>
+                    <input type="text" id="skill-input" name="skill" placeholder="e.g., Python" required>
+                    <button type="submit" class="register-button">Add Skill</button>
+                </form>
+            </div>
+
+            <!-- Existing Skills -->
+            <div class="form-group">
+                <label>Existing Skills:</label>
+                {% if user.skills %}
+                    <ul id="skills-list">
+                        {% for skill in user.skills %}
+                            <li id="skill-{{ skill.id }}">
+                                {{ skill.skill }}
+                                <button type="button" class="delete-skill-button" data-id="{{ skill.id }}">Delete</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p id="no-skills-message">No skills added.</p>
                 {% endif %}
             </div>
 

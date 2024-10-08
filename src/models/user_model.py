@@ -7,7 +7,7 @@ class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
                  failed_login_attempts=0, account_locked=False, city=None, country=None,
-                 work_history=None):
+                 work_history=None, skills=None):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -23,6 +23,7 @@ class User:
         self.city = city
         self.country = country
         self.work_history = work_history or []
+        self.skills = skills or []
 
     def save(self):
         DynamoDB.put_item('Users', self.to_dict())
@@ -131,6 +132,26 @@ class User:
                              {'user_id': self.user_id},
                              {'work_history': self.work_history})
 
+    def add_skill(self, skill_text):
+        skill_id = str(uuid.uuid4())
+        skill = {'id': skill_id, 'skill': skill_text}
+        if skill not in self.skills:
+            self.skills.append(skill)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'skills': self.skills})
+        return skill_id
+
+    def remove_skill(self, skill_id):
+        initial_length = len(self.skills)
+        self.skills = [skill for skill in self.skills if skill['id'] != skill_id]
+        if len(self.skills) < initial_length:
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'skills': self.skills})
+            return True
+        return False
+
     def to_dict(self):
         return {
             'user_id': self.user_id,
@@ -145,5 +166,6 @@ class User:
             'account_locked': self.account_locked,
             'city': self.city,
             'country': self.country,
-            'work_history': self.work_history
+            'work_history': self.work_history,
+            'skills': self.skills
         }
