@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, make_r
     jsonify
 from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
 from werkzeug.utils import secure_filename
 
 from config import store_secret, Config
@@ -123,30 +124,60 @@ def refresh_token():
 def setup_oauth():
     return redirect(url_for('user_views.start_oauth_flow'))
 
+
 @user_bp.route('/start_oauth_flow')
 def start_oauth_flow():
-    flow = current_app.flow  # Getting the flow from the app context
+    # Instantiate a new Flow object using the CLIENT_SECRET and redirect_uri from config
+    flow = Flow.from_client_config(
+        current_app.config['CLIENT_SECRET'],
+        scopes=['https://www.googleapis.com/auth/gmail.send']
+    )
+    flow.redirect_uri = current_app.config['OAUTH_REDIRECT_URI']
+
+    # Generate the authorization URL
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'  # Force consent to receive a new refresh_token. Fewer token errors with this enabled
+        prompt='consent'  # Force consent to receive a new refresh_token
     )
-    session['state'] = state  # Store state in the session
+
+    # Store the state in the session for validation in the callback
+    session['state'] = state
+
+    # Log the OAuth flow initiation
+    current_app.logger.info(f"OAuth flow started with state: {state}")
+    current_app.logger.info(f"Authorization URL: {authorization_url}")
+
     return redirect(authorization_url)
 
 
 @user_bp.route('/oauth2callback')
 def oauth2callback():
-    if 'state' not in session or session['state'] != request.args.get('state'):
+    # Validate the state parameter to prevent CSRF attacks
+    state = session.get('state')
+    incoming_state = request.args.get('state')
+    if not state or state != incoming_state:
+        current_app.logger.error("Invalid or missing state parameter in OAuth callback")
         return 'Invalid state parameter', 400
 
-    flow = current_app.flow  # Get flow from app context
+    # Instantiate a new Flow object using the CLIENT_SECRET and redirect_uri from config
+    flow = Flow.from_client_config(
+        current_app.config['CLIENT_SECRET'],
+        scopes=['https://www.googleapis.com/auth/gmail.send']
+    )
+    flow.redirect_uri = current_app.config['OAUTH_REDIRECT_URI']
+
+    # Complete the OAuth flow by fetching the token
     try:
         flow.fetch_token(authorization_response=request.url)
     except Exception as e:
+        current_app.logger.error(f"Error during token fetching: {e}")
         return f"Error during token fetching: {str(e)}", 400
 
+    # Retrieve the credentials from the flow
     credentials = flow.credentials
+
+    # Store the credentials in the session
     session['credentials'] = {
         'token': credentials.token,
         'refresh_token': credentials.refresh_token,
@@ -156,10 +187,12 @@ def oauth2callback():
         'scopes': credentials.scopes
     }
 
-    # Store the credentials in AWS SSM
+    # Store the credentials securely in AWS SSM
     store_secret('/your-app/token', json.dumps(session['credentials']))
+    current_app.logger.info("OAuth credentials successfully stored in AWS SSM")
 
     return redirect(url_for('user_views.dashboard'))
+
 
 @user_bp.route('/revoke')
 def revoke():

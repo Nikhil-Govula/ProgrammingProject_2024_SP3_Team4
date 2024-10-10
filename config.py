@@ -12,8 +12,8 @@ class Config:
     AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
     AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     AWS_REGION = os.getenv('AWS_DEFAULT_REGION', 'ap-southeast-2')
-    OAUTHLIB_INSECURE_TRANSPORT = os.getenv('OAUTHLIB_INSECURE_TRANSPORT', '1')
-    OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:8080/user/oauth2callback')
+    OAUTHLIB_INSECURE_TRANSPORT = os.getenv('OAUTHLIB_INSECURE_TRANSPORT')
+    OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI')
     S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'your-app-profile-pictures')
     S3_REGION = os.getenv('S3_REGION', 'ap-southeast-2')
 
