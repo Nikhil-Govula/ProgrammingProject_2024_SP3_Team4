@@ -66,15 +66,15 @@ def create_app(config_class=Config):
             print("No session ID in cookie")  # Debug log
 
     # Set environment variable for OAuth
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1')
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT')
 
     # Initialize OAuth 2.0 flow
-    flow = Flow.from_client_config(
-        app.config['CLIENT_SECRET'],
-        scopes=['https://www.googleapis.com/auth/gmail.send']
-    )
-    flow.redirect_uri = app.config.get('OAUTH_REDIRECT_URI', 'http://localhost:8080/user/oauth2callback')
-    app.flow = flow  # Attach flow to app for access in views
+    # app.flow = Flow.from_client_config(
+    #     app.config['CLIENT_SECRET'],
+    #     scopes=['https://www.googleapis.com/auth/gmail.send']
+    # )
+    # app.flow.redirect_uri = app.config['OAUTH_REDIRECT_URI']
+    # app.logger.info(f"OAuth Redirect URI set to: {app.flow.redirect_uri}")
 
     # Register blueprints
     app.register_blueprint(index_bp)
