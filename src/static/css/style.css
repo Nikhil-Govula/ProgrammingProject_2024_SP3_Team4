@@ -509,3 +509,11 @@ th {
 .delete-btn:hover {
     background-color: #da190b;
 }
+
+.account-actions {
+    margin-top: 20px;
+}
+
+.account-actions button {
+    margin-right: 10px;
+}

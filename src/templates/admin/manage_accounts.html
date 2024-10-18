@@ -86,8 +86,8 @@
                     </td>
                     <td>
                         <a href="{{ url_for('admin_views.account_detail', account_type='admin' if account.__class__.__name__ == 'Admin' else 'employer' if account.__class__.__name__ == 'Employer' else 'user', account_id=account.admin_id if account.__class__.__name__ == 'Admin' else account.employer_id if account.__class__.__name__ == 'Employer' else account.user_id) }}" class="btn">View/Edit</a>
-                        <form action="{{ url_for('admin_views.delete_account', account_type='admin' if account.__class__.__name__ == 'Admin' else 'employer' if account.__class__.__name__ == 'Employer' else 'user', account_id=account.admin_id if account.__class__.__name__ == 'Admin' else account.employer_id if account.__class__.__name__ == 'Employer' else account.user_id) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="btn delete-btn" onclick="return confirm('Are you sure you want to delete this account?')">Delete</button>
+                        <form action="{{ url_for('admin_views.deactivate_account', account_type='admin' if account.__class__.__name__ == 'Admin' else 'employer' if account.__class__.__name__ == 'Employer' else 'user', account_id=account.admin_id if account.__class__.__name__ == 'Admin' else account.employer_id if account.__class__.__name__ == 'Employer' else account.user_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn deactivate-btn" onclick="return confirm('Are you sure you want to deactivate this account?')">Deactivate</button>
                         </form>
                     </td>
                 </tr>

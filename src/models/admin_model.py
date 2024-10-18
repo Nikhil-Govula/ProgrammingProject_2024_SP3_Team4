@@ -117,3 +117,15 @@ class Admin:
     def get_all_admins():
         items = DynamoDB.get_all_admins()
         return [Admin(**item) for item in items]
+
+    def update_fields(self, fields):
+        try:
+            # Update only the provided fields
+            for key, value in fields.items():
+                if hasattr(self, key) and key not in ['admin_id']:
+                    setattr(self, key, value)
+            self.save()
+            return True, "Admin updated successfully."
+        except Exception as e:
+            print(f"Error updating Admin: {e}")
+            return False, str(e)

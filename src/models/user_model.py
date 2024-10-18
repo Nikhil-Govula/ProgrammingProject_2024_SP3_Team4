@@ -181,3 +181,25 @@ class User:
     def get_all_users():
         items = DynamoDB.get_all_users()
         return [User(**item) for item in items]
+
+    def update_fields(self, fields):
+        try:
+            # Handle 'location' separately if present
+            if 'location' in fields and fields['location']:
+                try:
+                    city, country = map(str.strip, fields['location'].split(',', 1))
+                    if city and country:
+                        self.city = city
+                        self.country = country
+                except ValueError:
+                    pass  # Optionally handle invalid format
+
+            # Update other fields
+            for key, value in fields.items():
+                if key != 'location' and hasattr(self, key):
+                    setattr(self, key, value)
+            self.save()
+            return True, "User updated successfully."
+        except Exception as e:
+            print(f"Error updating User: {e}")
+            return False, str(e)

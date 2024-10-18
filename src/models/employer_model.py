@@ -20,7 +20,7 @@ class Employer:
         self.is_active = is_active
 
     def save(self):
-        DynamoDB.put_item('Employers', self.__dict__)
+        DynamoDB.put_item('Employers', self.to_dict())
 
     @staticmethod
     def get_by_email(email):
@@ -104,13 +104,32 @@ class Employer:
         self.failed_login_attempts = 0
         self.account_locked = False
 
+    def toggle_active_status(self):
+        self.is_active = not self.is_active
+        DynamoDB.update_item('Employers',
+                             {'employer_id': self.employer_id},
+                             {'is_active': self.is_active})
+        print(f"Employer {self.employer_id} active status toggled to: {self.is_active}")  # Debug log
+
     def to_dict(self):
         return {
             'employer_id': self.employer_id,
             'company_name': self.company_name,
             'email': self.email,
+            'password': self.password,
             'contact_person': self.contact_person,
             'phone_number': self.phone_number,
             'is_active': self.is_active,
             'account_locked': self.account_locked
         }
+
+    def update_fields(self, fields):
+        try:
+            for key, value in fields.items():
+                if hasattr(self, key) and key not in ['employer_id']:
+                    setattr(self, key, value)
+            self.save()
+            return True, "Employer updated successfully."
+        except Exception as e:
+            print(f"Error updating Employer: {e}")
+            return False, str(e)

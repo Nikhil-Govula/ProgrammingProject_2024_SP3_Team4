@@ -1,5 +1,6 @@
 from flask import g
 
+from .user_controller import UserController
 from ..models.admin_model import Admin
 from ..models.user_model import User
 from ..models.employer_model import Employer
@@ -206,35 +207,52 @@ class AdminController:
         if not account:
             return False, f"{account_type.capitalize()} not found."
 
-        for key, value in kwargs.items():
-            if hasattr(account, key):
-                setattr(account, key, value)
+        # Prepare the fields to update based on account type
+        update_fields = {}
+        if account_type.lower() in ['admin', 'user']:
+            update_fields['first_name'] = kwargs.get('first_name')
+            update_fields['last_name'] = kwargs.get('last_name')
 
-        if 'location' in kwargs:
-            city, country = kwargs['location'].split(',')
-            account.city = city.strip()
-            account.country = country.strip()
+        update_fields['email'] = kwargs.get('email')
+        update_fields['phone_number'] = kwargs.get('phone_number')
 
-        if 'password' in kwargs and kwargs['password']:
-            hashed_password = bcrypt.hashpw(kwargs['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            account.password = hashed_password
+        if account_type.lower() == 'user':
+            update_fields['location'] = kwargs.get('location')
+        elif account_type.lower() == 'employer':
+            update_fields['company_name'] = kwargs.get('company_name')
+            update_fields['contact_person'] = kwargs.get('contact_person')
 
-        account.save()
-        AuditLog.log_action(admin_id=g.user.admin_id, action=f'update_{account_type}', target_user_id=account_id,
-                            details=kwargs)
-        return True, f"{account_type.capitalize()} account updated successfully."
+        # Handle password update
+        password = kwargs.get('password')
+        if password:
+            # Validate password if necessary
+            is_valid, message = UserController.validate_password(password)
+            if not is_valid:
+                return False, message
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            update_fields['password'] = hashed_password
+
+        # Perform the update
+        success, message = account.update_fields(update_fields)
+        if success:
+            # Log the update action
+            AuditLog.log_action(admin_id=g.user.admin_id, action=f'update_{account_type}', target_user_id=account_id,
+                                details=update_fields)
+            return True, f"{account_type.capitalize()} account updated successfully."
+        else:
+            return False, "Failed to update account."
 
     @staticmethod
-    def delete_account(account_id, account_type):
+    def deactivate_account(account_id, account_type):
         if account_type.lower() == 'admin':
             admin = Admin.get_by_id(account_id)
             if not admin:
                 return False, "Admin not found."
             admin.is_active = False
             admin.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_admin', target_user_id=admin.admin_id,
+            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_admin', target_user_id=admin.admin_id,
                                 details={})
-            return True, "Admin account archived successfully."
+            return True, "Admin account deactivated successfully."
 
         elif account_type.lower() == 'employer':
             employer = Employer.get_by_id(account_id)
@@ -242,9 +260,9 @@ class AdminController:
                 return False, "Employer not found."
             employer.is_active = False
             employer.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_employer', target_user_id=employer.employer_id,
+            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_employer', target_user_id=employer.employer_id,
                                 details={})
-            return True, "Employer account archived successfully."
+            return True, "Employer account deactivated successfully."
 
         elif account_type.lower() == 'user':
             user = User.get_by_id(account_id)
@@ -252,8 +270,8 @@ class AdminController:
                 return False, "User not found."
             user.is_active = False
             user.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_user', target_user_id=user.user_id, details={})
-            return True, "User account archived successfully."
+            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_user', target_user_id=user.user_id, details={})
+            return True, "User account deactivated successfully."
 
         else:
             return False, "Invalid account type."
@@ -330,3 +348,59 @@ class AdminController:
         AuditLog.log_action(admin_id=g.user.admin_id, action='create_admin', target_user_id=new_admin.admin_id,
                             details={'email': email})
         return True, "Admin account created successfully."
+
+    @staticmethod
+    def toggle_account_lock(account_id, account_type):
+        account = AdminController.get_account_by_id(account_id, account_type)
+        if account:
+            if account_type.lower() == 'admin':
+                if account.account_locked:
+                    account.unlock_account()
+                    message = "Admin account unlocked successfully."
+                else:
+                    account.lock_account()
+                    message = "Admin account locked successfully."
+            elif account_type.lower() == 'user':
+                if account.account_locked:
+                    account.unlock_account()
+                    message = "User account unlocked successfully."
+                else:
+                    account.lock_account()
+                    message = "User account locked successfully."
+            elif account_type.lower() == 'employer':
+                if account.account_locked:
+                    account.unlock_account()
+                    message = "Employer account unlocked successfully."
+                else:
+                    account.lock_account()
+                    message = "Employer account locked successfully."
+            else:
+                return False, "Invalid account type."
+            return True, message
+        return False, f"{account_type.capitalize()} not found."
+
+    @staticmethod
+    def toggle_account_activation(account_id, account_type):
+        account = AdminController.get_account_by_id(account_id, account_type)
+        if not account:
+            print(f"Account not found: {account_type} {account_id}")  # Debug log
+            return False, f"{account_type.capitalize()} not found."
+
+        print(f"Before toggle: {account_type} {account_id} is_active = {account.is_active}")  # Debug log
+
+        if account_type.lower() == 'employer':
+            account.toggle_active_status()
+        else:
+            account.is_active = not account.is_active
+            account.save()
+
+        print(f"After toggle: {account_type} {account_id} is_active = {account.is_active}")  # Debug log
+
+        # Log the action
+        action = 'activate' if account.is_active else 'deactivate'
+        AuditLog.log_action(admin_id=g.user.admin_id, action=f'{action}_{account_type}', target_user_id=account_id,
+                            details={})
+
+        return True, f"{account_type.capitalize()} account {'activated' if account.is_active else 'deactivated'} successfully."
+
+
