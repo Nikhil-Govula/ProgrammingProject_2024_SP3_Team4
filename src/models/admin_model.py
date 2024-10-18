@@ -5,7 +5,7 @@ import uuid
 
 class Admin:
     def __init__(self, admin_id, email, password, first_name, last_name, failed_login_attempts=0, account_locked=False,
-                 reset_token=None, token_expiration=None):
+                 reset_token=None, token_expiration=None, is_active=True):
         self.admin_id = admin_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -15,6 +15,7 @@ class Admin:
         self.account_locked = account_locked
         self.reset_token = reset_token
         self.token_expiration = token_expiration
+        self.is_active = is_active
 
     def save(self):
         DynamoDB.put_item('Admins', self.to_dict())
@@ -103,5 +104,16 @@ class Admin:
             'first_name': self.first_name,
             'last_name': self.last_name,
             'reset_token': self.reset_token,
-            'token_expiration': self.token_expiration
+            'token_expiration': self.token_expiration,
+            'is_active': self.is_active
         }
+
+    @staticmethod
+    def get_all_active_admins():
+        items = DynamoDB.get_all_active_admins()
+        return [Admin(**item) for item in items]
+
+    @staticmethod
+    def get_all_admins():
+        items = DynamoDB.get_all_admins()
+        return [Admin(**item) for item in items]

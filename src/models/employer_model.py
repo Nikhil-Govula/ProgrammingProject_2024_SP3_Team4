@@ -6,7 +6,7 @@ import uuid
 class Employer:
     def __init__(self, employer_id, company_name, email, password, contact_person, phone_number,
                  failed_login_attempts=0, account_locked=False,
-                 reset_token=None, token_expiration=None):
+                 reset_token=None, token_expiration=None, is_active=True):
         self.employer_id = employer_id or str(uuid.uuid4())
         self.company_name = company_name
         self.email = email
@@ -17,6 +17,7 @@ class Employer:
         self.account_locked = account_locked
         self.reset_token = reset_token
         self.token_expiration = token_expiration
+        self.is_active = is_active
 
     def save(self):
         DynamoDB.put_item('Employers', self.__dict__)
@@ -34,6 +35,11 @@ class Employer:
         if item:
             return Employer(**item)
         return None
+
+    @staticmethod
+    def get_all_employers():
+        items = DynamoDB.scan('Employers')
+        return [Employer(**item) for item in items.get('Items', [])]
 
     def increment_failed_attempts(self, threshold=5):
         self.failed_login_attempts += 1
@@ -104,5 +110,7 @@ class Employer:
             'company_name': self.company_name,
             'email': self.email,
             'contact_person': self.contact_person,
-            'phone_number': self.phone_number
+            'phone_number': self.phone_number,
+            'is_active': self.is_active,
+            'account_locked': self.account_locked
         }

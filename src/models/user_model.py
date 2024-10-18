@@ -7,7 +7,7 @@ class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
                  failed_login_attempts=0, account_locked=False, city=None, country=None,
-                 work_history=None, skills=None):
+                 work_history=None, skills=None, is_active=True):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -24,6 +24,7 @@ class User:
         self.country = country
         self.work_history = work_history or []
         self.skills = skills or []
+        self.is_active = is_active
 
     def save(self):
         DynamoDB.put_item('Users', self.to_dict())
@@ -167,5 +168,16 @@ class User:
             'city': self.city,
             'country': self.country,
             'work_history': self.work_history,
-            'skills': self.skills
+            'skills': self.skills,
+            'is_active': self.is_active
         }
+
+    @staticmethod
+    def get_all_active_users():
+        items = DynamoDB.get_all_active_users()
+        return [User(**item) for item in items]
+
+    @staticmethod
+    def get_all_users():
+        items = DynamoDB.get_all_users()
+        return [User(**item) for item in items]

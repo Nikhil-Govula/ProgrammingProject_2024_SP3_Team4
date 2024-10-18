@@ -1,5 +1,10 @@
+from flask import g
+
 from ..models.admin_model import Admin
+from ..models.user_model import User
+from ..models.employer_model import Employer
 from ..services.email_service import send_reset_email
+from ..models.audit_log_model import AuditLog
 import bcrypt
 import datetime
 
@@ -98,3 +103,230 @@ class AdminController:
             return False, "Password must contain at least one special character."
 
         return True, "Password meets all requirements."
+
+    @staticmethod
+    def create_account(email, password, first_name, last_name, account_type):
+        # Check if email already exists in Users or Admins
+        existing_user = User.get_by_email(email)
+        existing_admin = Admin.get_by_email(email)
+        if existing_user or existing_admin:
+            return False, "An account with this email already exists."
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        if account_type.lower() == 'admin':
+            new_admin = Admin(
+                admin_id=None,  # This will be auto-generated
+                email=email,
+                password=hashed_password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            new_admin.save()
+            AuditLog.log_action(admin_id=g.user.admin_id, action='create_admin', target_user_id=new_admin.admin_id,
+                                details={'email': email})
+            return True, "Admin account created successfully."
+
+        elif account_type.lower() == 'employee':
+            new_user = User(
+                user_id=None,  # This will be auto-generated
+                email=email,
+                password=hashed_password,
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=''  # Default or handle accordingly
+            )
+            new_user.save()
+            AuditLog.log_action(admin_id=g.user.admin_id, action='create_user', target_user_id=new_user.user_id,
+                                details={'email': email})
+            return True, "User account created successfully."
+
+        else:
+            return False, "Invalid account type."
+
+    @staticmethod
+    def get_all_accounts(account_type=None, account_status='all', search_query=None):
+        accounts = []
+
+        # Fetch Admins
+        if account_type is None or account_type.lower() == 'admin':
+            admins = Admin.get_all_admins()
+            accounts.extend(admins)
+
+        # Fetch Employers
+        if account_type is None or account_type.lower() == 'employer':
+            employers = Employer.get_all_employers()
+            accounts.extend(employers)
+
+        # Fetch Users
+        if account_type is None or account_type.lower() == 'user':
+            users = User.get_all_users()
+            accounts.extend(users)
+
+        # Apply Account Status Filter
+        if account_status == 'active':
+            accounts = [acc for acc in accounts if acc.is_active and not acc.account_locked]
+        elif account_status == 'locked':
+            accounts = [acc for acc in accounts if acc.account_locked]
+        # When account_status is 'all', we don't filter, showing all accounts
+
+        # Apply Search Filter
+        if search_query:
+            search_query = search_query.lower()
+            accounts = [acc for acc in accounts if
+                        search_query in acc.email.lower() or
+                        search_query in getattr(acc, 'first_name', '').lower() or
+                        search_query in getattr(acc, 'last_name', '').lower() or
+                        search_query in getattr(acc, 'company_name', '').lower()]
+
+        return accounts
+
+    @staticmethod
+    def get_account_by_id(account_id, account_type):
+        if account_type.lower() == 'admin':
+            return Admin.get_by_id(account_id)
+        elif account_type.lower() == 'employer':
+            return Employer.get_by_id(account_id)
+        elif account_type.lower() == 'user':
+            return User.get_by_id(account_id)
+        else:
+            return None
+
+    @staticmethod
+    def update_account(account_id, account_type, **kwargs):
+        if account_type.lower() == 'admin':
+            account = Admin.get_by_id(account_id)
+        elif account_type.lower() == 'employer':
+            account = Employer.get_by_id(account_id)
+        elif account_type.lower() == 'user':
+            account = User.get_by_id(account_id)
+        else:
+            return False, "Invalid account type."
+
+        if not account:
+            return False, f"{account_type.capitalize()} not found."
+
+        for key, value in kwargs.items():
+            if hasattr(account, key):
+                setattr(account, key, value)
+
+        if 'location' in kwargs:
+            city, country = kwargs['location'].split(',')
+            account.city = city.strip()
+            account.country = country.strip()
+
+        if 'password' in kwargs and kwargs['password']:
+            hashed_password = bcrypt.hashpw(kwargs['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            account.password = hashed_password
+
+        account.save()
+        AuditLog.log_action(admin_id=g.user.admin_id, action=f'update_{account_type}', target_user_id=account_id,
+                            details=kwargs)
+        return True, f"{account_type.capitalize()} account updated successfully."
+
+    @staticmethod
+    def delete_account(account_id, account_type):
+        if account_type.lower() == 'admin':
+            admin = Admin.get_by_id(account_id)
+            if not admin:
+                return False, "Admin not found."
+            admin.is_active = False
+            admin.save()
+            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_admin', target_user_id=admin.admin_id,
+                                details={})
+            return True, "Admin account archived successfully."
+
+        elif account_type.lower() == 'employer':
+            employer = Employer.get_by_id(account_id)
+            if not employer:
+                return False, "Employer not found."
+            employer.is_active = False
+            employer.save()
+            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_employer', target_user_id=employer.employer_id,
+                                details={})
+            return True, "Employer account archived successfully."
+
+        elif account_type.lower() == 'user':
+            user = User.get_by_id(account_id)
+            if not user:
+                return False, "User not found."
+            user.is_active = False
+            user.save()
+            AuditLog.log_action(admin_id=g.user.admin_id, action='delete_user', target_user_id=user.user_id, details={})
+            return True, "User account archived successfully."
+
+        else:
+            return False, "Invalid account type."
+
+    @staticmethod
+    def create_user_account(email, password, first_name, last_name, phone_number, location, skills):
+        existing_user = User.get_by_email(email)
+        if existing_user:
+            return False, "A user with this email already exists."
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        city, country = location.split(',') if ',' in location else ('', '')
+
+        new_user = User(
+            user_id=None,  # This will be auto-generated
+            email=email,
+            password=hashed_password,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            city=city.strip(),
+            country=country.strip()
+        )
+        new_user.save()
+
+        # Add skills
+        for skill in skills:
+            new_user.add_skill(skill.strip())
+
+        AuditLog.log_action(admin_id=g.user.admin_id, action='create_user', target_user_id=new_user.user_id,
+                            details={'email': email})
+        return True, "User account created successfully."
+
+    @staticmethod
+    def create_employer_account(email, password, company_name, contact_person, phone_number):
+        existing_employer = Employer.get_by_email(email)
+        if existing_employer:
+            return False, "An employer with this email already exists."
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        new_employer = Employer(
+            employer_id=None,  # This will be auto-generated
+            email=email,
+            password=hashed_password,
+            company_name=company_name,
+            contact_person=contact_person,
+            phone_number=phone_number
+        )
+        new_employer.save()
+
+        AuditLog.log_action(admin_id=g.user.admin_id, action='create_employer', target_user_id=new_employer.employer_id,
+                            details={'email': email, 'company_name': company_name})
+        return True, "Employer account created successfully."
+
+    @staticmethod
+    def create_admin_account(email, password, first_name, last_name):
+        existing_admin = Admin.get_by_email(email)
+        if existing_admin:
+            return False, "An admin with this email already exists."
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        new_admin = Admin(
+            admin_id=None,  # This will be auto-generated
+            email=email,
+            password=hashed_password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        new_admin.save()
+
+        AuditLog.log_action(admin_id=g.user.admin_id, action='create_admin', target_user_id=new_admin.admin_id,
+                            details={'email': email})
+        return True, "Admin account created successfully."

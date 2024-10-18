@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Create New Account</title>
+    <script>
+        function showFields() {
+            var accountType = document.getElementById('account_type').value;
+            document.getElementById('user_fields').style.display = 'block';
+            document.getElementById('employer_fields').style.display = 'none';
+            document.getElementById('admin_fields').style.display = 'none';
+            if (accountType === 'employer') {
+                document.getElementById('user_fields').style.display = 'none';
+                document.getElementById('employer_fields').style.display = 'block';
+            } else if (accountType === 'admin') {
+                document.getElementById('user_fields').style.display = 'none';
+                document.getElementById('admin_fields').style.display = 'block';
+            }
+        }
+
+        window.onload = showFields;
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Create New Account</h2>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('admin_views.create_account') }}">
+        <div class="form-group">
+            <label for="account_type">Account Type:</label><br>
+            <select id="account_type" name="account_type" required onchange="showFields()">
+                <option value="user" selected>Employee</option>
+                <option value="employer">Employer</option>
+                <option value="admin">Administrator</option>
+            </select>
+        </div>
+
+        <!-- Common fields for all account types -->
+        <div class="form-group">
+            <label for="email">Email Address:</label><br>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <!-- User (Employee) specific fields -->
+        <div id="user_fields">
+            <div class="form-group">
+                <label for="first_name">First Name:</label><br>
+                <input type="text" id="first_name" name="first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name:</label><br>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number:</label><br>
+                <input type="tel" id="phone_number" name="phone_number">
+            </div>
+            <div class="form-group">
+                <label for="location">Location (City, Country):</label><br>
+                <input type="text" id="location" name="location" placeholder="e.g., Melbourne, Australia">
+            </div>
+            <div class="form-group">
+                <label for="skills">Skills (comma-separated):</label><br>
+                <input type="text" id="skills" name="skills" placeholder="e.g., Python, JavaScript, Project Management">
+            </div>
+        </div>
+
+        <!-- Employer specific fields -->
+        <div id="employer_fields" style="display: none;">
+            <div class="form-group">
+                <label for="company_name">Company Name:</label><br>
+                <input type="text" id="company_name" name="company_name">
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact Person:</label><br>
+                <input type="text" id="contact_person" name="contact_person">
+            </div>
+            <div class="form-group">
+                <label for="employer_phone">Phone Number:</label><br>
+                <input type="tel" id="employer_phone" name="employer_phone">
+            </div>
+        </div>
+
+        <!-- Admin specific fields -->
+        <div id="admin_fields" style="display: none;">
+            <div class="form-group">
+                <label for="admin_first_name">First Name:</label><br>
+                <input type="text" id="admin_first_name" name="admin_first_name">
+            </div>
+            <div class="form-group">
+                <label for="admin_last_name">Last Name:</label><br>
+                <input type="text" id="admin_last_name" name="admin_last_name">
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Create Account</button>
+    </form>
+</div>
+{% endblock %}
