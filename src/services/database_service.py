@@ -71,3 +71,35 @@ class DynamoDB:
         except ClientError as e:
             logging.error(f"Error querying {table_name} by email: {str(e)}")
             return None
+
+    @staticmethod
+    def get_all_active_users():
+        response = DynamoDB.scan(
+            table_name='Users',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+        return response.get('Items', [])
+
+    @staticmethod
+    def get_all_active_admins():
+        response = DynamoDB.scan(
+            table_name='Admins',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+        return response.get('Items', [])
+
+    @staticmethod
+    def get_all_users():
+        response = DynamoDB.scan(
+            table_name='Users'
+        )
+        return response.get('Items', [])
+
+    @staticmethod
+    def get_all_admins():
+        response = DynamoDB.scan(
+            table_name='Admins'
+        )
+        return response.get('Items', [])

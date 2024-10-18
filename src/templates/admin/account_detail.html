@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Account Details</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            {% if account_type != 'employer' %}
+            // Initialize autocomplete only for non-employer accounts
+            $('#location-input').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.city_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response($.map(data.suggestions, function(item) {
+                                return {
+                                    label: item.city + ', ' + item.country,
+                                    value: item.city + ', ' + item.country
+                                };
+                            }));
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching suggestions:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 3,
+                select: function(event, ui) {
+                    console.log("Selected: " + ui.item.value);
+                }
+            });
+            {% endif %}
+
+            function updateAccount(action) {
+                $.ajax({
+                    url: "{{ url_for('admin_views.account_detail', account_type=account_type, account_id=account.admin_id if account_type == 'admin' else account.user_id if account_type == 'user' else account.employer_id) }}",
+                    type: 'POST',
+                    data: {
+                        action: action
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert("Error: " + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        alert("An error occurred. Please try again.");
+                    }
+                });
+            }
+
+            $('#toggle-lock-btn').click(function(e) {
+                e.preventDefault();
+                updateAccount('toggle_account_lock');
+            });
+
+            $('#toggle-deactivation-btn').click(function(e) {
+                e.preventDefault();
+                updateAccount('toggle_account_activation'); // Updated action name
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Account Details</h2>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('admin_views.account_detail', account_type=account_type, account_id=account.admin_id if account_type == 'admin' else account.user_id if account_type == 'user' else account.employer_id) }}">
+        <!-- Common Fields for All Account Types -->
+        {% if account_type in ['admin', 'user'] %}
+            <div class="form-group">
+                <label for="first_name">First Name:</label><br>
+                <input type="text" id="first_name" name="first_name" value="{{ account.first_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name:</label><br>
+                <input type="text" id="last_name" name="last_name" value="{{ account.last_name }}" required>
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="email">Email Address:</label><br>
+            <input type="email" id="email" name="email" value="{{ account.email }}" required>
+        </div>
+        <div class="form-group">
+            <label for="phone_number">Phone Number:</label><br>
+            <input type="tel" id="phone_number" name="phone_number" value="{{ account.phone_number }}">
+        </div>
+
+        <!-- Conditional Fields for Non-Employer Accounts -->
+        {% if account_type != 'employer' %}
+            {% if account_type == 'user' %}
+                <div class="form-group">
+                    <label for="location-input">Location:</label><br>
+                    <input type="text" id="location-input" name="location" value="{{ account.city + ', ' + account.country if account.city and account.country else '' }}">
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <!-- Conditional Fields for Employer Accounts -->
+        {% if account_type == 'employer' %}
+            <div class="form-group">
+                <label for="company_name">Company Name:</label><br>
+                <input type="text" id="company_name" name="company_name" value="{{ account.company_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact Person:</label><br>
+                <input type="text" id="contact_person" name="contact_person" value="{{ account.contact_person }}">
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="password">Password: <small>(Leave blank to keep current password)</small></label><br>
+            <input type="password" id="password" name="password" placeholder="New Password">
+        </div>
+        <button type="submit" class="btn">Update Account</button>
+    </form>
+    <div class="account-actions">
+        <button id="toggle-lock-btn" class="btn">
+            {% if account.account_locked %}Unlock Account{% else %}Lock Account{% endif %}
+        </button>
+        <button id="toggle-deactivation-btn" class="btn">
+            {% if account.is_active %}Deactivate Account{% else %}Activate Account{% endif %}
+        </button>
+    </div>
+</div>
+{% endblock %}

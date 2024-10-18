@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Manage Accounts</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function updateTable() {
+                var accountType = $('#account_type').val();
+                var searchQuery = $('#search_query').val();
+                var selectedStatuses = [];
+                $('input[name="status"]:checked').each(function() {
+                    selectedStatuses.push($(this).val());
+                });
+
+                $.ajax({
+                    url: "{{ url_for('admin_views.manage_accounts') }}",
+                    data: {
+                        account_type: accountType,
+                        account_status: selectedStatuses.join(','),
+                        search: searchQuery
+                    },
+                    success: function(data) {
+                        $('#accounts-table-body').html($(data).find('#accounts-table-body').html());
+                    }
+                });
+            }
+
+            $('#account_type').change(updateTable);
+            $('#search_query').on('input', updateTable);
+            $('input[name="status"]').change(updateTable);
+
+            var defaultAccountType = "{{ account_type }}" || "user";
+            $('#account_type').val(defaultAccountType);
+            $('#search_query').val("{{ search_query }}");
+
+            // Set initial checkbox states based on account_status
+            var initialStatuses = "{{ account_status }}".split(',');
+            initialStatuses.forEach(function(status) {
+                $('#status_' + status).prop('checked', true);
+            });
+
+            updateTable();
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Manage Accounts</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="filter-form">
+        <form id="filter-form">
+            <div class="form-group">
+                <label for="account_type">Account Type:</label>
+                <select name="account_type" id="account_type" class="form-control">
+                    <option value="user">User</option>
+                    <option value="employer">Employer</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Account Status:</label>
+                <div id="status-filter">
+                    <label><input type="checkbox" name="status" id="status_active" value="active" checked> Active</label>
+                    <label><input type="checkbox" name="status" id="status_locked" value="locked"> Locked</label>
+                    <label><input type="checkbox" name="status" id="status_archived" value="archived"> Archived</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="text" name="search" id="search_query" class="form-control" placeholder="Search...">
+            </div>
+        </form>
+    </div>
+
+    <table class="accounts-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Account Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="accounts-table-body">
+            {% for account in accounts %}
+            <tr>
+                <td>
+                    {% if account.__class__.__name__ == 'Employer' %}
+                        {{ account.company_name }}
+                    {% else %}
+                        {{ account.first_name }} {{ account.last_name }}
+                    {% endif %}
+                </td>
+                <td>{{ account.email }}</td>
+                <td>{{ account.__class__.__name__ }}</td>
+                <td>
+                    {% if account.account_locked %}
+                        Locked
+                    {% elif account.is_active %}
+                        Active
+                    {% else %}
+                        Archived
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin_views.account_detail', account_type=account.__class__.__name__.lower(), account_id=account.admin_id if account.__class__.__name__ == 'Admin' else account.employer_id if account.__class__.__name__ == 'Employer' else account.user_id) }}" class="btn btn-primary">View/Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Create New Account</title>
+    <script>
+        function showFields() {
+            var accountType = document.getElementById('account_type').value;
+
+            // Define field groups
+            var userFields = document.getElementById('user_fields');
+            var employerFields = document.getElementById('employer_fields');
+            var adminFields = document.getElementById('admin_fields');
+
+            // Hide all fields initially
+            userFields.style.display = 'none';
+            employerFields.style.display = 'none';
+            adminFields.style.display = 'none';
+
+            // Remove 'required' and disable all inputs
+            var allInputs = document.querySelectorAll('#user_fields input, #employer_fields input, #admin_fields input');
+            allInputs.forEach(function(input) {
+                input.required = false;
+                input.disabled = true;
+            });
+
+            // Show and set 'required' based on account type
+            if (accountType === 'user') {
+                userFields.style.display = 'block';
+                // Enable and set 'required' for employee-specific fields
+                document.getElementById('first_name').required = true;
+                document.getElementById('first_name').disabled = false;
+                document.getElementById('last_name').required = true;
+                document.getElementById('last_name').disabled = false;
+                document.getElementById('phone_number').required = false; // Set to true if needed
+                document.getElementById('phone_number').disabled = false;
+                document.getElementById('location').required = false; // Set to true if needed
+                document.getElementById('location').disabled = false;
+                document.getElementById('skills').required = false; // Set to true if needed
+                document.getElementById('skills').disabled = false;
+            } else if (accountType === 'employer') {
+                employerFields.style.display = 'block';
+                // Enable and set 'required' for employer-specific fields
+                document.getElementById('company_name').required = true;
+                document.getElementById('company_name').disabled = false;
+                document.getElementById('contact_person').required = true;
+                document.getElementById('contact_person').disabled = false;
+                document.getElementById('employer_phone').required = false; // Set to true if needed
+                document.getElementById('employer_phone').disabled = false;
+            } else if (accountType === 'admin') {
+                adminFields.style.display = 'block';
+                // Enable and set 'required' for admin-specific fields
+                document.getElementById('admin_first_name').required = true;
+                document.getElementById('admin_first_name').disabled = false;
+                document.getElementById('admin_last_name').required = true;
+                document.getElementById('admin_last_name').disabled = false;
+            }
+        }
+
+        window.onload = showFields;
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Create New Account</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('admin_views.create_account') }}">
+        <div class="form-group">
+            <label for="account_type">Account Type:</label><br>
+            <select id="account_type" name="account_type" required onchange="showFields()">
+                <option value="user" selected>Employee</option>
+                <option value="employer">Employer</option>
+                <option value="admin">Administrator</option>
+            </select>
+        </div>
+
+        <!-- Common fields for all account types -->
+        <div class="form-group">
+            <label for="email">Email Address:</label><br>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <!-- User (Employee) specific fields -->
+        <div id="user_fields">
+            <div class="form-group">
+                <label for="first_name">First Name:</label><br>
+                <input type="text" id="first_name" name="first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name:</label><br>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number:</label><br>
+                <input type="tel" id="phone_number" name="phone_number">
+            </div>
+            <div class="form-group">
+                <label for="location">Location (City, Country):</label><br>
+                <input type="text" id="location" name="location" placeholder="e.g., Melbourne, Australia">
+            </div>
+            <div class="form-group">
+                <label for="skills">Skills (comma-separated):</label><br>
+                <input type="text" id="skills" name="skills" placeholder="e.g., Python, JavaScript, Project Management">
+            </div>
+        </div>
+
+        <!-- Employer specific fields -->
+        <div id="employer_fields" style="display: none;">
+            <div class="form-group">
+                <label for="company_name">Company Name:</label><br>
+                <input type="text" id="company_name" name="company_name">
+            </div>
+            <div class="form-group">
+                <label for="contact_person">Contact Person:</label><br>
+                <input type="text" id="contact_person" name="contact_person">
+            </div>
+            <div class="form-group">
+                <label for="employer_phone">Phone Number:</label><br>
+                <input type="tel" id="employer_phone" name="employer_phone">
+            </div>
+        </div>
+
+        <!-- Admin specific fields -->
+        <div id="admin_fields" style="display: none;">
+            <div class="form-group">
+                <label for="admin_first_name">First Name:</label><br>
+                <input type="text" id="admin_first_name" name="admin_first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="admin_last_name">Last Name:</label><br>
+                <input type="text" id="admin_last_name" name="admin_last_name" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Create Account</button>
+    </form>
+</div>
+{% endblock %}
