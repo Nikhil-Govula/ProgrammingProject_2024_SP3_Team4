@@ -18,7 +18,7 @@ class Admin:
         self.is_active = is_active
 
     def save(self):
-        DynamoDB.put_item('Admins', self.to_dict())
+        return DynamoDB.put_item('Admins', self.to_dict())
 
     @staticmethod
     def get_by_id(admin_id):

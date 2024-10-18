@@ -27,7 +27,7 @@ class User:
         self.is_active = is_active
 
     def save(self):
-        DynamoDB.put_item('Users', self.to_dict())
+        return DynamoDB.put_item('Users', self.to_dict())
 
     def increment_failed_attempts(self):
         self.failed_login_attempts += 1

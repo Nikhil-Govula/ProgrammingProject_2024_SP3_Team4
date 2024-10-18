@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, jsonify, flash
 from functools import wraps
 import bcrypt
 
@@ -158,8 +158,10 @@ def create_account():
             return render_template('admin/create_account.html', error="Invalid account type")
 
         if success:
+            flash(f"{account_type.capitalize()} account created successfully", "success")
             return redirect(url_for('admin_views.manage_accounts'))
         else:
+            flash(message, "error")
             return render_template('admin/create_account.html', error=message)
     return render_template('admin/create_account.html')
 

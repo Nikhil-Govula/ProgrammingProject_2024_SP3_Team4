@@ -20,7 +20,7 @@ class Employer:
         self.is_active = is_active
 
     def save(self):
-        DynamoDB.put_item('Employers', self.to_dict())
+        return DynamoDB.put_item('Employers', self.to_dict())
 
     @staticmethod
     def get_by_email(email):
