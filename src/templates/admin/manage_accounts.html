@@ -5,38 +5,44 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Function to update the table
-            function updateTable() {
-                var accountType = $('#account_type').val();
-                var accountStatus = $('#account_status').val();
-                var searchQuery = $('#search_query').val();
+    // Function to update the table
+    function updateTable() {
+        var accountType = $('#account_type').val();
+        var searchQuery = $('#search_query').val();
 
-                $.ajax({
-                    url: "{{ url_for('admin_views.manage_accounts') }}",
-                    data: {
-                        account_type: accountType,
-                        account_status: accountStatus,
-                        search: searchQuery
-                    },
-                    success: function(data) {
-                        $('#accounts-table-body').html($(data).find('#accounts-table-body').html());
-                    }
-                });
-            }
-
-            // Attach event listeners
-            $('#account_type, #account_status').change(updateTable);
-            $('#search_query').on('input', updateTable);
-
-            // Set initial dropdown values
-            var defaultAccountType = "{{ account_type }}" || "user";
-            $('#account_type').val(defaultAccountType);
-            $('#account_status').val("{{ account_status }}");
-            $('#search_query').val("{{ search_query }}");
-
-            // Trigger initial table update
-            updateTable();
+        // Collect selected statuses
+        var selectedStatuses = [];
+        $('input[name="status"]:checked').each(function() {
+            selectedStatuses.push($(this).val());
         });
+
+        $.ajax({
+            url: "{{ url_for('admin_views.manage_accounts') }}",
+            data: {
+                account_type: accountType,
+                account_status: selectedStatuses.join(','), // Send statuses as a comma-separated string
+                search: searchQuery
+            },
+            success: function(data) {
+                $('#accounts-table-body').html($(data).find('#accounts-table-body').html());
+            }
+        });
+    }
+
+    // Attach event listeners
+    $('#account_type').change(updateTable);
+    $('#search_query').on('input', updateTable);
+    $('input[name="status"]').change(updateTable);  // Trigger update when checkboxes change
+
+    // Set initial dropdown values
+    var defaultAccountType = "{{ account_type }}" || "user";
+    $('#account_type').val(defaultAccountType);
+    $('#search_query').val("{{ search_query }}");
+
+    // Trigger initial table update
+    updateTable();
+});
+
     </script>
 {% endblock %}
 
@@ -44,24 +50,25 @@
 <div class="container">
     <h2>Manage Accounts</h2>
     <div class="filter-form">
-        <form id="filter-form">
-            <label for="account_type">Account Type:</label>
-            <select name="account_type" id="account_type">
-                <option value="user" selected>User</option>
-                <option value="employer">Employer</option>
-                <option value="admin">Admin</option>
-            </select>
+    <form id="filter-form">
+        <label for="account_type">Account Type:</label>
+        <select name="account_type" id="account_type">
+            <option value="user" selected>User</option>
+            <option value="employer">Employer</option>
+            <option value="admin">Admin</option>
+        </select>
 
-            <label for="account_status">Account Status:</label>
-            <select name="account_status" id="account_status">
-                <option value="all">Show All</option>
-                <option value="active">Only Active Accounts</option>
-                <option value="locked">Show Locked Accounts</option>
-            </select>
+        <label for="account_status">Account Status:</label>
+        <div id="status-filter">
+            <input type="checkbox" checked name="status" id="status_active" value="active"> Active<br>
+            <input type="checkbox" name="status" id="status_locked" value="locked"> Locked<br>
+            <input type="checkbox" name="status" id="status_archived" value="archived"> Archived
+        </div>
 
-            <input type="text" name="search" id="search_query" placeholder="Search...">
-        </form>
-    </div>
+        <input type="text" name="search" id="search_query" placeholder="Search...">
+    </form>
+</div>
+
 
     <table class="accounts-table">
         <thead>
@@ -96,12 +103,12 @@
                 {% endif %}
             </td>
             <td>
-                {% if account.is_active %}
-                    Active
-                {% elif account.account_locked %}
+                {% if account.account_locked %}
                     Locked
+                {% elif account.is_active %}
+                    Active
                 {% else %}
-                    Inactive
+                    Archived
                 {% endif %}
             </td>
             <td>
@@ -110,6 +117,7 @@
         </tr>
     {% endfor %}
 </tbody>
+
 
     </table>
 </div>

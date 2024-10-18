@@ -146,30 +146,31 @@ class AdminController:
             return False, "Invalid account type."
 
     @staticmethod
-    def get_all_accounts(account_type=None, account_status='all', search_query=None):
+    def get_all_accounts(account_type=None, account_status=None, search_query=None):
         accounts = []
 
-        # Fetch Admins
+        # Fetch Admins, Employers, and Users based on account_type
         if account_type is None or account_type.lower() == 'admin':
             admins = Admin.get_all_admins()
             accounts.extend(admins)
 
-        # Fetch Employers
         if account_type is None or account_type.lower() == 'employer':
             employers = Employer.get_all_employers()
             accounts.extend(employers)
 
-        # Fetch Users
         if account_type is None or account_type.lower() == 'user':
             users = User.get_all_users()
             accounts.extend(users)
 
         # Apply Account Status Filter
-        if account_status == 'active':
-            accounts = [acc for acc in accounts if acc.is_active and not acc.account_locked]
-        elif account_status == 'locked':
-            accounts = [acc for acc in accounts if acc.account_locked]
-        # When account_status is 'all', we don't filter, showing all accounts
+        if account_status:
+            filtered_accounts = []
+            for acc in accounts:
+                if ('active' in account_status and acc.is_active and not acc.account_locked) or \
+                        ('locked' in account_status and acc.account_locked) or \
+                        ('archived' in account_status and not acc.is_active and not acc.account_locked):
+                    filtered_accounts.append(acc)
+            accounts = filtered_accounts
 
         # Apply Search Filter
         if search_query:
