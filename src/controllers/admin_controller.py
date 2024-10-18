@@ -16,6 +16,8 @@ class AdminController:
     def login(email, password):
         admin = Admin.get_by_email(email)
         if admin:
+            if not admin.is_active:
+                return None, "This account has been deactivated. Please contact support for assistance."
             if admin.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
             if bcrypt.checkpw(password.encode('utf-8'), admin.password.encode('utf-8')):

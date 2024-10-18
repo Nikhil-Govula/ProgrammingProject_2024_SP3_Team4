@@ -11,6 +11,8 @@ class EmployerController:
     def login(email, password):
         employer = Employer.get_by_email(email)
         if employer:
+            if not employer.is_active:
+                return None, "This account has been deactivated. Please contact support for assistance."
             if employer.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
             if bcrypt.checkpw(password.encode('utf-8'), employer.password.encode('utf-8')):
