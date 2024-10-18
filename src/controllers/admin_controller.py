@@ -233,12 +233,21 @@ class AdminController:
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             update_fields['password'] = hashed_password
 
+        # **Redact Password Before Logging**
+        redacted_update_fields = update_fields.copy()
+        if 'password' in redacted_update_fields:
+            redacted_update_fields['password'] = '[REDACTED]'
+
         # Perform the update
         success, message = account.update_fields(update_fields)
         if success:
-            # Log the update action
-            AuditLog.log_action(admin_id=g.user.admin_id, action=f'update_{account_type}', target_user_id=account_id,
-                                details=update_fields)
+            # Log the update action with redacted fields
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                action=f'update_{account_type}',
+                target_user_id=account_id,
+                details=redacted_update_fields  # Use redacted fields here
+            )
             return True, f"{account_type.capitalize()} account updated successfully."
         else:
             return False, "Failed to update account."
