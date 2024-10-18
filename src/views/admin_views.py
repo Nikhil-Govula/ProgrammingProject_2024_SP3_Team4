@@ -102,22 +102,26 @@ def reset_with_token(token):
 @admin_bp.route('/manage_accounts', methods=['GET'])
 @auth_required(user_type='admin')
 def manage_accounts():
-    # Retrieve filter parameters from the request
-    account_type = request.args.get('account_type', default='', type=str).lower()
+    account_type = request.args.get('account_type', default='user', type=str).lower()
     account_status = request.args.get('account_status', default='all', type=str).lower()
     search_query = request.args.get('search', default='', type=str)
 
-    # Fetch filtered accounts
     accounts = AdminController.get_all_accounts(account_type=account_type,
                                                 account_status=account_status,
                                                 search_query=search_query)
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('admin/manage_accounts.html',
+                               accounts=accounts,
+                               account_type=account_type,
+                               account_status=account_status,
+                               search_query=search_query)
 
     return render_template('admin/manage_accounts.html',
                            accounts=accounts,
                            account_type=account_type,
                            account_status=account_status,
                            search_query=search_query)
-
 
 @admin_bp.route('/create_account', methods=['GET', 'POST'])
 @auth_required(user_type='admin')
