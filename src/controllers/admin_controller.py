@@ -1,3 +1,5 @@
+import logging
+
 from flask import g
 
 from .user_controller import UserController
@@ -124,8 +126,14 @@ class AdminController:
                 last_name=last_name
             )
             new_admin.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='create_admin', target_user_id=new_admin.admin_id,
-                                details={'email': email})
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action='create_admin',
+                target_user_id=new_admin.admin_id,
+                target_user_email=new_admin.email,  # Pass the target_user_email
+                details={'email': email}
+            )
             return True, "Admin account created successfully."
 
         elif account_type.lower() == 'employee':
@@ -138,8 +146,15 @@ class AdminController:
                 phone_number=''  # Default or handle accordingly
             )
             new_user.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='create_user', target_user_id=new_user.user_id,
-                                details={'email': email})
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action='create_user',
+                target_user_id=new_user.user_id,
+                target_user_email=new_user.email,  # New parameter
+                details={'email': email}
+            )
+
             return True, "User account created successfully."
 
         else:
@@ -242,11 +257,14 @@ class AdminController:
         success, message = account.update_fields(update_fields)
         if success:
             # Log the update action with redacted fields
+            target_email = getattr(account, 'email', None)
             AuditLog.log_action(
                 admin_id=g.user.admin_id,
+                admin_email=g.user.email,
                 action=f'update_{account_type}',
                 target_user_id=account_id,
-                details=redacted_update_fields  # Use redacted fields here
+                target_user_email=target_email,  # New parameter
+                details=redacted_update_fields
             )
             return True, f"{account_type.capitalize()} account updated successfully."
         else:
@@ -260,8 +278,15 @@ class AdminController:
                 return False, "Admin not found."
             admin.is_active = False
             admin.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_admin', target_user_id=admin.admin_id,
-                                details={})
+            target_email = AdminController.get_target_user_email(account_type, account_id)
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action=f'deactivate_{account_type}',  # or corresponding action
+                target_user_id=admin.admin_id,
+                target_user_email=target_email,  # New parameter
+                details={}
+            )
             return True, "Admin account deactivated successfully."
 
         elif account_type.lower() == 'employer':
@@ -270,8 +295,15 @@ class AdminController:
                 return False, "Employer not found."
             employer.is_active = False
             employer.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_employer', target_user_id=employer.employer_id,
-                                details={})
+            target_email = AdminController.get_target_user_email(account_type, account_id)
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action=f'deactivate_{account_type}',  # or corresponding action
+                target_user_id=employer.employer_id,
+                target_user_email=target_email,  # New parameter
+                details={}
+            )
             return True, "Employer account deactivated successfully."
 
         elif account_type.lower() == 'user':
@@ -280,7 +312,15 @@ class AdminController:
                 return False, "User not found."
             user.is_active = False
             user.save()
-            AuditLog.log_action(admin_id=g.user.admin_id, action='deactivate_user', target_user_id=user.user_id, details={})
+            target_email = AdminController.get_target_user_email(account_type, account_id)
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action=f'deactivate_{account_type}',  # or corresponding action
+                target_user_id=user.user_id,
+                target_user_email=target_email,  # New parameter
+                details={}
+            )
             return True, "User account deactivated successfully."
 
         else:
@@ -288,32 +328,71 @@ class AdminController:
 
     @staticmethod
     def create_user_account(email, password, first_name, last_name, phone_number, location, skills):
+        logging.info("Creating user account for email: %s", email)
         existing_user = User.get_by_email(email)
         if existing_user:
+            logging.warning("User account creation failed: Email %s already exists.", email)
             return False, "A user with this email already exists."
 
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        # Process location
+        try:
+            city, country = map(str.strip, location.split(',', 1)) if ',' in location else ('', '')
+        except ValueError:
+            logging.error("Invalid location format: %s", location)
+            return False, "Location must be in the format 'City, Country'."
 
-        city, country = location.split(',') if ',' in location else ('', '')
+        # Hash the password
+        try:
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        except Exception as e:
+            logging.exception("Error hashing password for user: %s", email)
+            return False, "Password processing failed."
 
+        # Create a new User instance
         new_user = User(
-            user_id=None,  # This will be auto-generated
+            user_id=None,  # Auto-generated
             email=email,
             password=hashed_password,
             first_name=first_name,
             last_name=last_name,
             phone_number=phone_number,
-            city=city.strip(),
-            country=country.strip()
+            city=city,
+            country=country
         )
-        new_user.save()
+
+        # Save the new user to the database
+        success = new_user.save()
+        if not success:
+            logging.error("Failed to save user account for email: %s", email)
+            return False, "Failed to create user account due to a database error."
 
         # Add skills
         for skill in skills:
             new_user.add_skill(skill.strip())
 
-        AuditLog.log_action(admin_id=g.user.admin_id, action='create_user', target_user_id=new_user.user_id,
-                            details={'email': email})
+        # Log the creation in AuditLog
+        try:
+            details = {
+                'email': email,
+                'first_name': first_name,
+                'last_name': last_name,
+                'phone_number': phone_number,
+                'location': location,
+                'skills': skills
+            }
+
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action='create_user',
+                target_user_id=new_user.user_id,
+                target_user_email=new_user.email,
+                details=details
+            )
+        except Exception as e:
+            logging.exception("Failed to log audit action for user creation.")
+
+        logging.info("User account created successfully for email: %s", email)
         return True, "User account created successfully."
 
     @staticmethod
@@ -334,14 +413,30 @@ class AdminController:
         )
         new_employer.save()
 
-        AuditLog.log_action(admin_id=g.user.admin_id, action='create_employer', target_user_id=new_employer.employer_id,
-                            details={'email': email, 'company_name': company_name})
+        # Log full details of the employer creation
+        details = {
+            'email': email,
+            'company_name': company_name,
+            'contact_person': contact_person,
+            'phone_number': phone_number
+        }
+
+        AuditLog.log_action(
+            admin_id=g.user.admin_id,
+            admin_email=g.user.email,
+            action='create_employer',
+            target_user_id=new_employer.employer_id,
+            target_user_email=new_employer.email,  # New parameter
+            details=details  # Include full details
+        )
         return True, "Employer account created successfully."
 
     @staticmethod
     def create_admin_account(email, password, first_name, last_name):
+        logging.info("Creating admin account for email: %s", email)
         existing_admin = Admin.get_by_email(email)
         if existing_admin:
+            logging.warning("Admin account creation failed: Email %s already exists.", email)
             return False, "An admin with this email already exists."
 
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -353,39 +448,76 @@ class AdminController:
             first_name=first_name,
             last_name=last_name
         )
-        new_admin.save()
 
-        AuditLog.log_action(admin_id=g.user.admin_id, action='create_admin', target_user_id=new_admin.admin_id,
-                            details={'email': email})
+        success = new_admin.save()
+        if not success:
+            logging.error("Failed to save admin account for email: %s", email)
+            return False, "Failed to create admin account due to a database error."
+
+        # Log full details of the admin creation
+        details = {
+            'email': email,
+            'first_name': first_name,
+            'last_name': last_name
+        }
+
+        AuditLog.log_action(
+            admin_id=g.user.admin_id,
+            admin_email=g.user.email,
+            action='create_admin',
+            target_user_id=new_admin.admin_id,
+            target_user_email=new_admin.email,  # New parameter
+            details=details  # Include full details
+        )
+        logging.info("Admin account created successfully for email: %s", email)
         return True, "Admin account created successfully."
 
     @staticmethod
     def toggle_account_lock(account_id, account_type):
         account = AdminController.get_account_by_id(account_id, account_type)
         if account:
+            action = ''
             if account_type.lower() == 'admin':
                 if account.account_locked:
                     account.unlock_account()
+                    action = 'unlock_admin'
                     message = "Admin account unlocked successfully."
                 else:
                     account.lock_account()
+                    action = 'lock_admin'
                     message = "Admin account locked successfully."
             elif account_type.lower() == 'user':
                 if account.account_locked:
                     account.unlock_account()
+                    action = 'unlock_user'
                     message = "User account unlocked successfully."
                 else:
                     account.lock_account()
+                    action = 'lock_user'
                     message = "User account locked successfully."
             elif account_type.lower() == 'employer':
                 if account.account_locked:
                     account.unlock_account()
+                    action = 'unlock_employer'
                     message = "Employer account unlocked successfully."
                 else:
                     account.lock_account()
+                    action = 'lock_employer'
                     message = "Employer account locked successfully."
             else:
                 return False, "Invalid account type."
+
+            # Log the lock/unlock action
+            target_email = getattr(account, 'email', None)
+            AuditLog.log_action(
+                admin_id=g.user.admin_id,
+                admin_email=g.user.email,
+                action=action,
+                target_user_id=account_id,
+                target_user_email=target_email,  # Logging the target user email
+                details={'action': action, 'account_id': account_id}
+            )
+
             return True, message
         return False, f"{account_type.capitalize()} not found."
 
@@ -406,11 +538,37 @@ class AdminController:
 
         print(f"After toggle: {account_type} {account_id} is_active = {account.is_active}")  # Debug log
 
-        # Log the action
+        # Prepare log details
         action = 'activate' if account.is_active else 'deactivate'
-        AuditLog.log_action(admin_id=g.user.admin_id, action=f'{action}_{account_type}', target_user_id=account_id,
-                            details={})
+        target_email = account.email if hasattr(account, 'email') else None
+        log_details = {
+            'action': action,
+            'account_id': account_id,
+            'is_active': account.is_active
+        }
+
+        # Log the action
+        AuditLog.log_action(
+            admin_id=g.user.admin_id,
+            admin_email=g.user.email,
+            action=f'{action}_{account_type}',
+            target_user_id=account_id,
+            target_user_email=target_email,  # New parameter
+            details=log_details  # Include relevant details
+        )
 
         return True, f"{account_type.capitalize()} account {'activated' if account.is_active else 'deactivated'} successfully."
 
-
+    @staticmethod
+    def get_target_user_email(account_type, account_id):
+        if account_type.lower() == 'admin':
+            admin = Admin.get_by_id(account_id)
+            return admin.email if admin else None
+        elif account_type.lower() == 'employer':
+            employer = Employer.get_by_id(account_id)
+            return employer.email if employer else None
+        elif account_type.lower() == 'user':
+            user = User.get_by_id(account_id)
+            return user.email if user else None
+        else:
+            return None

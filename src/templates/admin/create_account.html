@@ -5,15 +5,54 @@
     <script>
         function showFields() {
             var accountType = document.getElementById('account_type').value;
-            document.getElementById('user_fields').style.display = 'block';
-            document.getElementById('employer_fields').style.display = 'none';
-            document.getElementById('admin_fields').style.display = 'none';
-            if (accountType === 'employer') {
-                document.getElementById('user_fields').style.display = 'none';
-                document.getElementById('employer_fields').style.display = 'block';
+
+            // Define field groups
+            var userFields = document.getElementById('user_fields');
+            var employerFields = document.getElementById('employer_fields');
+            var adminFields = document.getElementById('admin_fields');
+
+            // Hide all fields initially
+            userFields.style.display = 'none';
+            employerFields.style.display = 'none';
+            adminFields.style.display = 'none';
+
+            // Remove 'required' and disable all inputs
+            var allInputs = document.querySelectorAll('#user_fields input, #employer_fields input, #admin_fields input');
+            allInputs.forEach(function(input) {
+                input.required = false;
+                input.disabled = true;
+            });
+
+            // Show and set 'required' based on account type
+            if (accountType === 'user') {
+                userFields.style.display = 'block';
+                // Enable and set 'required' for employee-specific fields
+                document.getElementById('first_name').required = true;
+                document.getElementById('first_name').disabled = false;
+                document.getElementById('last_name').required = true;
+                document.getElementById('last_name').disabled = false;
+                document.getElementById('phone_number').required = false; // Set to true if needed
+                document.getElementById('phone_number').disabled = false;
+                document.getElementById('location').required = false; // Set to true if needed
+                document.getElementById('location').disabled = false;
+                document.getElementById('skills').required = false; // Set to true if needed
+                document.getElementById('skills').disabled = false;
+            } else if (accountType === 'employer') {
+                employerFields.style.display = 'block';
+                // Enable and set 'required' for employer-specific fields
+                document.getElementById('company_name').required = true;
+                document.getElementById('company_name').disabled = false;
+                document.getElementById('contact_person').required = true;
+                document.getElementById('contact_person').disabled = false;
+                document.getElementById('employer_phone').required = false; // Set to true if needed
+                document.getElementById('employer_phone').disabled = false;
             } else if (accountType === 'admin') {
-                document.getElementById('user_fields').style.display = 'none';
-                document.getElementById('admin_fields').style.display = 'block';
+                adminFields.style.display = 'block';
+                // Enable and set 'required' for admin-specific fields
+                document.getElementById('admin_first_name').required = true;
+                document.getElementById('admin_first_name').disabled = false;
+                document.getElementById('admin_last_name').required = true;
+                document.getElementById('admin_last_name').disabled = false;
             }
         }
 
@@ -24,9 +63,13 @@
 {% block body %}
 <div class="container">
     <h2>Create New Account</h2>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <form method="POST" action="{{ url_for('admin_views.create_account') }}">
         <div class="form-group">
             <label for="account_type">Account Type:</label><br>
@@ -91,11 +134,11 @@
         <div id="admin_fields" style="display: none;">
             <div class="form-group">
                 <label for="admin_first_name">First Name:</label><br>
-                <input type="text" id="admin_first_name" name="admin_first_name">
+                <input type="text" id="admin_first_name" name="admin_first_name" required>
             </div>
             <div class="form-group">
                 <label for="admin_last_name">Last Name:</label><br>
-                <input type="text" id="admin_last_name" name="admin_last_name">
+                <input type="text" id="admin_last_name" name="admin_last_name" required>
             </div>
         </div>
 
