@@ -1,18 +1,23 @@
 # src/models/job_model.py
+from decimal import Decimal
 
 from ..services.database_service import DynamoDB
 import uuid
 import datetime
 
 class Job:
-    def __init__(self, job_id, employer_id, job_title, description, requirements, salary, location, certifications, skills, work_history, company_name, date_posted=None, is_active=True):
+    def __init__(self, job_id, employer_id, job_title, description, requirements, salary, city, country, certifications, skills, work_history, company_name, date_posted=None, is_active=True):
         self.job_id = job_id or str(uuid.uuid4())
         self.employer_id = employer_id
         self.job_title = job_title
         self.description = description
         self.requirements = requirements  # This can be a list or a string
-        self.salary = salary
-        self.location = location
+        try:
+            self.salary = Decimal(salary)  # Ensure salary is stored as a Decimal
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid salary value: {salary}") from e
+        self.city = city  # New attribute
+        self.country = country  # New attribute
         self.certifications = certifications  # List of required certifications
         self.skills = skills  # List of required skills
         self.work_history = work_history  # Required work history
@@ -48,9 +53,11 @@ class Job:
         try:
             for key, value in fields.items():
                 if hasattr(self, key) and key not in ['job_id', 'employer_id', 'date_posted']:
-                    setattr(self, key, value)
-            DynamoDB.update_item('Jobs', {'job_id': self.job_id},
-                                 fields)
+                    if key == 'salary':
+                        setattr(self, key, Decimal(value))
+                    else:
+                        setattr(self, key, value)
+            DynamoDB.update_item('Jobs', {'job_id': self.job_id}, fields)
             return True, "Job updated successfully."
         except Exception as e:
             print(f"Error updating Job: {e}")
@@ -68,8 +75,9 @@ class Job:
             'job_title': self.job_title,
             'description': self.description,
             'requirements': self.requirements,
-            'salary': self.salary,
-            'location': self.location,
+            'salary': self.salary,  # Stored as Decimal
+            'city': self.city,  # Updated attribute
+            'country': self.country,  # Updated attribute
             'certifications': self.certifications,
             'skills': self.skills,
             'work_history': self.work_history,

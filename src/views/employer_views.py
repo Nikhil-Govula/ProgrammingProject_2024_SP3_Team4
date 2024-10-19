@@ -113,7 +113,8 @@ def create_job():
         description = request.form['description']
         requirements = request.form['requirements']
         salary = request.form['salary']
-        location = request.form['location']
+        city = request.form['city']  # New field
+        country = request.form['country']  # New field
         certifications = request.form.getlist('certifications')  # Assuming multiple certifications
         skills = request.form.getlist('skills')  # Assuming multiple skills
         work_history = request.form['work_history']
@@ -125,7 +126,8 @@ def create_job():
             description=description,
             requirements=requirements,
             salary=salary,
-            location=location,
+            city=city,  # Pass city
+            country=country,  # Pass country
             certifications=certifications,
             skills=skills,
             work_history=work_history,
@@ -154,8 +156,9 @@ def edit_job(job_id):
             'job_title': request.form['job_title'],
             'description': request.form['description'],
             'requirements': request.form['requirements'],
-            'salary': request.form['salary'],
-            'location': request.form['location'],
+            'salary': float(request.form['salary']),  # Ensure salary is float
+            'city': request.form['city'],  # New field
+            'country': request.form['country'],  # New field
             'certifications': request.form.getlist('certifications'),
             'skills': request.form.getlist('skills'),
             'work_history': request.form['work_history']

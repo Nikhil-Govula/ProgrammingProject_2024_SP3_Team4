@@ -4,15 +4,46 @@
     <title>Your Job Postings</title>
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- DataTables Responsive CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
+
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Responsive JS -->
+    <script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
+
     <style>
-        /* Ensure the table layout is consistent */
+        /* Allow DataTables to manage column widths */
         .accounts-table {
             width: 100%;
-            table-layout: auto; /* Make sure the table can adjust column width based on content */
+        }
+
+        /* Optional: Customize the DataTables elements */
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5em 1em;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 1em;
+        }
+
+        /* Ensure the table header stays fixed */
+        .dataTables_wrapper .dataTables_scrollHead {
+            background-color: #4CAF50;
+        }
+
+        /* Style the selected row */
+        .selected {
+            background-color: #d9edf7 !important;
+        }
+
+        /* Fade-out effect for notifications */
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
         }
     </style>
 {% endblock %}
@@ -38,13 +69,14 @@
     {% endwith %}
 
     <!-- Job Table -->
-    <table class="accounts-table" id="jobsTable">
+    <table class="display responsive nowrap accounts-table" id="jobsTable">
         <thead>
             <tr>
                 <th>Job Title</th>
                 <th>Description</th>
                 <th>Salary</th>
-                <th>Location</th>
+                <th>City</th>
+                <th>Country</th>
                 <th>Date Posted</th>
             </tr>
         </thead>
@@ -53,46 +85,57 @@
             <tr data-job-id="{{ job.job_id }}">
                 <td>{{ job.job_title }}</td>
                 <td>{{ job.description }}</td>
-                <td>{{ "{:,.2f}".format(job.salary|float) }}</td>
-                <td>{{ job.location }}</td>
+                <td>${{ "{:,.2f}".format(job.salary) }}</td> <!-- Format Decimal -->
+                <td>{{ job.city }}</td>
+                <td>{{ job.country }}</td>
                 <!-- Slice the date string to display only YYYY-MM-DD -->
                 <td>{{ job.date_posted[:10] if job.date_posted else '' }}</td>
             </tr>
         {% else %}
             <tr>
-                <td colspan="5">No job postings found.</td>
+                <td colspan="6">No job postings found.</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
 
+<!-- DataTables Initialization and Other Scripts -->
 <script>
     $(document).ready(function() {
         let selectedJobId = null;
 
-        // Initialize DataTables
-        $('#jobsTable').DataTable({
+        // Initialize DataTables with responsive option
+        var table = $('#jobsTable').DataTable({
             "paging": true,
             "searching": true,
             "info": false,
             "lengthChange": false,
-            "pageLength": 10
+            "pageLength": 10,
+            "autoWidth": false,
+            "responsive": true,
+            "columns": [
+                { "width": "20%", "responsivePriority": 1 },
+                { "width": "40%", "responsivePriority": 2 },
+                { "width": "10%", "responsivePriority": 3 },
+                { "width": "10%", "responsivePriority": 4 },
+                { "width": "10%", "responsivePriority": 5 },
+                { "width": "10%", "responsivePriority": 6 }
+            ]
         });
 
         // Handle row selection
         $('#jobsTable tbody').on('click', 'tr', function () {
-            // Remove 'selected' class from all rows
-            $('#jobsTable tbody tr').removeClass('selected');
-
-            // Add 'selected' class to the clicked row
-            $(this).addClass('selected');
-
-            // Get the job ID of the selected row
-            selectedJobId = $(this).data('job-id');
-
-            // Enable the Edit button
-            $('#editSelectedJob').removeClass('btn-edit-disabled').prop('disabled', false);
+            if ($(this).hasClass('selected')) {
+                $(this).removeClass('selected');
+                selectedJobId = null;
+                $('#editSelectedJob').addClass('btn-edit-disabled').prop('disabled', true);
+            } else {
+                table.$('tr.selected').removeClass('selected');
+                $(this).addClass('selected');
+                selectedJobId = $(this).data('job-id');
+                $('#editSelectedJob').removeClass('btn-edit-disabled').prop('disabled', false);
+            }
         });
 
         // Handle edit button click

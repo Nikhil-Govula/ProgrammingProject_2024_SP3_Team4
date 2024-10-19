@@ -4,10 +4,9 @@ from ..models.employer_model import Employer
 from ..controllers.user_controller import UserController  # For password validation
 from ..services.email_service import send_reset_email
 from ..models.job_model import Job
-# from ..services.email_service import send_job_posted_email
 import datetime
 import bcrypt
-import datetime
+from decimal import Decimal  # Import Decimal
 
 class EmployerController:
     @staticmethod
@@ -79,16 +78,22 @@ class EmployerController:
         return False, "Invalid token", False
 
     @staticmethod
-    def create_job(employer_id, job_title, description, requirements, salary, location, certifications, skills,
+    def create_job(employer_id, job_title, description, requirements, salary, city, country, certifications, skills,
                    work_history, company_name):
+        try:
+            salary_decimal = Decimal(salary)
+        except (ValueError, TypeError) as e:
+            return False, f"Invalid salary value: {salary}"
+
         new_job = Job(
             job_id=None,
             employer_id=employer_id,
             job_title=job_title,
             description=description,
             requirements=requirements,
-            salary=salary,
-            location=location,
+            salary=salary_decimal,  # Pass Decimal
+            city=city,  # New parameter
+            country=country,  # New parameter
             certifications=certifications,
             skills=skills,
             work_history=work_history,
@@ -104,6 +109,11 @@ class EmployerController:
 
     @staticmethod
     def update_job(job_id, fields):
+        if 'salary' in fields:
+            try:
+                fields['salary'] = Decimal(fields['salary'])
+            except (ValueError, TypeError) as e:
+                return False, f"Invalid salary value: {fields['salary']}"
         job = Job.get_by_id(job_id)
         if job:
             return job.update_fields(fields)
