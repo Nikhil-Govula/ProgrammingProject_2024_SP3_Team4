@@ -1,0 +1,65 @@
+<!-- src/templates/employer/create_job.html -->
+
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Create Job Posting</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <h2>Create Job Posting</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notification {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <div class="form-group">
+            <label for="job_title">Job Title</label>
+            <input type="text" name="job_title" id="job_title" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Job Description</label>
+            <textarea name="description" id="description" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="requirements">Requirements</label>
+            <textarea name="requirements" id="requirements" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="salary">Salary</label>
+            <input type="number" name="salary" id="salary" required>
+        </div>
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" name="location" id="location" required>
+        </div>
+        <div class="form-group">
+            <label for="certifications">Certifications (Select multiple if applicable)</label>
+            <select name="certifications" id="certifications" multiple>
+                <!-- Populate with available certifications or allow free input -->
+                <option value="Certification A">Certification A</option>
+                <option value="Certification B">Certification B</option>
+                <!-- Add more as needed -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="skills">Skills (Select multiple if applicable)</label>
+            <select name="skills" id="skills" multiple>
+                <!-- Populate with available skills or allow free input -->
+                <option value="Skill A">Skill A</option>
+                <option value="Skill B">Skill B</option>
+                <!-- Add more as needed -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="work_history">Required Work History</label>
+            <textarea name="work_history" id="work_history" required></textarea>
+        </div>
+        <button type="submit" class="register-button">Post Job</button>
+    </form>
+</div>
+{% endblock %}

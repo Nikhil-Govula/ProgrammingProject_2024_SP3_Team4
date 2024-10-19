@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Your Job Postings</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="view-jobs-page">
+    <div class="job-page-header">
+        <div>
+            <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job</a>
+            <button id="editSelectedJob" class="btn btn-edit-disabled" disabled>Edit Selected Job</button>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notification {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Job Table -->
+    <table class="accounts-table" id="jobsTable">
+        <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Description</th>
+                <th>Salary</th>
+                <th>Location</th>
+                <th>Date Posted</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for job in jobs %}
+            <tr data-job-id="{{ job.job_id }}">
+                <td>{{ job.job_title }}</td>
+                <td>{{ job.description }}</td>
+                <td>{{ "{:,.2f}".format(job.salary|float) }}</td>
+                <td>{{ job.location }}</td>
+                <td>{{ job.date_posted }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">No job postings found.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let selectedJobId = null;
+
+        // Initialize DataTables
+        $('#jobsTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "info": false,
+            "lengthChange": false,
+            "pageLength": 10
+        });
+
+        // Handle row selection
+        $('#jobsTable tbody').on('click', 'tr', function () {
+            // Remove 'selected' class from all rows
+            $('#jobsTable tbody tr').removeClass('selected');
+
+            // Add 'selected' class to the clicked row
+            $(this).addClass('selected');
+
+            // Get the job ID of the selected row
+            selectedJobId = $(this).data('job-id');
+
+            // Enable the Edit button
+            $('#editSelectedJob').removeClass('btn-edit-disabled').prop('disabled', false);
+        });
+
+        // Handle edit button click
+        $('#editSelectedJob').click(function() {
+            if (selectedJobId) {
+                // Redirect to the edit page for the selected job
+                window.location.href = `/employer/jobs/edit/${selectedJobId}`;
+            }
+        });
+    });
+
+    // Flash Message Fade Out
+    window.onload = function() {
+        var notifications = document.querySelectorAll('.notification');
+        notifications.forEach(function(notification) {
+            setTimeout(function() {
+                notification.classList.add('fade-out');
+            }, 3000); // 3 seconds
+        });
+    };
+</script>
+{% endblock %}

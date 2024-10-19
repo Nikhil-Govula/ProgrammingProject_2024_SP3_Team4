@@ -3,6 +3,9 @@
 from ..models.employer_model import Employer
 from ..controllers.user_controller import UserController  # For password validation
 from ..services.email_service import send_reset_email
+from ..models.job_model import Job
+# from ..services.email_service import send_job_posted_email
+import datetime
 import bcrypt
 import datetime
 
@@ -74,3 +77,51 @@ class EmployerController:
             else:
                 return False, "Token expired", False
         return False, "Invalid token", False
+
+    @staticmethod
+    def create_job(employer_id, job_title, description, requirements, salary, location, certifications, skills,
+                   work_history, company_name):
+        new_job = Job(
+            job_id=None,
+            employer_id=employer_id,
+            job_title=job_title,
+            description=description,
+            requirements=requirements,
+            salary=salary,
+            location=location,
+            certifications=certifications,
+            skills=skills,
+            work_history=work_history,
+            company_name=company_name
+        )
+        success = new_job.save()
+        if success:
+            # Optionally, notify users or perform other actions
+            # send_job_posted_email(new_job)  # Implement this if you want to notify users
+            return True, "Job posted successfully."
+        else:
+            return False, "Failed to post job."
+
+    @staticmethod
+    def update_job(job_id, fields):
+        job = Job.get_by_id(job_id)
+        if job:
+            return job.update_fields(fields)
+        else:
+            return False, "Job not found."
+
+    @staticmethod
+    def delete_job(job_id):
+        job = Job.get_by_id(job_id)
+        if job:
+            job.delete()
+            return True, "Job deleted successfully."
+        else:
+            return False, "Job not found."
+
+    @staticmethod
+    def list_employer_jobs(employer_id):
+        jobs = Job.get_jobs_by_employer(employer_id)
+        # Sort jobs by date_posted descending
+        sorted_jobs = sorted(jobs, key=lambda x: x.date_posted, reverse=True)
+        return sorted_jobs

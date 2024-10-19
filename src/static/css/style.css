@@ -675,3 +675,44 @@ th {
 .accounts-table tbody::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+
+
+/* Styles specific to the view_jobs page */
+.view-jobs-page .job-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .view-jobs-page .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .view-jobs-page .btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Add a hover effect to table rows */
+        .view-jobs-page tbody tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        /* Highlight the selected row */
+        .view-jobs-page .selected {
+            background-color: #d9edf7 !important;
+        }
+
+        /* Disable the edit button when no job is selected */
+        .btn-edit-disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
