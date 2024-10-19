@@ -8,6 +8,13 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <style>
+        /* Ensure the table layout is consistent */
+        .accounts-table {
+            width: 100%;
+            table-layout: auto; /* Make sure the table can adjust column width based on content */
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -48,7 +55,8 @@
                 <td>{{ job.description }}</td>
                 <td>{{ "{:,.2f}".format(job.salary|float) }}</td>
                 <td>{{ job.location }}</td>
-                <td>{{ job.date_posted }}</td>
+                <!-- Slice the date string to display only YYYY-MM-DD -->
+                <td>{{ job.date_posted[:10] if job.date_posted else '' }}</td>
             </tr>
         {% else %}
             <tr>
