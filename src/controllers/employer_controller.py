@@ -210,3 +210,29 @@ class EmployerController:
 
         success, message = job.remove_certification(certification)
         return success, message
+
+    # **New Methods for Work History**
+
+    @staticmethod
+    def add_job_work_history(job_id, occupation, duration):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, message = job.add_work_history_entry(occupation, duration)
+        return success, message
+
+    @staticmethod
+    def remove_job_work_history(job_id, occupation, duration):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, message = job.remove_work_history_entry(occupation, duration)
+        return success, message

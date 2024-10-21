@@ -20,7 +20,7 @@ class Job:
         self.country = country
         self.certifications = certifications or []
         self.skills = skills or []
-        self.work_history = work_history
+        self.work_history = work_history or []  # Initialize as a list
         self.company_name = company_name
         self.date_posted = date_posted or datetime.datetime.utcnow().isoformat()
         self.is_active = is_active
@@ -71,7 +71,7 @@ class Job:
             'country': self.country,
             'certifications': self.certifications,
             'skills': self.skills,
-            'work_history': self.work_history,
+            'work_history': self.work_history,  # Store as a list of dicts
             'company_name': self.company_name,
             'date_posted': self.date_posted,
             'is_active': self.is_active
@@ -113,6 +113,40 @@ class Job:
             success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'certifications': self.certifications})
             return success, "Certification removed successfully"
         return False, "Certification not found"
+
+    def add_work_history_entry(self, occupation, duration):
+        # Check for duplicate entry
+        for entry in self.work_history:
+            if entry['occupation'] == occupation and entry['duration'] == duration:
+                print(f"Work history entry '{occupation} - {duration} months' already exists.")
+                return False, f"The work history entry '{occupation} - {duration} months' is already added to this job."
+
+        print(f"Adding work history entry: {occupation} - {duration} months")  # Debug log
+        self.work_history.append({'occupation': occupation, 'duration': duration})
+        success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'work_history': self.work_history})
+
+        if success:
+            print(f"Work history entry '{occupation} - {duration} months' added successfully.")  # Debug log
+        else:
+            print(f"Failed to add work history entry '{occupation} - {duration} months'")  # Debug log
+
+        return success, f"Work history entry '{occupation} - {duration} months' added successfully."
+
+    def remove_work_history_entry(self, occupation, duration):
+        entry_to_remove = None
+        for entry in self.work_history:
+            if entry['occupation'] == occupation and entry['duration'] == duration:
+                entry_to_remove = entry
+                break
+
+        if entry_to_remove:
+            self.work_history.remove(entry_to_remove)
+            success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'work_history': self.work_history})
+            if success:
+                return True, f"Work history entry '{occupation} - {duration} months' removed successfully."
+            else:
+                return False, f"Failed to remove work history entry '{occupation} - {duration} months'."
+        return False, "Work history entry not found."
 
     def update_fields(self, fields):
         try:

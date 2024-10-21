@@ -116,7 +116,7 @@ def create_job():
         location = request.form['city']  # Combined city and country field
         certifications = request.form.getlist('certifications[]')  # Changed to 'certifications[]'
         skills = request.form.getlist('skills[]')  # Changed to 'skills[]'
-        work_history = request.form['work_history']
+        work_history = request.form.getlist('work_history[]')  # Changed to 'work_history[]'
         company_name = g.user.company_name  # Assuming employer's company name
 
         # Split location into city and country
@@ -126,6 +126,17 @@ def create_job():
         except ValueError:
             flash("Invalid location format. Please use 'City, Country'.", 'error')
             return render_template('employer/create_job.html')
+
+        # Convert work_history into list of dicts
+        processed_work_history = []
+        for entry in work_history:
+            occupation = entry.get('occupation')
+            duration = entry.get('duration')
+            if occupation and duration:
+                processed_work_history.append({
+                    'occupation': occupation,
+                    'duration': int(duration)  # Assuming duration is provided in months as integer
+                })
 
         success, message = EmployerController.create_job(
             employer_id=g.user.employer_id,
@@ -137,7 +148,7 @@ def create_job():
             country=country,  # Pass the parsed country
             certifications=certifications,
             skills=skills,
-            work_history=work_history,
+            work_history=processed_work_history,
             company_name=company_name
         )
 
@@ -245,6 +256,56 @@ def delete_job_certification(job_id):
     success, message = EmployerController.remove_job_certification(job_id, certification)
     if success:
         return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+# **New Routes for Work History**
+
+@employer_bp.route('/jobs/<job_id>/add_work_history', methods=['POST'])
+@auth_required(user_type='employer')
+def add_work_history(job_id):
+    data = request.get_json()
+    occupation = data.get('occupation')
+    duration = data.get('duration')  # Duration in months
+
+    # Validate input
+    if not occupation or not duration:
+        return jsonify({'success': False, 'message': 'Occupation and duration are required.'}), 400
+
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            raise ValueError
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Duration must be a positive integer representing months.'}), 400
+
+    success, message = EmployerController.add_job_work_history(job_id, occupation, duration)
+    if success:
+        return jsonify({'success': True, 'message': message, 'occupation': occupation, 'duration': duration}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@employer_bp.route('/jobs/<job_id>/delete_work_history', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_work_history(job_id):
+    data = request.get_json()
+    occupation = data.get('occupation')
+    duration = data.get('duration')  # Duration in months
+
+    # Validate input
+    if not occupation or not duration:
+        return jsonify({'success': False, 'message': 'Occupation and duration are required.'}), 400
+
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            raise ValueError
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Duration must be a positive integer representing months.'}), 400
+
+    success, message = EmployerController.remove_job_work_history(job_id, occupation, duration)
+    if success:
+        return jsonify({'success': True, 'message': message, 'occupation': occupation, 'duration': duration}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
 
