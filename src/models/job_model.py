@@ -1,6 +1,6 @@
 # src/models/job_model.py
-from decimal import Decimal
 
+from decimal import Decimal
 from ..services.database_service import DynamoDB
 import uuid
 import datetime
@@ -11,22 +11,30 @@ class Job:
         self.employer_id = employer_id
         self.job_title = job_title
         self.description = description
-        self.requirements = requirements  # This can be a list or a string
+        self.requirements = requirements
         try:
-            self.salary = Decimal(salary)  # Ensure salary is stored as a Decimal
+            self.salary = Decimal(salary)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Invalid salary value: {salary}") from e
-        self.city = city  # New attribute
-        self.country = country  # New attribute
-        self.certifications = certifications  # List of required certifications
-        self.skills = skills  # List of required skills
-        self.work_history = work_history  # Required work history
+        self.city = city
+        self.country = country
+        self.certifications = certifications or []
+        self.skills = skills or []
+        self.work_history = work_history
         self.company_name = company_name
         self.date_posted = date_posted or datetime.datetime.utcnow().isoformat()
         self.is_active = is_active
 
-    def save(self):
-        return DynamoDB.put_item('Jobs', self.to_dict())
+    def save_with_response(self):
+        try:
+            result = DynamoDB.put_item('Jobs', self.to_dict())
+            if result:
+                return True, "Job saved successfully."
+            else:
+                return False, "Failed to save job."
+        except Exception as e:
+            print(f"Error saving job: {e}")
+            return False, "An error occurred while saving the job."
 
     @staticmethod
     def get_by_id(job_id):
@@ -45,26 +53,9 @@ class Job:
         response = DynamoDB.scan('Jobs', FilterExpression='employer_id = :eid AND is_active = :active',
                                  ExpressionAttributeValues={':eid': employer_id, ':active': True})
         jobs = [Job(**item) for item in response.get('Items', [])]
-        # Sort jobs by date_posted descending
-        sorted_jobs = sorted(jobs, key=lambda x: x.date_posted, reverse=True)
-        return sorted_jobs
-
-    def update_fields(self, fields):
-        try:
-            for key, value in fields.items():
-                if hasattr(self, key) and key not in ['job_id', 'employer_id', 'date_posted']:
-                    if key == 'salary':
-                        setattr(self, key, Decimal(value))
-                    else:
-                        setattr(self, key, value)
-            DynamoDB.update_item('Jobs', {'job_id': self.job_id}, fields)
-            return True, "Job updated successfully."
-        except Exception as e:
-            print(f"Error updating Job: {e}")
-            return False, str(e)
+        return sorted(jobs, key=lambda x: x.date_posted, reverse=True)
 
     def delete(self):
-        # Soft delete by setting is_active to False
         self.is_active = False
         DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'is_active': False})
 
@@ -75,9 +66,9 @@ class Job:
             'job_title': self.job_title,
             'description': self.description,
             'requirements': self.requirements,
-            'salary': self.salary,  # Stored as Decimal
-            'city': self.city,  # Updated attribute
-            'country': self.country,  # Updated attribute
+            'salary': self.salary,
+            'city': self.city,
+            'country': self.country,
             'certifications': self.certifications,
             'skills': self.skills,
             'work_history': self.work_history,
@@ -85,3 +76,53 @@ class Job:
             'date_posted': self.date_posted,
             'is_active': self.is_active
         }
+
+    def add_skill(self, skill):
+        if skill in self.skills:
+            print(f"Skill '{skill}' is already added.")  # Debug log
+            return False, f"The skill '{skill}' is already added to this job."
+
+        print(f"Adding skill '{skill}'")  # Debug log
+        self.skills.append(skill)
+        success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'skills': self.skills})
+
+        if success:
+            print(f"Skill '{skill}' added successfully.")  # Debug log
+        else:
+            print(f"Failed to add skill '{skill}'")  # Debug log
+
+        return success, f"Skill '{skill}' added successfully."
+
+    def remove_skill(self, skill):
+        if skill in self.skills:
+            self.skills.remove(skill)
+            success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'skills': self.skills})
+            return success, "Skill removed successfully"
+        return False, "Skill not found"
+
+    def add_certification(self, certification):
+        if certification not in self.certifications:
+            self.certifications.append(certification)
+            success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'certifications': self.certifications})
+            return success, certification
+        return False, "Certification already exists"
+
+    def remove_certification(self, certification):
+        if certification in self.certifications:
+            self.certifications.remove(certification)
+            success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, {'certifications': self.certifications})
+            return success, "Certification removed successfully"
+        return False, "Certification not found"
+
+    def update_fields(self, fields):
+        try:
+            success = DynamoDB.update_item('Jobs', {'job_id': self.job_id}, fields)
+            if success:
+                for key, value in fields.items():
+                    setattr(self, key, value)
+                return True, "Job updated successfully."
+            else:
+                return False, "Failed to update job."
+        except Exception as e:
+            print(f"Error updating Job: {e}")
+            return False, str(e)

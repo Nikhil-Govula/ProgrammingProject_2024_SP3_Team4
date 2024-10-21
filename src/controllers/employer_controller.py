@@ -1,4 +1,4 @@
-# src/controllers/employer_controller.py
+from flask import g
 
 from ..models.employer_model import Employer
 from ..controllers.user_controller import UserController  # For password validation
@@ -33,6 +33,11 @@ class EmployerController:
         if existing_employer:
             return False, "An employer with this email already exists."
 
+        # Validate password strength
+        is_valid, message = UserController.validate_password(password)
+        if not is_valid:
+            return False, message
+
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         new_employer = Employer(
             employer_id=None,  # This will be generated automatically
@@ -42,8 +47,11 @@ class EmployerController:
             contact_person=contact_person,
             phone_number=phone_number
         )
-        new_employer.save()
-        return True, "Employer registered successfully."
+        success = new_employer.save()
+        if success:
+            return True, "Employer registered successfully."
+        else:
+            return False, "Failed to register employer."
 
     @staticmethod
     def reset_password(email):
@@ -81,7 +89,10 @@ class EmployerController:
     def create_job(employer_id, job_title, description, requirements, salary, city, country, certifications, skills,
                    work_history, company_name):
         try:
+            print(f"Salary before conversion: {salary}")
             salary_decimal = Decimal(salary)
+            print(f"Salary after conversion: {salary_decimal}")
+
         except (ValueError, TypeError) as e:
             return False, f"Invalid salary value: {salary}"
 
@@ -99,7 +110,7 @@ class EmployerController:
             work_history=work_history,
             company_name=company_name
         )
-        success = new_job.save()
+        success, message = new_job.save_with_response()
         if success:
             # Optionally, notify users or perform other actions
             # send_job_posted_email(new_job)  # Implement this if you want to notify users
@@ -109,21 +120,27 @@ class EmployerController:
 
     @staticmethod
     def update_job(job_id, fields):
-        if 'salary' in fields:
-            try:
-                fields['salary'] = Decimal(fields['salary'])
-            except (ValueError, TypeError) as e:
-                return False, f"Invalid salary value: {fields['salary']}"
         job = Job.get_by_id(job_id)
-        if job:
-            return job.update_fields(fields)
-        else:
+        if not job:
             return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        try:
+            success, message = job.update_fields(fields)
+            return success, message
+        except Exception as e:
+            print(f"Error updating job: {e}")
+            return False, "An unexpected error occurred while updating the job."
 
     @staticmethod
     def delete_job(job_id):
         job = Job.get_by_id(job_id)
         if job:
+            # Ensure the employer has permission to delete this job
+            if job.employer_id != g.user.employer_id:
+                return False, "You do not have permission to delete this job."
             job.delete()
             return True, "Job deleted successfully."
         else:
@@ -135,3 +152,51 @@ class EmployerController:
         # Sort jobs by date_posted descending
         sorted_jobs = sorted(jobs, key=lambda x: x.date_posted, reverse=True)
         return sorted_jobs
+
+    @staticmethod
+    def add_job_skill(job_id, skill):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, message = job.add_skill(skill)
+        return success, message
+
+    @staticmethod
+    def remove_job_skill(job_id, skill):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, message = job.remove_skill(skill)
+        return success, message
+
+    @staticmethod
+    def add_job_certification(job_id, certification):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, result = job.add_certification(certification)
+        return success, result
+
+    @staticmethod
+    def remove_job_certification(job_id, certification):
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job.employer_id != g.user.employer_id:
+            return False, "You do not have permission to edit this job."
+
+        success, message = job.remove_certification(certification)
+        return success, message

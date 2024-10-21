@@ -1,9 +1,210 @@
-<!-- src/templates/employer/create_job.html -->
-
 {% extends "base.html" %}
 
 {% block head %}
     <title>Create Job Posting</title>
+    <!-- Include jQuery and jQuery UI for autocomplete functionality -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <style>
+        /* Optional: Customize the appearance of autocomplete suggestions */
+        .ui-autocomplete {
+            z-index: 1000;
+            background-color: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .ui-menu-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .dynamic-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .dynamic-input-group input {
+            flex: 1;
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .remove-input-button {
+            padding: 8px 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-input-button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+    <script>
+        $(document).ready(function() {
+            // Initialize autocomplete for City
+            $('#city').autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('user_views.city_suggestions') }}",
+                        type: 'GET',
+                        data: { query: request.term },
+                        success: function(data) {
+                            response($.map(data.suggestions, function(item) {
+                                return {
+                                    label: item.city + ', ' + item.country,
+                                    value: item.city + ', ' + item.country
+                                };
+                            }));
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching city suggestions:", error);
+                            response([]);
+                        }
+                    });
+                },
+                minLength: 3,
+                select: function(event, ui) {
+                    console.log("Selected city: " + ui.item.value);
+                }
+            });
+
+            // Initialize autocomplete for Certifications
+            function initializeCertificationsAutocomplete() {
+                $('.certification-input').autocomplete({
+                    source: function(request, response) {
+                        $.ajax({
+                            url: "{{ url_for('user_views.certification_suggestions') }}",
+                            type: 'GET',
+                            data: { query: request.term },
+                            success: function(data) {
+                                response($.map(data.suggestions, function(item) {
+                                    return {
+                                        label: item, // Assuming item is a string
+                                        value: item
+                                    };
+                                }));
+                            },
+                            error: function(xhr, status, error) {
+                                console.error("Error fetching certification suggestions:", error);
+                                response([]);
+                            }
+                        });
+                    },
+                    minLength: 2,
+                    select: function(event, ui) {
+                        console.log("Selected certification: " + ui.item.value);
+                    }
+                });
+            }
+
+            // Initialize autocomplete for Skills
+            function initializeSkillsAutocomplete() {
+                $('.skill-input').autocomplete({
+                    source: function(request, response) {
+                        $.ajax({
+                            url: "{{ url_for('user_views.skill_suggestions') }}",
+                            type: 'GET',
+                            data: { query: request.term },
+                            success: function(data) {
+                                response($.map(data.suggestions, function(item) {
+                                    return {
+                                        label: item, // Assuming item is a string
+                                        value: item
+                                    };
+                                }));
+                            },
+                            error: function(xhr, status, error) {
+                                console.error("Error fetching skill suggestions:", error);
+                                response([]);
+                            }
+                        });
+                    },
+                    minLength: 2,
+                    select: function(event, ui) {
+                        console.log("Selected skill: " + ui.item.value);
+                    }
+                });
+            }
+
+            initializeCertificationsAutocomplete();
+            initializeSkillsAutocomplete();
+
+            // Function to add a new certification input
+            $('#add-certification').on('click', function(e) {
+                e.preventDefault();
+                var certificationInput = `
+                    <div class="dynamic-input-group">
+                        <input type="text" name="certifications" class="certification-input" placeholder="Add a certification" required>
+                        <button type="button" class="remove-input-button">Remove</button>
+                    </div>
+                `;
+                $('#certifications-container').append(certificationInput);
+                initializeCertificationsAutocomplete();
+            });
+
+            // Function to add a new skill input
+            $('#add-skill').on('click', function(e) {
+                e.preventDefault();
+                var skillInput = `
+                    <div class="dynamic-input-group">
+                        <input type="text" name="skills" class="skill-input" placeholder="Add a skill" required>
+                        <button type="button" class="remove-input-button">Remove</button>
+                    </div>
+                `;
+                $('#skills-container').append(skillInput);
+                initializeSkillsAutocomplete();
+            });
+
+            // Function to remove an input field
+            $(document).on('click', '.remove-input-button', function() {
+                $(this).parent('.dynamic-input-group').remove();
+            });
+
+            // Initialize autocomplete for Certifications and Skills on existing inputs
+            initializeCertificationsAutocomplete();
+            initializeSkillsAutocomplete();
+
+            // Handle form submission to ensure multiple certifications and skills are captured
+            $('#create-job-form').on('submit', function(e) {
+                // Prevent default form submission
+                e.preventDefault();
+
+                // Gather form data
+                var formData = $(this).serializeArray();
+                var data = {};
+                $.each(formData, function(index, field) {
+                    if (data[field.name]) {
+                        if (Array.isArray(data[field.name])) {
+                            data[field.name].push(field.value);
+                        } else {
+                            data[field.name] = [data[field.name], field.value];
+                        }
+                    } else {
+                        data[field.name] = field.value;
+                    }
+                });
+
+                // Submit the form via AJAX
+                $.ajax({
+                    url: "{{ url_for('employer_views.create_job') }}",
+                    type: 'POST',
+                    data: data,
+                    success: function(response) {
+                        // Redirect on success
+                        window.location.href = "{{ url_for('employer_views.view_jobs') }}";
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error creating job:", error);
+                        alert("An error occurred while creating the job. Please try again.");
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block body %}
@@ -16,7 +217,7 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    <form method="POST">
+    <form id="create-job-form" method="POST">
         <div class="form-group">
             <label for="job_title">Job Title</label>
             <input type="text" name="job_title" id="job_title" required>
@@ -33,33 +234,32 @@
             <label for="salary">Salary</label>
             <input type="number" name="salary" id="salary" required>
         </div>
-        <!-- New City Field -->
+        <!-- City Field with Autocomplete -->
         <div class="form-group">
             <label for="city">City</label>
             <input type="text" name="city" id="city" required>
         </div>
-        <!-- New Country Field -->
+        <!-- Certifications Field with Multiple Inputs -->
         <div class="form-group">
-            <label for="country">Country</label>
-            <input type="text" name="country" id="country" required>
+            <label>Certifications (Add multiple as needed)</label>
+            <div id="certifications-container">
+                <div class="dynamic-input-group">
+                    <input type="text" name="certifications" class="certification-input" placeholder="Add a certification" required>
+                    <button type="button" class="remove-input-button">Remove</button>
+                </div>
+            </div>
+            <button type="button" id="add-certification">Add Certification</button>
         </div>
+        <!-- Skills Field with Multiple Inputs -->
         <div class="form-group">
-            <label for="certifications">Certifications (Select multiple if applicable)</label>
-            <select name="certifications" id="certifications" multiple>
-                <!-- Populate with available certifications or allow free input -->
-                <option value="Certification A">Certification A</option>
-                <option value="Certification B">Certification B</option>
-                <!-- Add more as needed -->
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="skills">Skills (Select multiple if applicable)</label>
-            <select name="skills" id="skills" multiple>
-                <!-- Populate with available skills or allow free input -->
-                <option value="Skill A">Skill A</option>
-                <option value="Skill B">Skill B</option>
-                <!-- Add more as needed -->
-            </select>
+            <label>Skills (Add multiple as needed)</label>
+            <div id="skills-container">
+                <div class="dynamic-input-group">
+                    <input type="text" name="skills" class="skill-input" placeholder="Add a skill" required>
+                    <button type="button" class="remove-input-button">Remove</button>
+                </div>
+            </div>
+            <button type="button" id="add-skill">Add Skill</button>
         </div>
         <div class="form-group">
             <label for="work_history">Required Work History</label>

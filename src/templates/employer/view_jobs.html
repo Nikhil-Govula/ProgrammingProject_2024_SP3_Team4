@@ -112,7 +112,7 @@
             "info": false,
             "lengthChange": false,
             "pageLength": 10,
-            "autoWidth": false,
+            "autoWidth": true,
             "responsive": true,
             "columns": [
                 { "width": "20%", "responsivePriority": 1 },
@@ -122,6 +122,11 @@
                 { "width": "10%", "responsivePriority": 5 },
                 { "width": "10%", "responsivePriority": 6 }
             ]
+        });
+
+        // Add this line to force DataTables to recalculate column widths
+        $(window).on('resize', function () {
+            table.columns.adjust().draw();
         });
 
         // Handle row selection

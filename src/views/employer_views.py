@@ -1,7 +1,6 @@
-from math import ceil
+# src/views/employer_views.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, flash
-
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, flash, jsonify
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
@@ -47,6 +46,7 @@ def register_employer():
         # Register the new employer
         success, message = EmployerController.register_employer(email, password, company_name, contact_person, phone_number)
         if success:
+            flash(message, 'success')
             return redirect(url_for('employer_views.login_employer'))
         else:
             return render_template('employer/register_employer.html', error=message)
@@ -89,12 +89,12 @@ def reset_with_token(token):
 
         success, message, was_locked = EmployerController.reset_password_with_token(token, new_password)
         if success:
-            return redirect(url_for('employer_views.login_employer', message=message))
+            flash(message, 'success')
+            return redirect(url_for('employer_views.login_employer'))
         else:
             return render_template('employer/reset_with_token.html', error=message, token=token)
 
     return render_template('employer/reset_with_token.html', token=token)
-
 
 JOBS_PER_PAGE = 10  # Define how many jobs to display per page
 
@@ -113,12 +113,19 @@ def create_job():
         description = request.form['description']
         requirements = request.form['requirements']
         salary = request.form['salary']
-        city = request.form['city']  # New field
-        country = request.form['country']  # New field
-        certifications = request.form.getlist('certifications')  # Assuming multiple certifications
-        skills = request.form.getlist('skills')  # Assuming multiple skills
+        location = request.form['city']  # Combined city and country field
+        certifications = request.form.getlist('certifications[]')  # Changed to 'certifications[]'
+        skills = request.form.getlist('skills[]')  # Changed to 'skills[]'
         work_history = request.form['work_history']
         company_name = g.user.company_name  # Assuming employer's company name
+
+        # Split location into city and country
+        try:
+            city, country = map(str.strip, location.split(',', 1))
+            print(f"City: {city}, Country: {country}")  # Log parsed values
+        except ValueError:
+            flash("Invalid location format. Please use 'City, Country'.", 'error')
+            return render_template('employer/create_job.html')
 
         success, message = EmployerController.create_job(
             employer_id=g.user.employer_id,
@@ -126,8 +133,8 @@ def create_job():
             description=description,
             requirements=requirements,
             salary=salary,
-            city=city,  # Pass city
-            country=country,  # Pass country
+            city=city,  # Pass the parsed city
+            country=country,  # Pass the parsed country
             certifications=certifications,
             skills=skills,
             work_history=work_history,
@@ -153,15 +160,12 @@ def edit_job(job_id):
 
     if request.method == 'POST':
         fields = {
-            'job_title': request.form['job_title'],
-            'description': request.form['description'],
-            'requirements': request.form['requirements'],
-            'salary': float(request.form['salary']),  # Ensure salary is float
-            'city': request.form['city'],  # New field
-            'country': request.form['country'],  # New field
-            'certifications': request.form.getlist('certifications'),
-            'skills': request.form.getlist('skills'),
-            'work_history': request.form['work_history']
+            'job_title': request.form.get('job_title'),
+            'description': request.form.get('description'),
+            'requirements': request.form.get('requirements'),
+            'salary': request.form.get('salary'),
+            'city': request.form.get('city'),
+            'work_history': request.form.get('work_history')
         }
 
         success, message = EmployerController.update_job(job_id, fields)
@@ -170,9 +174,57 @@ def edit_job(job_id):
             return redirect(url_for('employer_views.view_jobs'))
         else:
             flash(message, 'error')
-            return render_template('employer/edit_job.html', job=job)
 
     return render_template('employer/edit_job.html', job=job)
+
+
+@employer_bp.route('/jobs/<job_id>/add_skill', methods=['POST'])
+@auth_required(user_type='employer')
+def add_job_skill(job_id):
+    data = request.get_json()
+    skill = data.get('skill')
+
+    success, message = EmployerController.add_job_skill(job_id, skill)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400  # Ensure message is included
+
+@employer_bp.route('/jobs/<job_id>/delete_skill', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_job_skill(job_id):
+    data = request.get_json()
+    skill = data.get('skill')
+
+    success, message = EmployerController.remove_job_skill(job_id, skill)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@employer_bp.route('/jobs/<job_id>/add_certification', methods=['POST'])
+@auth_required(user_type='employer')
+def add_job_certification(job_id):
+    data = request.get_json()
+    certification = data.get('certification')
+
+    success, result = EmployerController.add_job_certification(job_id, certification)
+    if success:
+        return jsonify({'success': True, 'message': 'Certification added successfully', 'certification': result}), 200
+    else:
+        return jsonify({'success': False, 'message': result}), 400
+
+@employer_bp.route('/jobs/<job_id>/delete_certification', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_job_certification(job_id):
+    data = request.get_json()
+    certification = data.get('certification')
+
+    success, message = EmployerController.remove_job_certification(job_id, certification)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
 
 @employer_bp.route('/jobs/delete/<job_id>', methods=['POST'])
 @auth_required(user_type='employer')
@@ -183,5 +235,3 @@ def delete_job(job_id):
     else:
         flash(message, 'error')
     return redirect(url_for('employer_views.view_jobs'))
-
-
