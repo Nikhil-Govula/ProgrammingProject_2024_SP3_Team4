@@ -521,3 +521,18 @@ th {
 .account-actions button {
     margin-right: 10px;
 }
+
+
+#delete-job-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+#delete-job-button:hover {
+    background-color: #c82333;
+}

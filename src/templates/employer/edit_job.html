@@ -458,6 +458,30 @@
                 });
             });
 
+            // Handle job deletion
+            $('#delete-job-button').on('click', function() {
+                if (confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+                    $.ajax({
+                        url: "{{ url_for('employer_views.delete_job', job_id=job.job_id) }}",
+                        type: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                showNotification('Job deleted successfully.', 'success');
+                                // Redirect to the jobs list page after a short delay
+                                setTimeout(function() {
+                                    window.location.href = "{{ url_for('employer_views.view_jobs') }}";
+                                }, 2000);
+                            } else {
+                                showNotification(response.message || 'Failed to delete job.', 'error');
+                            }
+                        },
+                        error: function() {
+                            showNotification('An error occurred while deleting the job.', 'error');
+                        }
+                    });
+                }
+            });
+
             // Notification Function
             function showNotification(message, type = 'success') {
                 const notificationContainer = $('#notification-container');
@@ -629,6 +653,10 @@
             {% else %}
                 <p id="no-work-history-message">No work history entries added.</p>
             {% endif %}
+        </div>
+
+        <div class="form-group">
+            <button type="button" id="delete-job-button" class="btn btn-danger">Delete Job</button>
         </div>
 
         <!-- Work History is now handled via AJAX, so no need to include in the main form submission -->

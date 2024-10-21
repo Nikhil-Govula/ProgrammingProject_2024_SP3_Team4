@@ -109,14 +109,15 @@ def view_jobs():
 @auth_required(user_type='employer')
 def create_job():
     if request.method == 'POST':
-        job_title = request.form['job_title']
-        description = request.form['description']
-        requirements = request.form['requirements']
-        salary = request.form['salary']
-        location = request.form['city']  # Combined city and country field
-        certifications = request.form.getlist('certifications[]')  # Changed to 'certifications[]'
-        skills = request.form.getlist('skills[]')  # Changed to 'skills[]'
-        work_history = request.form.getlist('work_history[]')  # Changed to 'work_history[]'
+        data = request.get_json()
+        job_title = data.get('job_title')
+        description = data.get('description')
+        requirements = data.get('requirements')
+        salary = data.get('salary')
+        location = data.get('city')  # Combined city and country field
+        certifications = data.get('certifications', [])  # Changed to 'certifications[]'
+        skills = data.get('skills', [])  # Changed to 'skills[]'
+        work_history = data.get('work_history', [])  # Changed to 'work_history[]'
         company_name = g.user.company_name  # Assuming employer's company name
 
         # Split location into city and country
@@ -124,8 +125,7 @@ def create_job():
             city, country = map(str.strip, location.split(',', 1))
             print(f"City: {city}, Country: {country}")  # Log parsed values
         except ValueError:
-            flash("Invalid location format. Please use 'City, Country'.", 'error')
-            return render_template('employer/create_job.html')
+            return jsonify({'success': False, 'message': "Invalid location format. Please use 'City, Country'."}), 400
 
         # Convert work_history into list of dicts
         processed_work_history = []
@@ -153,11 +153,9 @@ def create_job():
         )
 
         if success:
-            flash(message, 'success')
-            return redirect(url_for('employer_views.view_jobs'))
+            return jsonify({'success': True, 'message': message}), 200
         else:
-            flash(message, 'error')
-            return render_template('employer/create_job.html')
+            return jsonify({'success': False, 'message': message}), 400
 
     return render_template('employer/create_job.html')
 
@@ -314,7 +312,6 @@ def delete_work_history(job_id):
 def delete_job(job_id):
     success, message = EmployerController.delete_job(job_id)
     if success:
-        flash(message, 'success')
+        return jsonify({'success': True, 'message': message}), 200
     else:
-        flash(message, 'error')
-    return redirect(url_for('employer_views.view_jobs'))
+        return jsonify({'success': False, 'message': message}), 400
