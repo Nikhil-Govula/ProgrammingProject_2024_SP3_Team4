@@ -128,7 +128,7 @@
             });
 
             // Handle adding a new certification
-            $('#add-certification-form').on('submit', function(e) {
+            $('#add-certification-button').on('click', function(e) {
                 e.preventDefault();
                 var certification = $('#certification-input').val().trim();
 
@@ -144,10 +144,12 @@
                     data: JSON.stringify({ certification: certification }),
                     success: function(response) {
                         if(response.success) {
+                            // Sanitize certification string for use in HTML IDs
+                            var safeCertification = certification.replace(/[^a-zA-Z0-9-_]/g, '');
                             $('#certifications-list').append(`
-                                <li id="certification-${response.certification.id}">
-                                    ${response.certification.name}
-                                    <button type="button" class="delete-certification-button" data-id="${response.certification.id}">Delete</button>
+                                <li id="certification-${safeCertification}">
+                                    ${certification}
+                                    <button type="button" class="delete-certification-button" data-certification="${certification}">Delete</button>
                                 </li>
                             `);
                             $('#certification-input').val('');
@@ -159,6 +161,34 @@
                     },
                     error: function() {
                         showNotification('An error occurred while adding the certification.', 'error');
+                    }
+                });
+            });
+
+            // Handle deleting a certification
+            $(document).on('click', '.delete-certification-button', function() {
+                var certification = $(this).data('certification');
+                var $listItem = $(this).closest('li');
+
+                $.ajax({
+                    url: "{{ url_for('employer_views.delete_job_certification', job_id=job.job_id) }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ certification: certification }),
+                    success: function(response) {
+                        if(response.success) {
+                            $listItem.remove();
+                            if($('#certifications-list li').length === 0) {
+                                $('#no-certifications-message').show();
+                            }
+                            showNotification('Certification deleted successfully.', 'success');
+                        } else {
+                            showNotification(response.message || 'Failed to delete certification.', 'error');
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error deleting certification:", textStatus, errorThrown);
+                        showNotification('An error occurred while deleting the certification.', 'error');
                     }
                 });
             });
@@ -192,7 +222,7 @@
             });
 
             // Handle adding a new skill
-            $('#add-skill-form').on('submit', function(e) {
+            $('#add-skill-button').on('click', function(e) {
                 e.preventDefault();
                 var skill = $('#skill-input').val().trim();
 
@@ -208,8 +238,10 @@
                     data: JSON.stringify({ skill: skill }),
                     success: function(response) {
                         if(response.success) {
+                            // Sanitize skill string for use in HTML IDs
+                            var safeSkill = skill.replace(/[^a-zA-Z0-9-_]/g, '');
                             $('#skills-list').append(`
-                                <li id="skill-${response.skill}">
+                                <li id="skill-${safeSkill}">
                                     ${skill}
                                     <button type="button" class="delete-skill-button" data-skill="${skill}">Delete</button>
                                 </li>
@@ -228,34 +260,6 @@
                                            : 'An error occurred while adding the skill.';
                         console.error("Error adding skill:", errorMessage);
                         showNotification(errorMessage, 'error');
-                    }
-                });
-            });
-
-            // Handle skill deletion
-            $(document).on('click', '.delete-skill-button', function() {
-                var skill = $(this).data('skill');
-                var $listItem = $(this).closest('li');
-
-                $.ajax({
-                    url: "{{ url_for('employer_views.delete_job_skill', job_id=job.job_id) }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ skill: skill }),
-                    success: function(response) {
-                        if(response.success) {
-                            $listItem.remove();
-                            if($('#skills-list li').length === 0) {
-                                $('#no-skills-message').show();
-                            }
-                            showNotification('Skill deleted successfully.', 'success');
-                        } else {
-                            showNotification(response.message || 'Failed to delete skill.', 'error');
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error("Error deleting skill:", textStatus, errorThrown);
-                        showNotification('An error occurred while deleting the skill.', 'error');
                     }
                 });
             });
@@ -283,74 +287,8 @@
                 },
                 minLength: 2,
                 select: function(event, ui) {
-                    console.log("Selected: " + ui.item.value);
+                    console.log("Selected skill: " + ui.item.value);
                 }
-            });
-
-            // Function to add a new certification input
-            $('#add-certification').on('click', function(e) {
-                e.preventDefault();
-                var certificationInput = `
-                    <div class="dynamic-input-group">
-                        <input type="text" name="certifications[]" class="certification-input" placeholder="Add a certification" required>
-                        <button type="button" class="remove-input-button">Remove</button>
-                    </div>
-                `;
-                $('#certifications-container').append(certificationInput);
-                initializeCertificationsAutocomplete();
-            });
-
-            // Function to add a new skill input
-            $('#add-skill').on('click', function(e) {
-                e.preventDefault();
-                var skillInput = `
-                    <div class="dynamic-input-group">
-                        <input type="text" name="skills[]" class="skill-input" placeholder="Add a skill" required>
-                        <button type="button" class="remove-input-button">Remove</button>
-                    </div>
-                `;
-                $('#skills-container').append(skillInput);
-                initializeSkillsAutocomplete();
-            });
-
-            // Function to remove an input field
-            $(document).on('click', '.remove-input-button', function() {
-                $(this).parent('.dynamic-input-group').remove();
-            });
-
-            // Modify the form submission
-            $('#edit-job-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = $(this).serializeArray();
-                var data = {};
-                $.each(formData, function(index, field) {
-                    data[field.name] = field.value;
-                });
-
-                // Submit the form via AJAX
-                $.ajax({
-                    url: "{{ url_for('employer_views.edit_job', job_id=job.job_id) }}",
-                    type: 'POST',
-                    data: JSON.stringify(data),
-                    contentType: 'application/json',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(response) {
-                        if(response.success) {
-                            showNotification(response.message, 'success');
-                            setTimeout(function() {
-                                window.location.href = "{{ url_for('employer_views.view_jobs') }}";
-                            }, 2000);
-                        } else {
-                            showNotification("Error: " + response.message, 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Error updating job:", error);
-                        showNotification("An error occurred while updating the job. Please try again.", 'error');
-                    }
-                });
             });
 
             // Notification Function
@@ -417,11 +355,11 @@
         <!-- Certifications Section -->
         <div class="form-group">
             <h3>Certifications</h3>
-            <form id="add-certification-form">
+            <div>
                 <label for="certification-input">Add a Certification:</label><br>
                 <input type="text" id="certification-input" name="certification" placeholder="e.g., AWS Certified Solutions Architect" required>
-                <button type="submit" class="register-button">Add Certification</button>
-            </form>
+                <button type="button" id="add-certification-button" class="add-input-button">Add Certification</button>
+            </div>
         </div>
 
         <!-- Existing Certifications -->
@@ -430,7 +368,7 @@
             {% if job.certifications %}
                 <ul id="certifications-list">
                     {% for cert in job.certifications %}
-                        <li id="certification-{{ loop.index }}">
+                        <li id="certification-{{ cert | replace(' ', '_') }}">
                             {{ cert }}
                             <button type="button" class="delete-certification-button" data-certification="{{ cert }}">Delete</button>
                         </li>
@@ -443,11 +381,11 @@
         <!-- Skills Section -->
         <div class="form-group">
             <h3>Skills</h3>
-            <form id="add-skill-form">
+            <div>
                 <label for="skill-input">Add a Skill:</label><br>
                 <input type="text" id="skill-input" name="skill" placeholder="e.g., Python" required>
-                <button type="submit" class="register-button">Add Skill</button>
-            </form>
+                <button type="button" id="add-skill-button" class="add-input-button">Add Skill</button>
+            </div>
         </div>
 
         <!-- Existing Skills -->
@@ -456,7 +394,7 @@
             {% if job.skills %}
                 <ul id="skills-list">
                     {% for skill in job.skills %}
-                        <li id="skill-{{ loop.index }}">
+                        <li id="skill-{{ skill | replace(' ', '_') }}">
                             {{ skill }}
                             <button type="button" class="delete-skill-button" data-skill="{{ skill }}">Delete</button>
                         </li>
