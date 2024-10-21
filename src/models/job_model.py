@@ -160,3 +160,28 @@ class Job:
         except Exception as e:
             print(f"Error updating Job: {e}")
             return False, str(e)
+
+    @staticmethod
+    def get_all_active_jobs():
+        """
+        Retrieve all active jobs from the database.
+        """
+        response = DynamoDB.scan(
+            'Jobs',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+        jobs = [Job(**item) for item in response.get('Items', [])]
+        # Sort jobs by date_posted descending
+        sorted_jobs = sorted(jobs, key=lambda x: x.date_posted, reverse=True)
+        return sorted_jobs
+
+    @staticmethod
+    def get_by_id(job_id):
+        """
+        Retrieve a job by its ID.
+        """
+        item = DynamoDB.get_item('Jobs', {'job_id': job_id})
+        if item:
+            return Job(**item)
+        return None

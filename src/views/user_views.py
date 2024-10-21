@@ -5,7 +5,7 @@ import requests
 import boto3
 from botocore.exceptions import ClientError
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
-    jsonify
+    jsonify, flash
 from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -555,3 +555,53 @@ def skill_suggestions():
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling SkillAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
+
+# src/views/user_views.py
+
+
+@user_bp.route('/jobs', methods=['GET'])
+@auth_required(user_type='user')
+def view_all_jobs():
+    """
+    Render a page displaying all available jobs with pagination.
+    """
+    page = int(request.args.get('page', 1))
+    per_page = 10  # Number of jobs per page
+    jobs = UserController.get_all_active_jobs()
+
+    total_jobs = len(jobs)
+    total_pages = (total_jobs + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_jobs = jobs[start:end]
+
+    return render_template(
+        'user/view_jobs.html',
+        jobs=paginated_jobs,
+        page=page,
+        total_pages=total_pages
+    )
+
+@user_bp.route('/jobs/<job_id>', methods=['GET'])
+@auth_required(user_type='user')
+def view_job_details(job_id):
+    """
+    Render a page displaying detailed information about a specific job.
+    """
+    job = UserController.get_job_by_id(job_id)
+    if not job:
+        flash("Job not found or is no longer available.", 'error')
+        return redirect(url_for('user_views.view_all_jobs'))
+    return render_template('user/job_detail.html', job=job)
+
+
+@user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
+@auth_required(user_type='user')
+def apply_for_job(job_id):
+    user = g.user
+    success, message = UserController.apply_for_job(user.user_id, job_id)
+    if success:
+        flash("Your application has been submitted successfully.", "success")
+    else:
+        flash(message, "error")
+    return redirect(url_for('user_views.view_job_details', job_id=job_id))
