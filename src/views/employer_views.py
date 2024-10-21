@@ -155,28 +155,50 @@ def create_job():
 def edit_job(job_id):
     job = Job.get_by_id(job_id)
     if not job or job.employer_id != g.user.employer_id:
+        if request.method == 'POST' and request.is_json:
+            return jsonify({'success': False, 'message': "Job not found or unauthorized."}), 404
         flash("Job not found or you don't have permission to edit this job.", 'error')
         return redirect(url_for('employer_views.view_jobs'))
 
     if request.method == 'POST':
-        fields = {
-            'job_title': request.form.get('job_title'),
-            'description': request.form.get('description'),
-            'requirements': request.form.get('requirements'),
-            'salary': request.form.get('salary'),
-            'city': request.form.get('city'),
-            'work_history': request.form.get('work_history')
-        }
+        if request.is_json:
+            # Handle AJAX JSON request for individual field updates
+            data = request.get_json()
+            fields = {}
+            allowed_fields = ['job_title', 'description', 'requirements', 'salary', 'city', 'work_history']
+            for key in allowed_fields:
+                if key in data:
+                    fields[key] = data[key]
 
-        success, message = EmployerController.update_job(job_id, fields)
-        if success:
-            flash(message, 'success')
-            return redirect(url_for('employer_views.view_jobs'))
+            if not fields:
+                return jsonify({'success': False, 'message': "No valid fields to update."}), 400
+
+            success, message = EmployerController.update_job(job_id, fields)
+            if success:
+                return jsonify({'success': True, 'message': message}), 200
+            else:
+                return jsonify({'success': False, 'message': message}), 400
         else:
-            flash(message, 'error')
+            # Handle standard form submission (if you decide to keep it)
+            fields = {
+                'job_title': request.form.get('job_title'),
+                'description': request.form.get('description'),
+                'requirements': request.form.get('requirements'),
+                'salary': request.form.get('salary'),
+                'city': request.form.get('city'),
+                'work_history': request.form.get('work_history')
+            }
 
+            success, message = EmployerController.update_job(job_id, fields)
+            if success:
+                flash(message, 'success')
+                return redirect(url_for('employer_views.view_jobs'))
+            else:
+                flash(message, 'error')
+                return render_template('employer/edit_job.html', job=job)
+
+    # Handle GET request to render the edit_job.html template
     return render_template('employer/edit_job.html', job=job)
-
 
 @employer_bp.route('/jobs/<job_id>/add_skill', methods=['POST'])
 @auth_required(user_type='employer')

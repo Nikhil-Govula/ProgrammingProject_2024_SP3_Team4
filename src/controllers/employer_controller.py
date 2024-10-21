@@ -127,6 +127,16 @@ class EmployerController:
         if job.employer_id != g.user.employer_id:
             return False, "You do not have permission to edit this job."
 
+        # Handle splitting of 'city' into 'city' and 'country'
+        if 'city' in fields:
+            city_input = fields.pop('city')
+            try:
+                city, country = map(str.strip, city_input.split(',', 1))
+                fields['city'] = city
+                fields['country'] = country
+            except ValueError:
+                return False, "Invalid city format. Please use 'City, Country'."
+
         try:
             success, message = job.update_fields(fields)
             return success, message

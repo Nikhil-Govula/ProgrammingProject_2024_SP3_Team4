@@ -24,12 +24,23 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .dynamic-input-group input {
+        .dynamic-input-group input, .dynamic-input-group textarea {
             flex: 1;
             padding: 8px;
             margin-right: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
+        }
+        .update-field-button {
+            padding: 8px 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .update-field-button:hover {
+            background-color: #2980b9;
         }
         .remove-input-button {
             padding: 8px 12px;
@@ -75,64 +86,64 @@
         $(document).ready(function() {
             // Initialize autocomplete for City
             $('#city').autocomplete({
-                source: function(request, response) {
+                source: function (request, response) {
                     $.ajax({
                         url: "{{ url_for('user_views.city_suggestions') }}",
                         type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
+                        data: {query: request.term},
+                        success: function (data) {
+                            response($.map(data.suggestions, function (item) {
                                 return {
                                     label: item.city + ', ' + item.country,
                                     value: item.city + ', ' + item.country
                                 };
                             }));
                         },
-                        error: function(xhr, status, error) {
+                        error: function (xhr, status, error) {
                             console.error("Error fetching city suggestions:", error);
                             response([]);
                         }
                     });
                 },
                 minLength: 3,
-                select: function(event, ui) {
+                select: function (event, ui) {
                     console.log("Selected city: " + ui.item.value);
                 }
             });
 
             // Initialize autocomplete for Certifications
             $('#certification-input').autocomplete({
-                source: function(request, response) {
+                source: function (request, response) {
                     $.ajax({
                         url: "{{ url_for('user_views.certification_suggestions') }}",
                         type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
+                        data: {query: request.term},
+                        success: function (data) {
+                            response($.map(data.suggestions, function (item) {
                                 return {
                                     label: item,
                                     value: item
                                 };
                             }));
                         },
-                        error: function(xhr, status, error) {
+                        error: function (xhr, status, error) {
                             console.error("Error fetching certification suggestions:", error);
                             response([]);
                         }
                     });
                 },
                 minLength: 2,
-                select: function(event, ui) {
+                select: function (event, ui) {
                     console.log("Selected certification: " + ui.item.value);
                 }
             });
 
             // Handle adding a new certification
-            $('#add-certification-button').on('click', function(e) {
+            $('#add-certification-button').on('click', function (e) {
                 e.preventDefault();
                 var certification = $('#certification-input').val().trim();
 
-                if(certification === "") {
+                if (certification === "") {
                     showNotification('Certification cannot be empty.', 'error');
                     return;
                 }
@@ -141,9 +152,9 @@
                     url: "{{ url_for('employer_views.add_job_certification', job_id=job.job_id) }}",
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ certification: certification }),
-                    success: function(response) {
-                        if(response.success) {
+                    data: JSON.stringify({certification: certification}),
+                    success: function (response) {
+                        if (response.success) {
                             // Sanitize certification string for use in HTML IDs
                             var safeCertification = certification.replace(/[^a-zA-Z0-9-_]/g, '');
                             $('#certifications-list').append(`
@@ -159,14 +170,14 @@
                             showNotification(response.message, 'error');
                         }
                     },
-                    error: function() {
+                    error: function () {
                         showNotification('An error occurred while adding the certification.', 'error');
                     }
                 });
             });
 
             // Handle deleting a certification
-            $(document).on('click', '.delete-certification-button', function() {
+            $(document).on('click', '.delete-certification-button', function () {
                 var certification = $(this).data('certification');
                 var $listItem = $(this).closest('li');
 
@@ -174,11 +185,11 @@
                     url: "{{ url_for('employer_views.delete_job_certification', job_id=job.job_id) }}",
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ certification: certification }),
-                    success: function(response) {
-                        if(response.success) {
+                    data: JSON.stringify({certification: certification}),
+                    success: function (response) {
+                        if (response.success) {
                             $listItem.remove();
-                            if($('#certifications-list li').length === 0) {
+                            if ($('#certifications-list li').length === 0) {
                                 $('#no-certifications-message').show();
                             }
                             showNotification('Certification deleted successfully.', 'success');
@@ -186,7 +197,7 @@
                             showNotification(response.message || 'Failed to delete certification.', 'error');
                         }
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         console.error("Error deleting certification:", textStatus, errorThrown);
                         showNotification('An error occurred while deleting the certification.', 'error');
                     }
@@ -194,7 +205,7 @@
             });
 
             // Handle skill deletion
-            $(document).on('click', '.delete-skill-button', function() {
+            $(document).on('click', '.delete-skill-button', function () {
                 var skill = $(this).data('skill');
                 var $listItem = $(this).closest('li');
 
@@ -202,11 +213,11 @@
                     url: "{{ url_for('employer_views.delete_job_skill', job_id=job.job_id) }}",
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ skill: skill }),
-                    success: function(response) {
-                        if(response.success) {
+                    data: JSON.stringify({skill: skill}),
+                    success: function (response) {
+                        if (response.success) {
                             $listItem.remove();
-                            if($('#skills-list li').length === 0) {
+                            if ($('#skills-list li').length === 0) {
                                 $('#no-skills-message').show();
                             }
                             showNotification('Skill deleted successfully.', 'success');
@@ -214,7 +225,7 @@
                             showNotification(response.message || 'Failed to delete skill.', 'error');
                         }
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         console.error("Error deleting skill:", textStatus, errorThrown);
                         showNotification('An error occurred while deleting the skill.', 'error');
                     }
@@ -222,11 +233,11 @@
             });
 
             // Handle adding a new skill
-            $('#add-skill-button').on('click', function(e) {
+            $('#add-skill-button').on('click', function (e) {
                 e.preventDefault();
                 var skill = $('#skill-input').val().trim();
 
-                if(skill === "") {
+                if (skill === "") {
                     showNotification('Skill cannot be empty.', 'error');
                     return;
                 }
@@ -235,9 +246,9 @@
                     url: "{{ url_for('employer_views.add_job_skill', job_id=job.job_id) }}",
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ skill: skill }),
-                    success: function(response) {
-                        if(response.success) {
+                    data: JSON.stringify({skill: skill}),
+                    success: function (response) {
+                        if (response.success) {
                             // Sanitize skill string for use in HTML IDs
                             var safeSkill = skill.replace(/[^a-zA-Z0-9-_]/g, '');
                             $('#skills-list').append(`
@@ -253,11 +264,11 @@
                             showNotification(response.message, 'error');
                         }
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         // Use the message from the server's response
                         var errorMessage = jqXHR.responseJSON && jqXHR.responseJSON.message
-                                           ? jqXHR.responseJSON.message
-                                           : 'An error occurred while adding the skill.';
+                            ? jqXHR.responseJSON.message
+                            : 'An error occurred while adding the skill.';
                         console.error("Error adding skill:", errorMessage);
                         showNotification(errorMessage, 'error');
                     }
@@ -266,30 +277,83 @@
 
             // Initialize autocomplete for skill input
             $('#skill-input').autocomplete({
-                source: function(request, response) {
+                source: function (request, response) {
                     $.ajax({
                         url: "{{ url_for('user_views.skill_suggestions') }}",
                         type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
+                        data: {query: request.term},
+                        success: function (data) {
+                            response($.map(data.suggestions, function (item) {
                                 return {
                                     label: item,
                                     value: item
                                 };
                             }));
                         },
-                        error: function(xhr, status, error) {
+                        error: function (xhr, status, error) {
                             console.error("Error fetching skill suggestions:", error);
                             response([]);
                         }
                     });
                 },
                 minLength: 2,
-                select: function(event, ui) {
+                select: function (event, ui) {
                     console.log("Selected skill: " + ui.item.value);
                 }
             });
+
+// Handle updating individual fields
+$('.update-field-button').on('click', function(e) {
+    e.preventDefault();
+    var field = $(this).data('field');
+    var value;
+
+    // Determine the type of input (input or textarea)
+    if ($('#' + field).is('textarea')) {
+        value = $('#' + field).val().trim();
+    } else {
+        value = $('#' + field).val().trim();
+    }
+
+    if(value === "") {
+        showNotification(`${field.replace('_', ' ').capitalize()} cannot be empty.`, 'error');
+        return;
+    }
+
+    // Additional validation for the 'city' field
+    if(field === 'city') {
+        if(!value.includes(',')) {
+            showNotification("Please enter both city and country, separated by a comma.", 'error');
+            return;
+        }
+        var parts = value.split(',');
+        if(parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+            showNotification("Please ensure both city and country are provided.", 'error');
+            return;
+        }
+    }
+
+    var data = {};
+    data[field] = value;
+
+    $.ajax({
+        url: "{{ url_for('employer_views.edit_job', job_id=job.job_id) }}",
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            if(response.success) {
+                showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
+            } else {
+                showNotification("Error: " + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error(`Error updating ${field}:`, error);
+            showNotification(`An error occurred while updating ${field.replace('_', ' ')}. Please try again.`, 'error');
+        }
+    });
+});
 
             // Notification Function
             function showNotification(message, type = 'success') {
@@ -316,7 +380,12 @@
                 }, 3000); // Show for 3 seconds
             }
         });
-    </script>
+
+            // Capitalize function for better message formatting
+            String.prototype.capitalize = function () {
+                return this.charAt(0).toUpperCase() + this.slice(1);
+            }
+        </script>
 {% endblock %}
 
 {% block body %}
@@ -331,27 +400,51 @@
         {% endif %}
     {% endwith %}
     <form id="edit-job-form" method="POST">
+        <!-- Job Title -->
         <div class="form-group">
             <label for="job_title">Job Title</label>
-            <input type="text" name="job_title" id="job_title" value="{{ job.job_title }}" required>
+            <div class="dynamic-input-group">
+                <input type="text" name="job_title" id="job_title" value="{{ job.job_title }}" required>
+                <button type="button" class="update-field-button" data-field="job_title">Update</button>
+            </div>
         </div>
+
+        <!-- Job Description -->
         <div class="form-group">
             <label for="description">Job Description</label>
-            <textarea name="description" id="description" required>{{ job.description }}</textarea>
+            <div class="dynamic-input-group">
+                <textarea name="description" id="description" required>{{ job.description }}</textarea>
+                <button type="button" class="update-field-button" data-field="description">Update</button>
+            </div>
         </div>
+
+        <!-- Requirements -->
         <div class="form-group">
             <label for="requirements">Requirements</label>
-            <textarea name="requirements" id="requirements" required>{{ job.requirements }}</textarea>
+            <div class="dynamic-input-group">
+                <textarea name="requirements" id="requirements" required>{{ job.requirements }}</textarea>
+                <button type="button" class="update-field-button" data-field="requirements">Update</button>
+            </div>
         </div>
+
+        <!-- Salary -->
         <div class="form-group">
             <label for="salary">Salary</label>
-            <input type="number" name="salary" id="salary" value="{{ job.salary }}" required>
+            <div class="dynamic-input-group">
+                <input type="number" name="salary" id="salary" value="{{ job.salary }}" required>
+                <button type="button" class="update-field-button" data-field="salary">Update</button>
+            </div>
         </div>
-        <!-- City Field with Autocomplete -->
+
+        <!-- City -->
         <div class="form-group">
             <label for="city">City</label>
-            <input type="text" name="city" id="city" value="{{ job.city }}, {{ job.country }}" required>
+            <div class="dynamic-input-group">
+                <input type="text" name="city" id="city" value="{{ job.city }}, {{ job.country }}" required>
+                <button type="button" class="update-field-button" data-field="city">Update</button>
+            </div>
         </div>
+
         <!-- Certifications Section -->
         <div class="form-group">
             <h3>Certifications</h3>
@@ -378,6 +471,7 @@
                 <p id="no-certifications-message">No certifications added.</p>
             {% endif %}
         </div>
+
         <!-- Skills Section -->
         <div class="form-group">
             <h3>Skills</h3>
@@ -404,11 +498,15 @@
                 <p id="no-skills-message">No skills added.</p>
             {% endif %}
         </div>
+
+        <!-- Work History -->
         <div class="form-group">
             <label for="work_history">Required Work History</label>
-            <textarea name="work_history" id="work_history" required>{{ job.work_history }}</textarea>
+            <div class="dynamic-input-group">
+                <textarea name="work_history" id="work_history" required>{{ job.work_history }}</textarea>
+                <button type="button" class="update-field-button" data-field="work_history">Update</button>
+            </div>
         </div>
-        <button type="submit" class="add-input-button">Update Job</button>
     </form>
 </div>
 {% endblock %}
