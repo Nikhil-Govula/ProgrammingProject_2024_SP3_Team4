@@ -522,156 +522,17 @@ th {
     margin-right: 10px;
 }
 
-/* Specific styles for the accounts table */
-.accounts-table {
-    width: 100%; /* Ensures the table takes up the full width of its container */
-    table-layout: fixed; /* Fixes the table layout algorithm */
-    max-width: 1000px; /* Sets a maximum width for the table */
-    margin: 0 auto; /* Centers the table within its container */
-    border-collapse: collapse; /* Ensures borders are collapsed */
-}
 
-.accounts-table th, .accounts-table td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
-    /* Optional: Add overflow handling */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.accounts-table th {
-    background-color: #4CAF50;
+#delete-job-button {
+    background-color: #dc3545;
     color: white;
-}
-
-.accounts-table td {
-    background-color: #fff;
-}
-
-/* Define fixed widths for each column */
-.accounts-table th:nth-child(1),
-.accounts-table td:nth-child(1) {
-    width: 25%; /* Name */
-}
-
-.accounts-table th:nth-child(2),
-.accounts-table td:nth-child(2) {
-    width: 25%; /* Email */
-}
-
-.accounts-table th:nth-child(3),
-.accounts-table td:nth-child(3) {
-    width: 15%; /* Account Type */
-}
-
-.accounts-table th:nth-child(4),
-.accounts-table td:nth-child(4) {
-    width: 15%; /* Status */
-}
-
-.accounts-table th:nth-child(5),
-.accounts-table td:nth-child(5) {
-    width: 20%; /* Actions */
-}
-
-/* Optional: Add hover effect for rows */
-.accounts-table tr:hover {
-    background-color: #f1f1f1;
-}
-
-/* Ensure the container around the table has a fixed width or max-width */
-
-/* Adjust table layout for consistency */
-.accounts-table {
-    width: 100%;
-    table-layout: fixed; /* Ensure consistent column widths */
-    max-width: 1000px;
-    border-collapse: collapse;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
     margin-top: 20px;
 }
 
-.accounts-table th, .accounts-table td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.accounts-table th {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.accounts-table td {
-    background-color: #fff;
-}
-
-/* Fixed column widths */
-.accounts-table th:nth-child(1),
-.accounts-table td:nth-child(1) {
-    width: 25%; /* Name */
-}
-
-.accounts-table th:nth-child(2),
-.accounts-table td:nth-child(2) {
-    width: 25%; /* Email */
-}
-
-.accounts-table th:nth-child(3),
-.accounts-table td:nth-child(3) {
-    width: 15%; /* Account Type */
-}
-
-.accounts-table th:nth-child(4),
-.accounts-table td:nth-child(4) {
-    width: 15%; /* Status */
-}
-
-.accounts-table th:nth-child(5),
-.accounts-table td:nth-child(5) {
-    width: 20%; /* Actions */
-}
-
-/* Sticky table header */
-.accounts-table thead th {
-    position: sticky;
-    top: 0;
-    background-color: #4CAF50;
-    z-index: 5;
-}
-
-/* Ensure tbody has a consistent height */
-.accounts-table tbody {
-    display: block;
-    height: 400px; /* Set a fixed height */
-    overflow-y: auto; /* Enable vertical scrolling */
-}
-
-.accounts-table thead, .accounts-table tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-}
-
-/* Optional: Add hover effect for rows */
-.accounts-table tbody tr:hover {
-    background-color: #f1f1f1;
-}
-
-/* Keep scrollbar for tbody */
-.accounts-table tbody::-webkit-scrollbar {
-    width: 10px;
-}
-.accounts-table tbody::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-.accounts-table tbody::-webkit-scrollbar-thumb {
-    background: #888;
-}
-.accounts-table tbody::-webkit-scrollbar-thumb:hover {
-    background: #555;
+#delete-job-button:hover {
+    background-color: #c82333;
 }

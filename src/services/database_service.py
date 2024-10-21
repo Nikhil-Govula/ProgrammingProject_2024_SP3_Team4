@@ -103,3 +103,17 @@ class DynamoDB:
             table_name='Admins'
         )
         return response.get('Items', [])
+
+    @staticmethod
+    def query(table_name, index_name, KeyConditionExpression, ExpressionAttributeValues):
+        table = DynamoDB.dynamodb.Table(table_name)
+        try:
+            response = table.query(
+                IndexName=index_name,
+                KeyConditionExpression=KeyConditionExpression,
+                ExpressionAttributeValues=ExpressionAttributeValues
+            )
+            return response
+        except ClientError as e:
+            print(e.response['Error']['Message'])
+            return {}

@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g
+# src/views/employer_views.py
 
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, flash, jsonify
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
+from ..models import Job
 
 employer_bp = Blueprint('employer_views', __name__, url_prefix='/employer')
 
@@ -44,6 +46,7 @@ def register_employer():
         # Register the new employer
         success, message = EmployerController.register_employer(email, password, company_name, contact_person, phone_number)
         if success:
+            flash(message, 'success')
             return redirect(url_for('employer_views.login_employer'))
         else:
             return render_template('employer/register_employer.html', error=message)
@@ -86,9 +89,229 @@ def reset_with_token(token):
 
         success, message, was_locked = EmployerController.reset_password_with_token(token, new_password)
         if success:
-            return redirect(url_for('employer_views.login_employer', message=message))
+            flash(message, 'success')
+            return redirect(url_for('employer_views.login_employer'))
         else:
             return render_template('employer/reset_with_token.html', error=message, token=token)
 
     return render_template('employer/reset_with_token.html', token=token)
 
+JOBS_PER_PAGE = 10  # Define how many jobs to display per page
+
+@employer_bp.route('/jobs', methods=['GET'])
+@auth_required(user_type='employer')
+def view_jobs():
+    employer_id = g.user.employer_id
+    all_jobs = EmployerController.list_employer_jobs(employer_id)
+    return render_template('employer/view_jobs.html', jobs=all_jobs)
+
+@employer_bp.route('/jobs/create', methods=['GET', 'POST'])
+@auth_required(user_type='employer')
+def create_job():
+    if request.method == 'POST':
+        data = request.get_json()
+        job_title = data.get('job_title')
+        description = data.get('description')
+        requirements = data.get('requirements')
+        salary = data.get('salary')
+        location = data.get('city')
+        certifications = data.get('certifications', [])
+        skills = data.get('skills', [])
+        work_history = data.get('work_history', [])
+        company_name = g.user.company_name
+
+        # Split location into city and country
+        try:
+            city, country = map(str.strip, location.split(',', 1))
+            print(f"City: {city}, Country: {country}")  # Log parsed values
+        except ValueError:
+            return jsonify({'success': False, 'message': "Invalid location format. Please use 'City, Country'."}), 400
+
+        # Convert work_history into list of dicts
+        processed_work_history = []
+        for entry in work_history:
+            occupation = entry.get('occupation')
+            duration = entry.get('duration')
+            if occupation and duration:
+                processed_work_history.append({
+                    'occupation': occupation,
+                    'duration': int(duration)
+                })
+
+        success, message = EmployerController.create_job(
+            employer_id=g.user.employer_id,
+            job_title=job_title,
+            description=description,
+            requirements=requirements,
+            salary=salary,
+            city=city,
+            country=country,
+            certifications=certifications,
+            skills=skills,
+            work_history=processed_work_history,
+            company_name=company_name
+        )
+
+        if success:
+            return jsonify({'success': True, 'message': message}), 200
+        else:
+            return jsonify({'success': False, 'message': message}), 400
+
+    return render_template('employer/create_job.html')
+
+@employer_bp.route('/jobs/edit/<job_id>', methods=['GET', 'POST'])
+@auth_required(user_type='employer')
+def edit_job(job_id):
+    job = Job.get_by_id(job_id)
+    if not job or job.employer_id != g.user.employer_id:
+        if request.method == 'POST' and request.is_json:
+            return jsonify({'success': False, 'message': "Job not found or unauthorized."}), 404
+        flash("Job not found or you don't have permission to edit this job.", 'error')
+        return redirect(url_for('employer_views.view_jobs'))
+
+    if request.method == 'POST':
+        if request.is_json:
+            # Handle AJAX JSON request for individual field updates
+            data = request.get_json()
+            fields = {}
+            allowed_fields = ['job_title', 'description', 'requirements', 'salary', 'city', 'work_history']
+            for key in allowed_fields:
+                if key in data:
+                    fields[key] = data[key]
+
+            if not fields:
+                return jsonify({'success': False, 'message': "No valid fields to update."}), 400
+
+            success, message = EmployerController.update_job(job_id, fields)
+            if success:
+                return jsonify({'success': True, 'message': message}), 200
+            else:
+                return jsonify({'success': False, 'message': message}), 400
+        else:
+            # Handle standard form submission (if you decide to keep it)
+            fields = {
+                'job_title': request.form.get('job_title'),
+                'description': request.form.get('description'),
+                'requirements': request.form.get('requirements'),
+                'salary': request.form.get('salary'),
+                'city': request.form.get('city'),
+                'work_history': request.form.get('work_history')
+            }
+
+            success, message = EmployerController.update_job(job_id, fields)
+            if success:
+                flash(message, 'success')
+                return redirect(url_for('employer_views.view_jobs'))
+            else:
+                flash(message, 'error')
+                return render_template('employer/edit_job.html', job=job)
+
+    # Handle GET request to render the edit_job.html template
+    return render_template('employer/edit_job.html', job=job)
+
+@employer_bp.route('/jobs/<job_id>/add_skill', methods=['POST'])
+@auth_required(user_type='employer')
+def add_job_skill(job_id):
+    data = request.get_json()
+    skill = data.get('skill')
+
+    success, message = EmployerController.add_job_skill(job_id, skill)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400  # Ensure message is included
+
+@employer_bp.route('/jobs/<job_id>/delete_skill', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_job_skill(job_id):
+    data = request.get_json()
+    skill = data.get('skill')
+
+    success, message = EmployerController.remove_job_skill(job_id, skill)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@employer_bp.route('/jobs/<job_id>/add_certification', methods=['POST'])
+@auth_required(user_type='employer')
+def add_job_certification(job_id):
+    data = request.get_json()
+    certification = data.get('certification')
+
+    success, result = EmployerController.add_job_certification(job_id, certification)
+    if success:
+        return jsonify({'success': True, 'message': 'Certification added successfully', 'certification': result}), 200
+    else:
+        return jsonify({'success': False, 'message': result}), 400
+
+@employer_bp.route('/jobs/<job_id>/delete_certification', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_job_certification(job_id):
+    data = request.get_json()
+    certification = data.get('certification')
+
+    success, message = EmployerController.remove_job_certification(job_id, certification)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+# **New Routes for Work History**
+
+@employer_bp.route('/jobs/<job_id>/add_work_history', methods=['POST'])
+@auth_required(user_type='employer')
+def add_work_history(job_id):
+    data = request.get_json()
+    occupation = data.get('occupation')
+    duration = data.get('duration')
+
+    # Validate input
+    if not occupation or not duration:
+        return jsonify({'success': False, 'message': 'Occupation and duration are required.'}), 400
+
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            raise ValueError
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Duration must be a positive integer representing months.'}), 400
+
+    success, message = EmployerController.add_job_work_history(job_id, occupation, duration)
+    if success:
+        return jsonify({'success': True, 'message': message, 'occupation': occupation, 'duration': duration}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@employer_bp.route('/jobs/<job_id>/delete_work_history', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_work_history(job_id):
+    data = request.get_json()
+    occupation = data.get('occupation')
+    duration = data.get('duration')
+
+    # Validate input
+    if not occupation or not duration:
+        return jsonify({'success': False, 'message': 'Occupation and duration are required.'}), 400
+
+    try:
+        duration = int(duration)
+        if duration <= 0:
+            raise ValueError
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Duration must be a positive integer representing months.'}), 400
+
+    success, message = EmployerController.remove_job_work_history(job_id, occupation, duration)
+    if success:
+        return jsonify({'success': True, 'message': message, 'occupation': occupation, 'duration': duration}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+@employer_bp.route('/jobs/delete/<job_id>', methods=['POST'])
+@auth_required(user_type='employer')
+def delete_job(job_id):
+    success, message = EmployerController.delete_job(job_id)
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'message': message}), 400

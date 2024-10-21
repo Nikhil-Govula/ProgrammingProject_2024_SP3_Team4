@@ -1,0 +1,79 @@
+<!-- templates/user/view_jobs.html -->
+
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Available Jobs</title>
+    <style>
+        /* Basic styling for the job list */
+        .job-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .job-list th, .job-list td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .job-list th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        .view-button {
+            padding: 6px 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .view-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <h2>Available Jobs</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="notification {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if jobs %}
+        <table class="job-list">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Salary</th>
+                    <th>Date Posted</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                    <tr>
+                        <td>{{ job.job_title }}</td>
+                        <td>{{ job.company_name }}</td>
+                        <td>{{ job.city }}, {{ job.country }}</td>
+                        <td>${{ "{:,.2f}".format(job.salary) }}</td>
+                        <td>{{ job.date_posted[:10] }}</td>
+                        <td>
+                            <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}" class="view-button">View Details</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No jobs are currently available. Please check back later.</p>
+    {% endif %}
+</div>
+{% endblock %}

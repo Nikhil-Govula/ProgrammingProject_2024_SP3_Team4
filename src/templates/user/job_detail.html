@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>{{ job.job_title }} - Details</title>
+    <style>
+        .job-detail {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .job-detail h2 {
+            margin-bottom: 10px;
+        }
+        .job-detail p {
+            margin-bottom: 10px;
+        }
+        .job-detail .section {
+            margin-bottom: 20px;
+        }
+        .back-button {
+            padding: 6px 12px;
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+        .apply-button {
+            padding: 10px 20px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .apply-button:hover {
+            background-color: #1e8449;
+        }
+        .certifications, .skills, .work-history {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <div class="job-detail">
+        <a href="{{ url_for('user_views.view_all_jobs') }}" class="back-button">← Back to Jobs</a>
+        <h2>{{ job.job_title }}</h2>
+        <p><strong>Company:</strong> {{ job.company_name }}</p>
+        <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
+        <p><strong>Salary:</strong> ${{ "{:,.2f}".format(job.salary) }}</p>
+        <p><strong>Date Posted:</strong> {{ job.date_posted[:10] }}</p>
+
+        <div class="section">
+            <h3>Job Description</h3>
+            <p>{{ job.description }}</p>
+        </div>
+
+        <div class="section">
+            <h3>Requirements</h3>
+            <p>{{ job.requirements }}</p>
+        </div>
+
+        {% if job.certifications %}
+            <div class="section">
+                <h3>Certifications</h3>
+                <ul class="certifications">
+                    {% for cert in job.certifications %}
+                        <li>{{ cert }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if job.skills %}
+            <div class="section">
+                <h3>Skills</h3>
+                <ul class="skills">
+                    {% for skill in job.skills %}
+                        <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if job.work_history %}
+            <div class="section">
+                <h3>Required Work History</h3>
+                <ul class="work-history">
+                    {% for work in job.work_history %}
+                        <li>{{ work.occupation }} - {{ work.duration }} months</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <!-- Apply Now Button -->
+        <form action="{{ url_for('user_views.apply_for_job', job_id=job.job_id) }}" method="POST">
+            <button type="submit" class="apply-button">Apply Now</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!-- src/templates/user/job_board.html -->
+
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Job Board</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <h2>Job Board</h2>
+    <table class="accounts-table">
+        <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Company</th>
+                <th>Salary</th>
+                <th>Location</th>
+                <th>Description</th>
+                <th>Requirements</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+                <tr>
+                    <td>{{ job.job_title }}</td>
+                    <td>{{ job.company_name }}</td>
+                    <td>{{ job.salary }}</td>
+                    <td>{{ job.location }}</td>
+                    <td>{{ job.description }}</td>
+                    <td>
+                        <strong>Certifications:</strong> {{ job.certifications | join(', ') }}<br>
+                        <strong>Skills:</strong> {{ job.skills | join(', ') }}<br>
+                        <strong>Work History:</strong> {{ job.work_history }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">No job postings available at the moment.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

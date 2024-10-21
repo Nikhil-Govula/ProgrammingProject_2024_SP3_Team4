@@ -8,6 +8,8 @@ from werkzeug.utils import secure_filename
 
 from config import Config
 from ..models.user_model import User
+from ..models.job_model import Job
+from ..models.application_model import Application
 from ..services.email_service import send_reset_email
 import bcrypt
 import datetime
@@ -394,3 +396,29 @@ class UserController:
             return True, "Skill deleted successfully.", None
         else:
             return False, "Skill not found.", None
+
+    @staticmethod
+    def get_all_active_jobs():
+        """
+        Retrieve all active jobs from the database.
+        """
+        return Job.get_all_active_jobs()
+
+    @staticmethod
+    def get_job_by_id(job_id):
+        """
+        Retrieve a specific job by its ID.
+        """
+        return Job.get_by_id(job_id)
+
+    @staticmethod
+    def apply_for_job(user_id, job_id):
+        # Check if the user has already applied for this job
+        existing_application = Application.get_by_user_and_job(user_id, job_id)
+        if existing_application:
+            return False, "You have already applied for this job."
+
+        # Create a new application
+        application = Application(user_id=user_id, job_id=job_id)
+        success, message = application.save()
+        return success, message
