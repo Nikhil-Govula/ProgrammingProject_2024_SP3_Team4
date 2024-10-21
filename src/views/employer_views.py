@@ -114,11 +114,11 @@ def create_job():
         description = data.get('description')
         requirements = data.get('requirements')
         salary = data.get('salary')
-        location = data.get('city')  # Combined city and country field
-        certifications = data.get('certifications', [])  # Changed to 'certifications[]'
-        skills = data.get('skills', [])  # Changed to 'skills[]'
-        work_history = data.get('work_history', [])  # Changed to 'work_history[]'
-        company_name = g.user.company_name  # Assuming employer's company name
+        location = data.get('city')
+        certifications = data.get('certifications', [])
+        skills = data.get('skills', [])
+        work_history = data.get('work_history', [])
+        company_name = g.user.company_name
 
         # Split location into city and country
         try:
@@ -135,7 +135,7 @@ def create_job():
             if occupation and duration:
                 processed_work_history.append({
                     'occupation': occupation,
-                    'duration': int(duration)  # Assuming duration is provided in months as integer
+                    'duration': int(duration)
                 })
 
         success, message = EmployerController.create_job(
@@ -144,8 +144,8 @@ def create_job():
             description=description,
             requirements=requirements,
             salary=salary,
-            city=city,  # Pass the parsed city
-            country=country,  # Pass the parsed country
+            city=city,
+            country=country,
             certifications=certifications,
             skills=skills,
             work_history=processed_work_history,
@@ -264,7 +264,7 @@ def delete_job_certification(job_id):
 def add_work_history(job_id):
     data = request.get_json()
     occupation = data.get('occupation')
-    duration = data.get('duration')  # Duration in months
+    duration = data.get('duration')
 
     # Validate input
     if not occupation or not duration:
@@ -288,7 +288,7 @@ def add_work_history(job_id):
 def delete_work_history(job_id):
     data = request.get_json()
     occupation = data.get('occupation')
-    duration = data.get('duration')  # Duration in months
+    duration = data.get('duration')
 
     # Validate input
     if not occupation or not duration:

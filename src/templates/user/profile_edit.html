@@ -151,7 +151,7 @@
                         success: function(data) {
                             response($.map(data.suggestions, function(item) {
                                 return {
-                                    label: item, // Assuming item is a string
+                                    label: item,
                                     value: item
                                 };
                             }));

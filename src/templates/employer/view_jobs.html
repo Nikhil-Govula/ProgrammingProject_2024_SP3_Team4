@@ -15,12 +15,10 @@
     <script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
 
     <style>
-        /* Allow DataTables to manage column widths */
         .accounts-table {
             width: 100%;
         }
 
-        /* Optional: Customize the DataTables elements */
         .dataTables_wrapper .dataTables_paginate .paginate_button {
             padding: 0.5em 1em;
         }
@@ -30,17 +28,14 @@
             margin-bottom: 1em;
         }
 
-        /* Ensure the table header stays fixed */
         .dataTables_wrapper .dataTables_scrollHead {
             background-color: #4CAF50;
         }
 
-        /* Style the selected row */
         .selected {
             background-color: #d9edf7 !important;
         }
 
-        /* Fade-out effect for notifications */
         .fade-out {
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
@@ -85,7 +80,7 @@
             <tr data-job-id="{{ job.job_id }}">
                 <td>{{ job.job_title }}</td>
                 <td>{{ job.description }}</td>
-                <td>${{ "{:,.2f}".format(job.salary) }}</td> <!-- Format Decimal -->
+                <td>${{ "{:,.2f}".format(job.salary) }}</td>
                 <td>{{ job.city }}</td>
                 <td>{{ job.country }}</td>
                 <!-- Slice the date string to display only YYYY-MM-DD -->
@@ -124,7 +119,6 @@
             ]
         });
 
-        // Add this line to force DataTables to recalculate column widths
         $(window).on('resize', function () {
             table.columns.adjust().draw();
         });

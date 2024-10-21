@@ -7,7 +7,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <style>
-        /* Optional: Customize the appearance of autocomplete suggestions */
         .ui-autocomplete {
             z-index: 1000;
             background-color: white;
@@ -165,7 +164,7 @@
                 });
             }
 
-            // Initialize autocomplete for Occupation (Work History)
+            // Initialize autocomplete for Occupation
             function initializeOccupationAutocomplete() {
                 $('.occupation-input').autocomplete({
                     source: function(request, response) {
@@ -269,7 +268,6 @@
                             }
                         }
                     } else {
-                        // Strip '[]' from field names for certifications and skills
                         var fieldName = field.name.replace(/\[\]$/, '');
                         if (data[fieldName]) {
                             if (Array.isArray(data[fieldName])) {
@@ -307,7 +305,6 @@
                     data.work_history = mergedWorkHistory;
                 }
 
-                // Debugging: Log the data to ensure it's correctly formatted
                 console.log("Form Data to be sent:", data);
 
                 // Submit the form via AJAX

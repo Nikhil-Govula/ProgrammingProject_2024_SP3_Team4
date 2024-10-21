@@ -7,7 +7,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <style>
-        /* Customize the appearance of autocomplete suggestions */
         .ui-autocomplete {
             z-index: 1000;
             background-color: white;
@@ -165,7 +164,7 @@
                 }
             });
 
-            // Initialize autocomplete for Occupation (Work History)
+            // Initialize autocomplete for Occupation
             $('#occupation-input').autocomplete({
                 source: function (request, response) {
                     $.ajax({
@@ -173,7 +172,6 @@
                         type: 'GET',
                         data: {query: request.term},
                         success: function (data) {
-                            // Assuming the API returns a list of occupations
                             response($.map(data.suggestions, function (item) {
                                 return {
                                     label: item,  // Adjust based on API response structure
@@ -658,8 +656,6 @@
         <div class="form-group">
             <button type="button" id="delete-job-button" class="btn btn-danger">Delete Job</button>
         </div>
-
-        <!-- Work History is now handled via AJAX, so no need to include in the main form submission -->
     </form>
 </div>
 {% endblock %}
