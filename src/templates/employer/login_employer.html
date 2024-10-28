@@ -1,82 +1,226 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employer Login | JobTrunk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing_style.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom, #5cde83, #5296e7);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #283E4A;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        .header nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 400;
+        }
+        .header nav a:hover {
+            text-decoration: underline;
+        }
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 35vh;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin: auto;
+            width: 400px;
+        }
+        .login-container h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #283E4A;
+        }
+        .login-container form {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+        .login-container input {
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .login-container button {
+            background-color: #0073b1;
+            color: white;
+            padding: 10px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        .login-container button:hover {
+            background-color: #005682;
+        }
+        .login-container a {
+            color: #0073b1;
+            text-decoration: none;
+            font-size: 0.9em;
+            align-self: flex-end;
+        }
+        .login-container a:hover {
+            text-decoration: underline;
+        }
+        .login-container div {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .popup-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 10px;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .footer {
+            background-color: #283E4A;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+        .footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">JobTrunk</div>
+        <nav>
+            <a href="{{ url_for('employer_views.login_employer') }}">Sign In</a>
+            <a href="{{ url_for('employer_views.register_employer') }}">Join Now</a>
+        </nav>
+    </header>
 
-{% block head %}
-    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>Company Login</title>
-{% endblock %}
-
-{% block body %}
-<div class="registration-container">
-    <div class="form-container">
-        <div class="register-card">
-            <div class="form-group">
-                <h1>Sign in as Employer</h1>
-            </div>
-            <form action="{{ url_for('employer_views.login_employer') }}" method="POST">
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email address" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <a href="#" id="forgot-password-link" style="text-align:right;display:block;">Forgot password?</a>
-                </div>
-
-                {% if error %}
-                    <p style="color: red;">{{ error }}</p>
-                {% endif %}
-
-                <button type="submit" class="register-button">Sign in</button>
-            </form>
-            <div class="footer-links">
-                <p>Don't have an account? <a href="{{ url_for('employer_views.register_employer') }}">Sign up</a></p>
-            </div>
+    <div class="login-container">
+        <h2>Sign in as Employer</h2>
+        <form action="{{ url_for('user_views.login_user') }}" method="POST">
+            <input type="email" name="email" placeholder="Email address" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <a href="#" id="forgot-password-link">Forgot password?</a><br><br>
+            <button type="submit">Sign in</button>
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+        </form>
+        <div>
+            <p>Don’t have an account? <a href="{{ url_for('employer_views.register_employer') }}">Sign up</a></p>
         </div>
     </div>
-</div>
 
-<!-- Forgot Password Popup -->
-<div id="forgot-password-popup" class="popup">
-    <div class="popup-content">
-        <span class="close-btn" id="close-popup">&times;</span>
-        <h2>Forgot your password?</h2>
-        <p>We'll send a link to reset your password to your registered email address.</p>
-        <form action="{{ url_for('employer_views.reset_password') }}" method="POST">
-            <input type="email" name="email" placeholder="Email address" required>
-            <button type="submit" class="register-button">Send Link</button>
-        </form>
+    <!-- Forgot Password Popup -->
+    <div id="forgot-password-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-popup">&times;</span>
+            <h2>Forgot your password?</h2>
+            <p>We'll send a link to reset your password to your registered email address.</p>
+            <form action="{{ url_for('employer_views.reset_password') }}" method="POST">
+                <input type="email" name="email" placeholder="Email address" required>
+                <button type="submit" class="register-button">Send Link</button>
+            </form>
+        </div>
     </div>
-</div>
 
-<div id="overlay"></div>
-{% endblock %}
+    <div id="overlay"></div>
 
-{% block footer %}
-    {{ super() }}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const forgotPasswordLink = document.getElementById('forgot-password-link');
-        const forgotPasswordPopup = document.getElementById('forgot-password-popup');
-        const closePopup = document.getElementById('close-popup');
-        const overlay = document.getElementById('overlay');
+    <footer class="footer">
+        <p>
+            &copy; 2024 JobTrunk. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms & Conditions</a> | <a href="#">About JobTrunk</a> | <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
+        </p>
+    </footer>
 
-        forgotPasswordLink.addEventListener('click', function(event) {
-            event.preventDefault();
-            forgotPasswordPopup.style.display = 'block';
-            overlay.style.display = 'block';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            const forgotPasswordPopup = document.getElementById('forgot-password-popup');
+            const closePopup = document.getElementById('close-popup');
+            const overlay = document.getElementById('overlay');
+
+            forgotPasswordLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                forgotPasswordPopup.style.display = 'block';
+                overlay.style.display = 'block';
+            });
+
+            closePopup.addEventListener('click', function() {
+                forgotPasswordPopup.style.display = 'none';
+                overlay.style.display = 'none';
+            });
+
+            overlay.addEventListener('click', function() {
+                forgotPasswordPopup.style.display = 'none';
+                overlay.style.display = 'none';
+            });
         });
-
-        closePopup.addEventListener('click', function() {
-            forgotPasswordPopup.style.display = 'none';
-            overlay.style.display = 'none';
-        });
-
-        overlay.addEventListener('click', function() {
-            forgotPasswordPopup.style.display = 'none';
-            overlay.style.display = 'none';
-        });
-    });
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
