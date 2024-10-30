@@ -1,17 +1,46 @@
 {% extends 'base.html' %}
 
-{% block head %}
-    <title>User Dashboard</title>
-{% endblock %}
-
 {% block body %}
-<div class="dashboard-container">
-    <h1>Welcome, {{ user.first_name }} {{ user.last_name }}</h1>
-    <p>Email: {{ user.email }}</p>
 
-    <div class="dashboard-links">
-        <a href="{{ url_for('user_views.view_all_jobs') }}">View All Jobs</a>
-        <a href="{{ url_for('user_views.logout') }}">Logout</a>
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <h1>Welcome, {{ user.first_name }} {{ user.last_name }}</h1>
+        <p>Your personalized job search dashboard</p>
+    </header>
+
+    <div class="profile-summary">
+        <h2>Your Profile</h2>
+        <p>Email: {{ user.email }}</p>
+        <div class="profile-actions">
+            <a href="{{ url_for('user_views.view_profile') }}" class="dashboard-button">View Profile</a>
+            <a href="{{ url_for('user_views.edit_profile') }}" class="dashboard-button">Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Job Opportunities</h2>
+        <div class="job-actions">
+            <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">Browse All Jobs</a>
+            <a href="{{ url_for('user_views.recommended_jobs') }}" class="dashboard-button">Recommended Jobs</a>
+            <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Applications</h2>
+        <div class="application-actions">
+            <a href="{{ url_for('user_views.view_applications') }}" class="dashboard-button">View Your Applications</a>
+            <a href="{{ url_for('user_views.track_applications') }}" class="dashboard-button">Track Application Status</a>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Career Resources</h2>
+        <div class="resources-actions">
+            <a href="{{ url_for('user_views.interview_tips') }}" class="dashboard-button">Interview Tips</a>
+            <a href="{{ url_for('user_views.networking_events') }}" class="dashboard-button">Networking Events</a>
+        </div>
     </div>
 </div>
+
 {% endblock %}

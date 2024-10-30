@@ -177,6 +177,27 @@ class Job:
         return sorted_jobs
 
     @staticmethod
+    def get_recommended_jobs(user_skills):
+        """
+        Retrieve recommended jobs based on user's skills.
+        """
+        response = DynamoDB.scan(
+            'Jobs',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+        jobs = [Job(**item) for item in response.get('Items', [])]
+
+        # Filter jobs based on user's skills
+        recommended_jobs = [
+            job for job in jobs if any(skill in user_skills for skill in job.skills)
+        ]
+
+        # Sort jobs by date_posted descending
+        sorted_jobs = sorted(recommended_jobs, key=lambda x: x.date_posted, reverse=True)
+        return sorted_jobs
+
+    @staticmethod
     def get_by_id(job_id):
         """
         Retrieve a job by its ID.

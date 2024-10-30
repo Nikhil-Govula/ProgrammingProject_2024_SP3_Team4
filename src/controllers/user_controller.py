@@ -422,3 +422,68 @@ class UserController:
         application = Application(user_id=user_id, job_id=job_id)
         success, message = application.save()
         return success, message
+
+    # New method to get all recommended jobs based on user profile and preferences
+    @staticmethod
+    def get_recommended_jobs(user):
+        user_skills = user.get_skills()  # Assuming User model has get_skills method
+        return Job.get_recommended_jobs(user_skills)  # A method that filters jobs based on skills
+
+    # New method to get saved jobs for the user
+    @staticmethod
+    def get_saved_jobs(user_id):
+        user = User.get_by_id(user_id)
+        if user and user.saved_jobs:
+            saved_jobs = [Job.get_by_id(job_id) for job_id in user.saved_jobs]
+            return [job for job in saved_jobs if job is not None]
+        return []
+
+    # Method to save a job for a user
+    @staticmethod
+    def save_job(user_id, job_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        job = Job.get_by_id(job_id)
+        if not job:
+            return False, "Job not found."
+
+        if job_id in user.saved_jobs:
+            return False, "Job already saved."
+
+        user.saved_jobs.append(job_id)
+        user.save()
+        return True, "Job saved successfully."
+
+    # New method for retrieving user's job applications
+    @staticmethod
+    def get_user_applications(user_id):
+        applications = Application.get_by_user_id(user_id)
+        return applications
+
+    # New method for tracking user applications
+    @staticmethod
+    def get_application_status(user_id):
+        return Application.get_by_user_id(user_id)
+
+    # New method for networking events
+    @staticmethod
+    def get_networking_events():
+        # This should ideally get events from the database or an external service
+        return [
+            {
+                'name': 'Tech Networking 2024',
+                'date': '2024-12-05',
+                'location': 'Online',
+                'description': 'Connect with industry professionals in the tech world.',
+                'registration_link': 'https://example.com/register'
+            },
+            {
+                'name': 'Women in Tech Summit',
+                'date': '2025-01-15',
+                'location': 'New York, USA',
+                'description': 'A summit focused on opportunities for women in tech.',
+                'registration_link': 'https://example.com/register'
+            }
+        ]

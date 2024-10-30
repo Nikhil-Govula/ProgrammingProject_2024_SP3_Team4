@@ -6,35 +6,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base_style.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
     {% block head %}
     {% endblock %}
 </head>
 
 <body>
-    <div id="nav">
-        <ul>
-            <li><a href="{{ url_for('landing.landing') }}">Home</a></li>
-            <li><a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a></li>
-            <li><a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a></li>
-            <li><a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a></li>
+    <header class="header">
+        <div class="logo">JobTrunk</div>
+        <nav class="nav-links">
+            <nav>
+{#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
+{#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
+{#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
+{#            <a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a>#}
             {% if g.user %}
+
+                {# Header links if USER logged in #}
                 {% if g.user_type == 'user' %}
-                    <li><a href="{{ url_for('user_views.dashboard') }}">My Profile</a></li>
+                    <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">View All Jobs</a>
+                    <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
+                    {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
+                    {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
+                    {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
+                    <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button">Dashboard</a>
+                    <a href="{{ url_for('user_views.logout') }}" class="dashboard-button logout">Logout</a>
+
+                {# Header links if EMPLOYER logged in #}
                 {% elif g.user_type == 'employer' %}
-                    <li><a href="{{ url_for('employer_views.dashboard') }}">My Profile</a></li>
+                    <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">Manage Job Postings</a>
+                    <a href="{{ url_for('employer_views.dashboard') }}">Dashboard</a>
+
+                {# Header links if ADMIN logged in #}
                 {% elif g.user_type == 'admin' %}
-                    <li><a href="{{ url_for('admin_views.dashboard') }}">My Profile</a></li>
+                    <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
                 {% endif %}
-                <li style="float:right; list-style: none;">
-                    <a href="{{ url_for('user_views.view_profile') }}">
-                        <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="nav-profile-picture">
-                    </a>
-                </li>
+
+                {# Profile icon #}
+                <a href="{{ url_for('user_views.view_profile') }}" class="profile-link">
+                    <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="nav-profile-picture">
+                </a>
             {% else %}
-                <li style="float:right"><a href="{{ url_for('landing.landing') }}">Login</a></li>
+                <a href="{{ url_for('landing.landing') }}" class="login-link">Login</a>
             {% endif %}
-        </ul>
-    </div>
+        </nav>
+    </header>
 
     <div class="content">
         {% block body %}
@@ -42,13 +58,13 @@
     </div>
 
     {% block footer %}
-    <div class="footer">
-        <p>&copy; 2024 Your Company. All rights reserved. |
+    <footer class="footer">
+        <p>&copy; 2024 JobTrunk. All rights reserved. |
             <a href="#">Privacy Policy</a> |
             <a href="#">Terms & Conditions</a> |
-            <a href="#">About [Project Name]</a>
+            <a href="#">About JobTrunk</a>
         </p>
-    </div>
+    </footer>
     {% endblock %}
 </body>
 

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container networking-events-container">
+    <h1 class="section-heading">Upcoming Networking Events</h1>
+    <p>Connect with professionals and expand your network at these upcoming events:</p>
+
+    <div class="events-list">
+        {% if events %}
+            {% for event in events %}
+                <div class="event-card card mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ event.name }}</h4>
+                        <p class="card-text"><strong>Date:</strong> {{ event.date }}</p>
+                        <p class="card-text"><strong>Location:</strong> {{ event.location }}</p>
+                        <a href="{{ event.link }}" target="_blank" class="btn btn-primary">Register</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No upcoming events available. Check back later for more opportunities.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

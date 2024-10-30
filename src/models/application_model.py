@@ -37,6 +37,15 @@ class Application:
         return None
 
     @staticmethod
+    def get_by_user_id(user_id):
+        response = DynamoDB.scan(
+            'Applications',
+            FilterExpression='user_id = :user_id',
+            ExpressionAttributeValues={':user_id': user_id}
+        )
+        return [Application(**item) for item in response['Items']]
+
+    @staticmethod
     def get_by_user_and_job(user_id, job_id):
         # Assuming you have a GSI on user_id and job_id
         response = DynamoDB.query(

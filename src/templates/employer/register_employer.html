@@ -77,27 +77,13 @@
         .register-button:hover {
             background-color: #005682;
         }
-        .footer-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .footer-links a {
-            color: #0073b1;
-            text-decoration: none;
-            font-size: 0.9em;
-        }
-        .footer-links a:hover {
-            text-decoration: underline;
-        }
         .footer {
             background-color: #283E4A;
             color: white;
             padding: 20px;
             text-align: center;
             font-size: 0.9em;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+            margin-top: auto;
         }
         .footer a {
             color: white;
@@ -111,7 +97,7 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">JobTrunk</div>
+        <div class="logo">JobTrunk (employer)</div>
         <nav>
             <a href="{{ url_for('employer_views.login_employer') }}">Sign In</a>
             <a href="{{ url_for('employer_views.register_employer') }}">Join Now</a>

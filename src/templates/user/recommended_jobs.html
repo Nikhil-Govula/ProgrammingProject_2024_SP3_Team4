@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container recommended-jobs-container">
+    <h1 class="section-heading">Recommended Jobs for You</h1>
+    <p>Based on your profile, these jobs are tailored for your skills and interests:</p>
+
+    <div class="job-listings">
+        {% if jobs %}
+            {% for job in jobs %}
+                <div class="job-card card mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ job.title }}</h4>
+                        <p class="card-text"><strong>Company:</strong> {{ job.company }}</p>
+                        <p class="card-text"><strong>Location:</strong> {{ job.location }}</p>
+                        <p class="card-text"><strong>Skills Required:</strong> {{ job.skills | join(', ') }}</p>
+                        <a href="{{ url_for('user_views.view_job_details', job_id=job.id) }}" class="btn btn-primary">View Job Details</a>
+                        <button class="btn btn-secondary btn-save">Save Job</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No recommended jobs available at the moment. Update your profile preferences for better suggestions.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

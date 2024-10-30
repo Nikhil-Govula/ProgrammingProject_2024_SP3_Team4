@@ -605,3 +605,46 @@ def apply_for_job(job_id):
     else:
         flash(message, "error")
     return redirect(url_for('user_views.view_job_details', job_id=job_id))
+
+# **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
+
+@user_bp.route('/recommended_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def recommended_jobs():
+    user = g.user
+    recommended_jobs = UserController.get_recommended_jobs(user)
+    return render_template('user/recommended_jobs.html', jobs=recommended_jobs)
+
+@user_bp.route('/saved_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def saved_jobs():
+    user = g.user
+    saved_jobs = UserController.get_saved_jobs(user.user_id)
+    return render_template('user/saved_jobs.html', jobs=saved_jobs)
+
+
+@user_bp.route('/view_applications', methods=['GET'])
+@auth_required(user_type='user')
+def view_applications():
+    user = g.user
+    applications = UserController.get_user_applications(user.user_id)
+    return render_template('user/view_applications.html', applications=applications)
+
+@user_bp.route('/track_applications', methods=['GET'])
+@auth_required(user_type='user')
+def track_applications():
+    user = g.user
+    applications = UserController.get_user_applications(user.user_id)
+    return render_template('user/track_applications.html', applications=applications)
+
+@user_bp.route('/interview_tips', methods=['GET'])
+@auth_required(user_type='user')
+def interview_tips():
+    tips = UserController.get_interview_tips()
+    return render_template('user/interview_tips.html', tips=tips)
+
+@user_bp.route('/networking_events', methods=['GET'])
+@auth_required(user_type='user')
+def networking_events():
+    events = UserController.get_networking_events()
+    return render_template('user/networking_events.html', events=events)

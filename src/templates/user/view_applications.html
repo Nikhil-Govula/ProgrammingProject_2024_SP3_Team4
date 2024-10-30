@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container view-applications-container">
+    <h1 class="section-heading">Your Job Applications</h1>
+    <p>Below are the jobs you've applied for and their current status:</p>
+
+    <div class="applications-list">
+        {% if applications %}
+            {% for application in applications %}
+                <div class="application-card card mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ application.job.title }}</h4>
+                        <p class="card-text"><strong>Company:</strong> {{ application.job.company }}</p>
+                        <p class="card-text"><strong>Application Status:</strong> {{ application.status }}</p>
+                        <a href="{{ url_for('user_views.view_job_details', job_id=application.job.id) }}" class="btn btn-primary">View Job</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>You haven't applied for any jobs yet. Start applying now to see your applications here.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

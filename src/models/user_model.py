@@ -7,7 +7,7 @@ class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
                  failed_login_attempts=0, account_locked=False, city=None, country=None,
-                 work_history=None, skills=None, is_active=True):
+                 work_history=None, skills=None, saved_jobs=None, applications=None, is_active=True):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -24,6 +24,8 @@ class User:
         self.country = country
         self.work_history = work_history or []
         self.skills = skills or []
+        self.saved_jobs = saved_jobs or []  # Added to store saved job IDs
+        self.applications = applications or []  # Added to store job applications
         self.is_active = is_active
 
     def save(self):
@@ -153,6 +155,31 @@ class User:
             return True
         return False
 
+    # Method to get user skills
+    def get_skills(self):
+        return self.skills
+
+    def save_job(self, job_id):
+        if job_id not in self.saved_jobs:
+            self.saved_jobs.append(job_id)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'saved_jobs': self.saved_jobs})
+
+    def unsave_job(self, job_id):
+        if job_id in self.saved_jobs:
+            self.saved_jobs = [job for job in self.saved_jobs if job != job_id]
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'saved_jobs': self.saved_jobs})
+
+    def add_application(self, application_id):
+        if application_id not in self.applications:
+            self.applications.append(application_id)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'applications': self.applications})
+
     def to_dict(self):
         return {
             'user_id': self.user_id,
@@ -169,6 +196,8 @@ class User:
             'country': self.country,
             'work_history': self.work_history,
             'skills': self.skills,
+            'saved_jobs': self.saved_jobs,
+            'applications': self.applications,
             'is_active': self.is_active
         }
 

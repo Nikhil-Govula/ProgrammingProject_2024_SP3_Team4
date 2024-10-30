@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container saved-jobs-container">
+    <h1 class="section-heading">Saved Jobs</h1>
+    <p>Here are the jobs you've saved to review later:</p>
+
+    <div class="saved-jobs-list">
+        {% if saved_jobs %}
+            {% for job in saved_jobs %}
+                <div class="job-card card mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ job.title }}</h4>
+                        <p class="card-text"><strong>Company:</strong> {{ job.company }}</p>
+                        <p class="card-text"><strong>Location:</strong> {{ job.location }}</p>
+                        <a href="{{ url_for('user_views.view_job_details', job_id=job.id) }}" class="btn btn-primary">View Job Details</a>
+                        <button class="btn btn-danger btn-unsave">Unsave Job</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>You haven't saved any jobs yet. Start exploring and save jobs for future consideration.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
