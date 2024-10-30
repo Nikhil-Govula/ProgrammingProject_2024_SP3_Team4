@@ -80,8 +80,9 @@ p {
     flex: 1;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding-top: 60px;
+    align-items: center; /* Changed from center to flex-start */
+    padding-top: 100px; /* Added padding-top to account for fixed header */
+    width: 100%;
 }
 
 /* ==========================================================================
@@ -300,4 +301,100 @@ p {
         width: 100%;
         text-align: center;
     }
+}
+
+/* ==========================================================================
+   Available Jobs Styles
+   ========================================================================== */
+.available-jobs-section {
+    width: 100%;
+    max-width: 1200px;
+    padding: 40px;
+    background: linear-gradient(to bottom, #a0e9ff, #38b6ff);
+    border-radius: 10px;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.job-list-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.job-card {
+    width: 300px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.job-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.company-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 5px;
+    background: #f3f3f3;
+}
+
+.job-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.job-details {
+    margin-bottom: 15px;
+}
+
+.job-details p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.view-details-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background-color: #38b6ff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.view-details-button:hover {
+    background-color: #3299cc;
+}
+
+.no-jobs-message {
+    width: 100%;
+    text-align: center;
+    color: #666;
+    font-size: 1.2rem;
+    margin: 40px 0;
 }

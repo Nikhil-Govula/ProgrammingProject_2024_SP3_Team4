@@ -1,37 +1,39 @@
 {% extends 'base.html' %}
 
 {% block body %}
-<div class="content available-jobs-section">
-    <h2 class="section-title">Available Jobs</h2>
+<div class="content">
+    <div class="available-jobs-section">
+        <h2 class="section-title">Available Jobs</h2>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="notification {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-<div class="job-list-container">
-    {% if jobs %}
-        {% for job in jobs %}
-            <div class="job-card">
-                <div class="job-header">
-                    <img src="{{ url_for('static', filename='images/company_logo_placeholder.png') }}" alt="Company Logo" class="company-logo">
-                    <div class="job-title">{{ job.job_title }}</div>
-                </div>
-                <div class="job-details">
-                    <p><strong>Company:</strong> {{ job.company_name }}</p>
-                    <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
-                    <p><strong>Salary:</strong> ${{ "{:,.2f}".format(job.salary) }}</p>
-                    <p><strong>Date Posted:</strong> {{ job.date_posted[:10] }}</p>
-                </div>
-                <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}" class="view-details-button">View Details</a>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="no-jobs-message">No jobs are currently available. Please check back later.</p>
-    {% endif %}
+        <div class="job-list-container">
+            {% if jobs %}
+                {% for job in jobs %}
+                    <div class="job-card">
+                        <div class="job-header">
+                            <img src="{{ url_for('static', filename='images/company_logo_placeholder.png') }}" alt="Company Logo" class="company-logo">
+                            <h3 class="job-title">{{ job.job_title }}</h3>
+                        </div>
+                        <div class="job-details">
+                            <p><strong>Company:</strong> {{ job.company_name }}</p>
+                            <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
+                            <p><strong>Salary:</strong> ${{ "{:,.2f}".format(job.salary) }}</p>
+                            <p><strong>Date Posted:</strong> {{ job.date_posted[:10] }}</p>
+                        </div>
+                        <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}" class="view-details-button">View Details</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-jobs-message">No jobs are currently available. Please check back later.</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}
