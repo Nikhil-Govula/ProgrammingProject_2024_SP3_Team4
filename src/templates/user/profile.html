@@ -2,7 +2,7 @@
 
 {% block head %}
     <title>My Profile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{#    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">#}
 {% endblock %}
 
 {% block body %}
@@ -65,7 +65,7 @@
                     <ul>
                         {% for cert in user.certifications %}
                             <li>
-                                <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
+                                <a href="{{ cert.url }}" target="_blank" class="certification-link">{{ cert.filename }}</a> ({{ cert.type }})
                             </li>
                         {% endfor %}
                     </ul>
@@ -89,9 +89,9 @@
             </div>
 
             <!-- Action Buttons -->
-            <a href="{{ url_for('user_views.edit_profile') }}" class="register-button">Edit Profile</a>
+            <a href="{{ url_for('user_views.edit_profile') }}" class="profile-action-button">Edit Profile</a>
             <hr>
-            <a href="{{ url_for('user_views.change_password') }}" class="register-button">Change Password</a>
+            <a href="{{ url_for('user_views.change_password') }}" class="profile-action-button">Change Password</a>
         </div>
     </div>
 </div>
