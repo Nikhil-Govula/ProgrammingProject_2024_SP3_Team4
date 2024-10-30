@@ -78,6 +78,18 @@
         .register-button:hover {
             background-color: #005682;
         }
+        .footer-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .footer-links a {
+            color: #0073b1;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
         .footer {
             background-color: #283E4A;
             color: white;
@@ -110,7 +122,7 @@
             <div class="register-card">
                 <div class="form">
                     <h1>Employer Registration</h1>
-                    <a href="{{ url_for('user_views.login_user') }}">Login as an employee?</a>
+                    <a href="{{ url_for('user_views.login_user') }}">Are you an employee?</a>
                     <br>
                     <br>
                 </div>
@@ -139,7 +151,6 @@
                     <button type="submit" class="register-button">Register</button>
                 </form>
                 <div class="footer-links">
-                    <hr>
                     <p>Already have an account? <a href="{{ url_for('employer_views.login_employer') }}">Log in</a></p>
                 </div>
             </div>
