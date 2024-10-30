@@ -119,35 +119,24 @@
             </form>
         </div>
     </div>
+
+    <!-- Overlay for Popup -->
+    <div id="overlay"></div>
 {% endblock %}
 
 {% block footer %}
-    {{ super() }}
+    <footer class="footer">
+        <p>
+            &copy; 2024 JobTrunk. All rights reserved. |
+            <a href="#">Privacy Policy</a> |
+            <a href="#">Terms & Conditions</a> |
+            <a href="#">About JobTrunk</a> |
+            <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
+        </p>
+    </footer>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const forgotPasswordLink = document.getElementById('forgot-password-link');
-            const forgotPasswordPopup = document.getElementById('forgot-password-popup');
-            const closePopup = document.getElementById('close-popup');
-            const overlay = document.getElementById('overlay');
-
-            forgotPasswordLink.addEventListener('click', function(event) {
-                event.preventDefault();
-                forgotPasswordPopup.style.display = 'block';
-                overlay.style.display = 'block';
-            });
-
-            closePopup.addEventListener('click', function() {
-                forgotPasswordPopup.style.display = 'none';
-                overlay.style.display = 'none';
-            });
-
-            overlay.addEventListener('click', function() {
-                forgotPasswordPopup.style.display = 'none';
-                overlay.style.display = 'none';
-            });
-        });
-    </script>
+    <!-- Include the centralized JavaScript file -->
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}
