@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employer Registration | JobTrunk</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing_style.css') }}">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
+<!-- templates/register_employer.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+Employer Registration | JobTrunk
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -94,59 +95,45 @@
             text-decoration: underline;
         }
     </style>
-</head>
-<body>
-    <header class="header">
-        <div class="logo">JobTrunk (employer)</div>
-        <nav>
-            <a href="{{ url_for('employer_views.login_employer') }}">Sign In</a>
-            <a href="{{ url_for('employer_views.register_employer') }}">Join Now</a>
-        </nav>
-    </header>
+{% endblock %}
 
-    <div class="registration-container">
-        <div class="form-container">
-            <div class="register-card">
+{% block body %}
+<div class="registration-container">
+    <div class="form-container">
+        <div class="register-card">
+            <div class="form-group">
+                <h1>Employer Registration</h1>
+                <a href="{{ url_for('user_views.login_user') }}">Login as an employee?</a>
+            </div>
+            <form action="{{ url_for('employer_views.register_employer') }}" method="POST">
+                <div class="form-group split">
+                    <input type="text" name="first_name" placeholder="First name" required>
+                    <input type="text" name="last_name" placeholder="Last name" required>
+                </div>
                 <div class="form-group">
-                    <h1>User Registration</h1>
-                    <a href="{{ url_for('user_views.login_user') }}">Login as an employee?</a>
+                    <input type="email" name="email" placeholder="Email address" required>
                 </div>
-                <form action="{{ url_for('employer_views.register_employer') }}" method="POST">
-                    <div class="form-group split">
-                        <input type="text" name="first_name" placeholder="First name" required>
-                        <input type="text" name="last_name" placeholder="Last name" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" name="email" placeholder="Email address" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" name="phone_number" placeholder="Phone number" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="password" placeholder="Password" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="confirm_password" placeholder="Confirm password" required>
-                    </div>
-
-                    {% if error %}
-                        <p style="color: red;">{{ error }}</p>
-                    {% endif %}
-
-                    <button type="submit" class="register-button">Register</button>
-                </form>
-                <div class="footer-links">
-                    <hr>
-                    <p>Already have an account? <a href="{{ url_for('employer_views.login_employer') }}">Log in</a></p>
+                <div class="form-group">
+                    <input type="text" name="phone_number" placeholder="Phone number" required>
                 </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="confirm_password" placeholder="Confirm password" required>
+                </div>
+
+                {% if error %}
+                    <p style="color: red;">{{ error }}</p>
+                {% endif %}
+
+                <button type="submit" class="register-button">Register</button>
+            </form>
+            <div class="footer-links">
+                <hr>
+                <p>Already have an account? <a href="{{ url_for('employer_views.login_employer') }}">Log in</a></p>
             </div>
         </div>
     </div>
-
-    <footer class="footer">
-        <p>
-            &copy; 2024 JobTrunk. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms & Conditions</a> | <a href="#">About JobTrunk</a> | <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
-        </p>
-    </footer>
-</body>
-</html>
+</div>
+{% endblock %}

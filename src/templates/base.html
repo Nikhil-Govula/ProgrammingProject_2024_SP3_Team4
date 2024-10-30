@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all_style.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- DataTables Responsive CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
+    <!-- Include jQuery and jQuery UI for Autocomplete -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Responsive JS -->
+    <script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
     {% block head %}
     {% endblock %}
 </head>
@@ -14,7 +28,7 @@
     <header class="header">
         <div class="logo">JobTrunk</div>
         <nav class="nav-links">
-            <nav>
+{#            <nav>#}
 {#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
 {#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
 {#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
@@ -61,9 +75,17 @@
         <p>&copy; 2024 JobTrunk. All rights reserved. |
             <a href="#">Privacy Policy</a> |
             <a href="#">Terms & Conditions</a> |
-            <a href="#">About JobTrunk</a>
+            <a href="#">About JobTrunk</a> |
+            <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
         </p>
     </footer>
+    {% endblock %}
+
+    <!-- Common Overlay Element -->
+    <div id="overlay" style="display: none;"></div>
+
+    {% block scripts %}
+    <!-- Child templates can inject their specific JavaScript here -->
     {% endblock %}
 </body>
 
