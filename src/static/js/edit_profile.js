@@ -1,16 +1,44 @@
 // src/static/js/edit_profile.js
 
 $(document).ready(function() {
-    // Initialize Autocomplete for Location, Certification Type, and Skill Inputs
-    initializeAutocomplete('#location-input', CONFIG.citySuggestionsUrl, function(item) {
-        console.log("Selected location: " + item.value);
-    });
-    initializeAutocomplete('#cert_type', CONFIG.certificationSuggestionsUrl, function(item) {
-        console.log("Selected certification type: " + item.value);
-    });
-    initializeAutocomplete('#skill-input', CONFIG.skillSuggestionsUrl, function(item) {
-        console.log("Selected skill: " + item.value);
-    });
+    // Initialize Autocomplete for Location with custom mapping
+    initializeAutocomplete(
+        '#location-input',
+        CONFIG.citySuggestionsUrl,
+        function(item) {
+            console.log("Selected location: " + item.value);
+        },
+        function(item) {
+            // Custom mapping: transform city and country into label and value
+            return {
+                label: item.city + ', ' + item.country,
+                value: item.city + ', ' + item.country
+            };
+        }
+    );
+
+    // Initialize Autocomplete for Certification Type (assuming it returns strings)
+    initializeAutocomplete(
+        '#cert_type',
+        CONFIG.certificationSuggestionsUrl,
+        function(item) {
+            console.log("Selected certification type: " + item.value);
+        }
+        // No mapItem function needed if suggestions are strings
+    );
+
+    // Initialize Autocomplete for Skill Inputs (assuming they return strings)
+    initializeAutocomplete(
+        '#skill-input',
+        CONFIG.skillSuggestionsUrl,
+        function(item) {
+            console.log("Selected skill: " + item.value);
+        }
+        // No mapItem function needed if suggestions are strings
+    );
+
+    // Initialize Datepickers
+    initializeDatePickers('.date-picker');
 
     // Handle Profile Picture Upload
     $('#profile-picture-input').on('change', function() {
@@ -201,3 +229,10 @@ $(document).ready(function() {
         }
     });
 });
+
+// Function to initialize datepickers (could be centralized in main.js or similar)
+function initializeDatePickers(selector) {
+    $(selector).datepicker({
+        dateFormat: 'yy-mm-dd'
+    });
+}

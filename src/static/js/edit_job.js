@@ -1,25 +1,51 @@
 // src/static/js/edit_job.js
 
 $(document).ready(function() {
-    // Initialize Autocomplete for City
-    initializeAutocomplete('#city', CONFIG.citySuggestionsUrl, function(item) {
-        console.log("Selected city: " + item.value);
-    });
+    // Initialize Autocomplete for City with custom mapping
+    initializeAutocomplete(
+        '#city',
+        CONFIG.citySuggestionsUrl,
+        function(item) {
+            console.log("Selected city: " + item.value);
+        },
+        function(item) {
+            // Custom mapping: combine city and country for label and value
+            return {
+                label: item.city + ', ' + item.country,
+                value: item.city + ', ' + item.country
+            };
+        }
+    );
 
-    // Initialize Autocomplete for Certifications
-    initializeAutocomplete('#certification-input', CONFIG.certificationSuggestionsUrl, function(item) {
-        console.log("Selected certification: " + item.value);
-    });
+    // Initialize Autocomplete for Certifications (assuming they return strings)
+    initializeAutocomplete(
+        '#certification-input',
+        CONFIG.certificationSuggestionsUrl,
+        function(item) {
+            console.log("Selected certification: " + item.value);
+        }
+        // No mapItem function needed if suggestions are simple strings
+    );
 
-    // Initialize Autocomplete for Skills
-    initializeAutocomplete('#skill-input', CONFIG.skillSuggestionsUrl, function(item) {
-        console.log("Selected skill: " + item.value);
-    });
+    // Initialize Autocomplete for Skills (assuming they return strings)
+    initializeAutocomplete(
+        '#skill-input',
+        CONFIG.skillSuggestionsUrl,
+        function(item) {
+            console.log("Selected skill: " + item.value);
+        }
+        // No mapItem function needed if suggestions are simple strings
+    );
 
-    // Initialize Autocomplete for Occupation
-    initializeAutocomplete('#occupation-input', CONFIG.occupationSuggestionsUrl, function(item) {
-        console.log("Selected occupation: " + item.value);
-    });
+    // Initialize Autocomplete for Occupation (assuming they return strings)
+    initializeAutocomplete(
+        '#occupation-input',
+        CONFIG.occupationSuggestionsUrl,
+        function(item) {
+            console.log("Selected occupation: " + item.value);
+        }
+        // No mapItem function needed if suggestions are simple strings
+    );
 
     // Handle adding a new certification
     $('#add-certification-button').on('click', function (e) {
@@ -77,7 +103,7 @@ $(document).ready(function() {
                     }
                     showNotification('Certification deleted successfully.', 'success');
                 } else {
-                    showNotification(response.message || 'Failed to delete certification.', 'error');
+                    showNotification(response.message, 'error');
                 }
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -105,7 +131,7 @@ $(document).ready(function() {
                     }
                     showNotification('Skill deleted successfully.', 'success');
                 } else {
-                    showNotification(response.message || 'Failed to delete skill.', 'error');
+                    showNotification(response.message, 'error');
                 }
             },
             error: function (jqXHR, textStatus, errorThrown) {
