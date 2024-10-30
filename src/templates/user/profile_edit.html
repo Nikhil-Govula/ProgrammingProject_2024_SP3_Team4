@@ -2,282 +2,10 @@
 
 {% block head %}
     <title>Edit Profile</title>
-    <script>
-        $(document).ready(function() {
-            // Handle profile picture upload
-            $('#profile-picture-input').on('change', function() {
-                var formData = new FormData();
-                var file = this.files[0];
-                formData.append('profile_picture', file);
-
-                $.ajax({
-                    url: "{{ url_for('user_views.upload_profile_picture') }}",
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        if(response.success) {
-                            $('#profile-picture').attr('src', response.profile_picture_url);
-                            showNotification('Profile picture updated successfully.', 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        showNotification('An error occurred while uploading the profile picture.', 'error');
-                    }
-                });
-            });
-
-            // Handle adding a new certification
-            $('#add-certification-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-
-                $.ajax({
-                    url: "{{ url_for('user_views.upload_certification') }}",
-                    type: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        if(response.success) {
-                            // Append the new certification to the list
-                            $('#certifications-list').append(`
-                                <li id="cert-${response.certifications[0].id}">
-                                    <a href="${response.certifications[0].url}" target="_blank">${response.certifications[0].filename}</a> (${response.certifications[0].type})
-                                    <button type="button" class="delete-cert-button" data-id="${response.certifications[0].id}">Delete</button>
-                                </li>
-                            `);
-                            // Clear the form
-                            $('#add-certification-form')[0].reset();
-                            showNotification('Certification added successfully.', 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        showNotification('An error occurred while adding the certification.', 'error');
-                    }
-                });
-            });
-
-            // Handle certification deletion
-            $(document).on('click', '.delete-cert-button', function() {
-                var certId = $(this).data('id');
-                if(confirm('Are you sure you want to delete this certification?')) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.delete_certification') }}",
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ cert_id: certId }),
-                        success: function(response) {
-                            if(response.success) {
-                                $(`#cert-${certId}`).remove();
-                                showNotification('Certification deleted successfully.', 'success');
-                            } else {
-                                showNotification(response.message, 'error');
-                            }
-                        },
-                        error: function() {
-                            showNotification('An error occurred while deleting the certification.', 'error');
-                        }
-                    });
-                }
-            });
-
-            // Handle individual field updates
-            $('.update-field-button').on('click', function() {
-                var field = $(this).data('field');
-                var value = $(`#${field}-input`).val();
-
-                $.ajax({
-                    url: "{{ url_for('user_views.update_profile_field') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ field: field, value: value }),
-                    success: function(response) {
-                        if(response.success) {
-                            showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        showNotification('An error occurred while updating the field.', 'error');
-                    }
-                });
-            });
-
-            // Initialize autocomplete for location input
-            $('#location-input').autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.city_suggestions') }}",
-                        type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
-                                return {
-                                    label: item.city + ', ' + item.country,
-                                    value: item.city + ', ' + item.country
-                                };
-                            }));
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error fetching suggestions:", error);
-                            response([]);
-                        }
-                    });
-                },
-                minLength: 3,
-                select: function(event, ui) {
-                    console.log("Selected: " + ui.item.value);
-                }
-            });
-
-            // Initialize autocomplete for certification type input
-            $('#cert_type').autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.certification_suggestions') }}",
-                        type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
-                                return {
-                                    label: item,
-                                    value: item
-                                };
-                            }));
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error fetching certification suggestions:", error);
-                            response([]);
-                        }
-                    });
-                },
-                minLength: 2, // Minimum characters before autocomplete starts
-                select: function(event, ui) {
-                    console.log("Selected: " + ui.item.value);
-                }
-            });
-
-            $('#add-skill-form').on('submit', function(e) {
-                e.preventDefault();
-                var skill = $('#skill-input').val().trim();
-
-                if(skill === "") {
-                    showNotification('Skill cannot be empty.', 'error');
-                    return;
-                }
-
-                $.ajax({
-                    url: "{{ url_for('user_views.add_skill') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ skill: skill }),
-                    success: function(response) {
-                        if(response.success) {
-                            // Append the new skill to the list
-                            $('#skills-list').append(`
-                                <li id="skill-${response.skill.id}">
-                                    ${response.skill.skill}
-                                    <button type="button" class="delete-skill-button" data-id="${response.skill.id}">Delete</button>
-                                </li>
-                            `);
-                            // Clear the input
-                            $('#skill-input').val('');
-                            showNotification('Skill added successfully.', 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: function() {
-                        showNotification('An error occurred while adding the skill.', 'error');
-                    }
-                });
-            });
-
-            // Handle skill deletion
-            $(document).on('click', '.delete-skill-button', function() {
-                var skillId = $(this).data('id');
-                if(confirm('Are you sure you want to delete this skill?')) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.delete_skill') }}",
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ skill_id: skillId }),
-                        success: function(response) {
-                            if(response.success) {
-                                $(`#skill-${skillId}`).remove();
-                                showNotification('Skill deleted successfully.', 'success');
-                            } else {
-                                showNotification(response.message, 'error');
-                            }
-                        },
-                        error: function() {
-                            showNotification('An error occurred while deleting the skill.', 'error');
-                        }
-                    });
-                }
-            });
-
-            // Initialize autocomplete for skill input
-            $('#skill-input').autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.skill_suggestions') }}",
-                        type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response($.map(data.suggestions, function(item) {
-                                return {
-                                    label: item, // Assuming item is a string
-                                    value: item
-                                };
-                            }));
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error fetching skill suggestions:", error);
-                            response([]);
-                        }
-                    });
-                },
-                minLength: 2,
-                select: function(event, ui) {
-                    console.log("Selected: " + ui.item.value);
-                }
-            });
-
-            // Notification Function
-            function showNotification(message, type = 'success') {
-                const notificationContainer = document.getElementById('notification-container');
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.textContent = message;
-                notificationContainer.appendChild(notification);
-
-                // Trigger a reflow before adding the opacity to ensure the transition works
-                notification.offsetHeight;
-                notification.style.opacity = '1';
-
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => {
-                        notificationContainer.removeChild(notification);
-                    }, 500); // Wait for fade out transition to complete before removing
-                }, 3000); // Show for 3 seconds
-            }
-
-            // Capitalize function for alert messages
-            String.prototype.capitalize = function() {
-                return this.charAt(0).toUpperCase() + this.slice(1);
-            }
-            });
-        </script>
 {% endblock %}
+
+
+
 
 {% block body %}
 <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
@@ -404,6 +132,172 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize Autocomplete
+        initializeAutocomplete('#location-input', "{{ url_for('user_views.city_suggestions') }}");
+        initializeAutocomplete('#cert_type', "{{ url_for('user_views.certification_suggestions') }}");
+        initializeAutocomplete('#skill-input', "{{ url_for('user_views.skill_suggestions') }}");
+
+        // Handle profile picture upload
+        $('#profile-picture-input').on('change', function() {
+            var formData = new FormData();
+            var file = this.files[0];
+            formData.append('profile_picture', file);
+
+            $.ajax({
+                url: "{{ url_for('user_views.upload_profile_picture') }}",
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    if(response.success) {
+                        $('#profile-picture').attr('src', response.profile_picture_url);
+                        showNotification('Profile picture updated successfully.', 'success');
+                    } else {
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: handleAjaxError
+            });
+        });
+
+        // Handle adding a new certification
+        $('#add-certification-form').on('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: "{{ url_for('user_views.upload_certification') }}",
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    if(response.success) {
+                        // Append the new certification to the list
+                        $('#certifications-list').append(`
+                            <li id="cert-${response.certifications[0].id}">
+                                <a href="${response.certifications[0].url}" target="_blank">${response.certifications[0].filename}</a> (${response.certifications[0].type})
+                                <button type="button" class="delete-cert-button" data-id="${response.certifications[0].id}">Delete</button>
+                            </li>
+                        `);
+                        // Clear the form
+                        $('#add-certification-form')[0].reset();
+                        showNotification('Certification added successfully.', 'success');
+                    } else {
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: handleAjaxError
+            });
+        });
+
+        // Handle certification deletion
+        $(document).on('click', '.delete-cert-button', function() {
+            var certId = $(this).data('id');
+            if(confirm('Are you sure you want to delete this certification?')) {
+                $.ajax({
+                    url: "{{ url_for('user_views.delete_certification') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ cert_id: certId }),
+                    success: function(response) {
+                        if(response.success) {
+                            $(`#cert-${certId}`).remove();
+                            showNotification('Certification deleted successfully.', 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: handleAjaxError
+                });
+            }
+        });
+
+        // Handle individual field updates
+        $('.update-field-button').on('click', function() {
+            var field = $(this).data('field');
+            var value = $(`#${field}-input`).val();
+
+            $.ajax({
+                url: "{{ url_for('user_views.update_profile_field') }}",
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ field: field, value: value }),
+                success: function(response) {
+                    if(response.success) {
+                        showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
+                    } else {
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: handleAjaxError
+            });
+        });
+
+        // Handle adding a new skill
+        $('#add-skill-form').on('submit', function(e) {
+            e.preventDefault();
+            var skill = $('#skill-input').val().trim();
+
+            if(skill === "") {
+                showNotification('Skill cannot be empty.', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url_for('user_views.add_skill') }}",
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ skill: skill }),
+                success: function(response) {
+                    if(response.success) {
+                        // Append the new skill to the list
+                        $('#skills-list').append(`
+                            <li id="skill-${response.skill.id}">
+                                ${response.skill.skill}
+                                <button type="button" class="delete-skill-button" data-id="${response.skill.id}">Delete</button>
+                            </li>
+                        `);
+                        // Clear the input
+                        $('#skill-input').val('');
+                        showNotification('Skill added successfully.', 'success');
+                    } else {
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: handleAjaxError
+            });
+        });
+
+        // Handle skill deletion
+        $(document).on('click', '.delete-skill-button', function() {
+            var skillId = $(this).data('id');
+            if(confirm('Are you sure you want to delete this skill?')) {
+                $.ajax({
+                    url: "{{ url_for('user_views.delete_skill') }}",
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ skill_id: skillId }),
+                    success: function(response) {
+                        if(response.success) {
+                            $(`#skill-${skillId}`).remove();
+                            showNotification('Skill deleted successfully.', 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: handleAjaxError
+                });
+            }
+        });
+    });
+</script>
 {% endblock %}
 
 {% block footer %}

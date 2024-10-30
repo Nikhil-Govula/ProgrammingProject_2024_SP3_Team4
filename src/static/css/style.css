@@ -512,3 +512,92 @@ p {
     text-align: center;
     margin-bottom: 10px;
 }
+
+
+/* Edit Job Posting Specific Styles */
+.ui-autocomplete {
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ui-menu-item {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.dynamic-input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dynamic-input-group input,
+.dynamic-input-group textarea {
+    flex: 1;
+    padding: 8px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.update-field-button {
+    padding: 8px 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.update-field-button:hover {
+    background-color: #2980b9;
+}
+
+.remove-input-button {
+    padding: 8px 12px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.remove-input-button:hover {
+    background-color: #c0392b;
+}
+
+.add-input-button {
+    padding: 8px 12px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.add-input-button:hover {
+    background-color: #27ae60;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px;
+    border-radius: 5px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.notification.success {
+    background-color: #2ecc71;
+}
+
+.notification.error {
+    background-color: #e74c3c;
+}
