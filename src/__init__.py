@@ -1,6 +1,7 @@
 import logging
 from flask import Flask, request, g, render_template
 from flask_mail import Mail
+from datetime import datetime
 from google_auth_oauthlib.flow import Flow
 
 from config import Config
@@ -64,6 +65,18 @@ def create_app(config_class=Config):
             g.user = None
             g.user_type = None
             print("No session ID in cookie")  # Debug log
+
+    @app.template_filter('format_date')
+    def format_date(value):
+        """Format a date value to dd/mm/yyyy."""
+        try:
+            date_obj = datetime.strptime(value[:10], '%Y-%m-%d')
+            return date_obj.strftime('%d/%m/%Y')
+        except ValueError:
+            return value  # If there is an error, return the original value
+
+    # Register the filter
+    app.jinja_env.filters['format_date'] = format_date
 
     # Set environment variable for OAuth
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = str(app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1'))

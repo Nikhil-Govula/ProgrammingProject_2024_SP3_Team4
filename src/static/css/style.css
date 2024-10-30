@@ -69,10 +69,26 @@ body {
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
-    width: 100%; /* Ensure full width of the parent */
+    width: 100%;
+    align-items: center;
+    padding-left: 2%;
+    padding-right: 2%;
+    outline: auto;
+    outline-color: lightgray;
+}
+
+.form-group-password {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    margin: 5px;
+    border: 5px solid #85a98c; /* Border color same as background */
+    border-radius: 10px;
+    box-sizing: border-box; /* Ensures padding and border are included in the width */
 }
 
 .form-group input[type="text"],
@@ -218,10 +234,10 @@ body {
 
 .content {
     flex: 1;
-    display: flex;
+    /*display: flex;*/
     justify-content: center;
     align-items: center;
-    padding-top: 60px;
+    /*padding-top: 60px;*/
 }
 
 .login-container {
@@ -289,7 +305,6 @@ body {
     height: 150px;
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 20px;
     border: 2px solid #85a98c;
 }
 
@@ -461,6 +476,7 @@ body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    display: block;
 }
 
 .register-button:hover {

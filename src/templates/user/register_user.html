@@ -51,6 +51,7 @@
             width: 100%;
         }
         .form-group {
+            display: flex;
             margin-bottom: 20px;
         }
         .form-group.split {
@@ -119,7 +120,7 @@
     <div class="registration-container">
         <div class="form-container">
             <div class="register-card">
-                <div class="form-group">
+                <div class="form">
                     <h1>User Registration</h1>
                     <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
                 </div>

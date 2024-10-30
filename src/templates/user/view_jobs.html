@@ -18,14 +18,14 @@
         {% for job in jobs %}
             <div class="job-card">
                 <div class="job-header">
-                    <img src="{{ url_for('static', filename='images/company_logo_placeholder.png') }}" alt="Company Logo" class="company-logo">
+                    <img src="{{ url_for('static', filename='images/company_logo_placeholder.svg') }}" alt="Company Logo" class="company-logo">
                     <div class="job-title">{{ job.job_title }}</div>
                 </div>
                 <div class="job-details">
-                    <p><strong>Company:</strong> {{ job.company_name }}</p>
-                    <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
-                    <p><strong>Salary:</strong> ${{ "{:,.2f}".format(job.salary) }}</p>
-                    <p><strong>Date Posted:</strong> {{ job.date_posted[:10] }}</p>
+                    <p><strong>Company:</strong>&nbsp;{{ job.company_name }}</p>
+                    <p><strong>Location:</strong>&nbsp;{{ job.city }}, {{ job.country }}</p>
+                    <p><strong>Salary:</strong>&nbsp;${{ "{:,.2f}".format(job.salary) }}</p>
+                    <p><strong>Date Posted:</strong>&nbsp;{{ job.date_posted | format_date }}</p>
                 </div>
                 <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}" class="view-details-button">View Details</a>
             </div>

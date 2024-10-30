@@ -138,8 +138,8 @@ body {
 .dashboard-container {
     width: 700px;
     max-width: 1200px;
-    margin-bottom: 50px;
-    padding: 20px;
+    margin: 5% auto;
+    padding: 25px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
@@ -195,7 +195,7 @@ body {
     font-weight: 700;
     text-align: center;
     margin-bottom: 20px;
-    color: #ffffff;
+    color: black;
 }
 
 .job-list-container {
@@ -203,6 +203,7 @@ body {
     flex-wrap: wrap;
     justify-content: space-around;
     gap: 20px;
+    padding: 30px;
 }
 
 .job-card {
@@ -245,6 +246,7 @@ body {
 }
 
 .job-details p {
+    display: flex;
     margin: 5px 0;
     font-size: 0.9rem;
     color: #555;
