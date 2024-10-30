@@ -1,4 +1,3 @@
-/*all_styles.css*/
 /* ==========================================================================
    Reset & Base Styles
    ========================================================================== */
@@ -213,11 +212,7 @@ p {
 
 .profile-summary h2 {
     margin-bottom: 15px;
-}
-
-.profile-summary h2 {
     font-family: 'Roboto', sans-serif;
-    margin-bottom: 15px;
     font-weight: 700;
 }
 
@@ -400,96 +395,9 @@ p {
     margin: 40px 0;
 }
 
-/* Form Containers */
-.registration-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
-.form-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-}
-
-.register-card {
-    background-color: #FFFFFF;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 600px;
-    text-align: center;
-}
-
-.register-card h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: #4A4A4A;
-}
-
-/* Form Groups */
-.form-group {
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    width: 100%; /* Ensure full width of the parent */
-}
-
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border: 5px solid #85a98c; /* Border color same as background */
-    border-radius: 10px;
-    box-sizing: border-box; /* Ensures padding and border are included in the width */
-}
-
-/* Specific styling for the first and last name fields */
-.form-group.split {
-    display: flex;
-    gap: 10px; /* Space between the two fields */
-}
-
-.form-group.split input[type="text"] {
-    width: calc(50% - 5px); /* Adjust width to fit both fields equally */
-}
-
-/* Buttons */
-.register-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 5px;
-    color: #FFFFFF;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-
-.register-button:hover {
-    background-color: #4F6D62;
-}
-
-/* Links */
-.certification-link {
-    color: #007BFF;
-    text-decoration: none;
-    display: inline-block;
-    transition: color 0.3s ease;
-}
-
-.certification-link:hover {
-    color: #0056b3;
-    text-decoration: underline;
-}
-
-/* Profile Picture in Profile Section */
+/* ==========================================================================
+   Profile Picture in Profile Section
+   ========================================================================== */
 .profile-picture {
     width: 150px;
     height: 150px;
@@ -499,7 +407,9 @@ p {
     border: 2px solid #85a98c;
 }
 
-/* Profile Picture in Navbar */
+/* ==========================================================================
+   Profile Picture in Navbar
+   ========================================================================== */
 .nav-profile-picture {
     width: 40px;
     height: 40px;
@@ -510,7 +420,9 @@ p {
     border: 2px solid #FFFFFF;
 }
 
-/* Profile Action Buttons */
+/* ==========================================================================
+   Profile Action Buttons
+   ========================================================================== */
 .profile-action-button {
     display: inline-block;
     background-color: #4CAF50;
@@ -528,4 +440,75 @@ p {
 .profile-action-button:hover {
     background-color: #45a049;
     text-decoration: none;
+}
+
+/* ==========================================================================
+   User Registration Page Styles
+   ========================================================================== */
+
+.user-registration { /* Namespace */
+    /* You can add any specific styles for the registration page container here */
+}
+
+/* Scoped Registration Styles */
+.user-registration .registration-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    padding: 20px;
+}
+
+.user-registration .register-card {
+    background-color: #FFFFFF;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%; /* Changed to 100% to fit within form-container */
+    text-align: center;
+}
+
+.user-registration .register-card h1 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #4A4A4A;
+}
+
+.user-registration .form-group {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.user-registration .form-group.split {
+    display: flex;
+    gap: 10px;
+}
+
+.user-registration .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.user-registration .register-button {
+    background-color: #0073b1;
+    color: white;
+    padding: 10px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.user-registration .register-button:hover {
+    background-color: #005682;
+}
+
+.user-registration .error-message {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
 }

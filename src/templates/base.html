@@ -1,25 +1,25 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}JobTrunk{% endblock %}</title>
-    <!-- Global Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/all_styles.css') }}">
-    <!-- Google Fonts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
-    <!-- jQuery and jQuery UI -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- DataTables Responsive CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
+    <!-- Include jQuery and jQuery UI for Autocomplete -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <!-- DataTables CSS and JS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
+    <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Responsive JS -->
     <script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
-    <!-- Additional CSS for Child Templates -->
     {% block head %}
     {% endblock %}
 </head>
@@ -28,18 +28,34 @@
     <header class="header">
         <div class="logo">JobTrunk</div>
         <nav class="nav-links">
+{#            <nav>#}
+{#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
+{#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
+{#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
+{#            <a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a>#}
             {% if g.user %}
+
+                {# Header links if USER logged in #}
                 {% if g.user_type == 'user' %}
                     <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">View All Jobs</a>
                     <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
+                    {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
+                    {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
+                    {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
                     <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button">Dashboard</a>
                     <a href="{{ url_for('user_views.logout') }}" class="dashboard-button logout">Logout</a>
+
+                {# Header links if EMPLOYER logged in #}
                 {% elif g.user_type == 'employer' %}
                     <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">Manage Job Postings</a>
                     <a href="{{ url_for('employer_views.dashboard') }}">Dashboard</a>
+
+                {# Header links if ADMIN logged in #}
                 {% elif g.user_type == 'admin' %}
                     <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
                 {% endif %}
+
+                {# Profile icon #}
                 <a href="{{ url_for('user_views.view_profile') }}" class="profile-link">
                     <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="nav-profile-picture">
                 </a>

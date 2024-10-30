@@ -6,143 +6,46 @@ User Registration | JobTrunk
 
 {% block head %}
     {{ super() }}
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background: linear-gradient(to bottom, #5cde83, #5296e7);
-        }
-        .header {
-            background-color: #283E4A;
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header .logo {
-            font-size: 1.8em;
-            font-weight: 700;
-        }
-        .header nav a {
-            color: white;
-            text-decoration: none;
-            margin: 0 15px;
-            font-weight: 400;
-        }
-        .header nav a:hover {
-            text-decoration: underline;
-        }
-        .registration-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 80vh;
-            padding: 20px;
-        }
-        .form-container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group.split {
-            display: flex;
-            gap: 10px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .register-button {
-            background-color: #0073b1;
-            color: white;
-            padding: 10px;
-            font-size: 1.2em;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            width: 100%;
-        }
-        .register-button:hover {
-            background-color: #005682;
-        }
-        .footer-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .footer-links a {
-            color: #0073b1;
-            text-decoration: none;
-            font-size: 0.9em;
-        }
-        .footer-links a:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            background-color: #283E4A;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 0.9em;
-            margin-top: auto;
-        }
-        .footer a {
-            color: white;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
-<div class="registration-container">
-    <div class="form-container">
-        <div class="register-card">
-            <div class="form-group">
-                <h1>User Registration</h1>
-                <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
-            </div>
-            <form action="{{ url_for('user_views.register_user') }}" method="POST">
-                <div class="form-group split">
-                    <input type="text" name="first_name" placeholder="First name" required>
-                    <input type="text" name="last_name" placeholder="Last name" required>
+<div class="user-registration"> <!-- Added namespace class -->
+    <div class="registration-container">
+        <div class="form-container">
+            <div class="register-card">
+                <div class="form">
+                    <h1>User Registration</h1>
+                    <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
+                    <br>
+                    <br>
                 </div>
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email address" required>
-                </div>
-                <div class="form-group">
-                    <input type="text" name="phone_number" placeholder="Phone number" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="confirm_password" placeholder="Confirm password" required>
-                </div>
+                <form action="{{ url_for('user_views.register_user') }}" method="POST">
+                    <div class="form-group split">
+                        <input type="text" name="first_name" placeholder="First name" required>
+                        <input type="text" name="last_name" placeholder="Last name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Email address" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="phone_number" placeholder="Phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="confirm_password" placeholder="Confirm password" required>
+                    </div>
 
-                {% if error %}
-                    <p style="color: red;">{{ error }}</p>
-                {% endif %}
+                    {% if error %}
+                        <p class="error-message">{{ error }}</p> <!-- Added class for error styling -->
+                    {% endif %}
 
-                <button type="submit" class="register-button">Register</button>
-            </form>
-            <div class="footer-links">
-                <hr>
-                <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
+                    <button type="submit" class="register-button">Register</button>
+                </form>
+                <div class="footer-links">
+                    <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
+                </div>
             </div>
         </div>
     </div>
