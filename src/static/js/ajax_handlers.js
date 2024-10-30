@@ -23,3 +23,8 @@ $(document).ready(function() {
         });
     }
 });
+
+function handleAjaxError(jqXHR, textStatus, errorThrown) {
+    console.error(`AJAX Error: ${textStatus}: ${errorThrown}`);
+    showNotification('An unexpected error occurred. Please try again later.', 'error');
+}

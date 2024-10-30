@@ -2,13 +2,11 @@
 
 {% block head %}
     <title>Edit Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_profile.css') }}">
 {% endblock %}
 
-
-
-
 {% block body %}
-<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+<div id="notification-container"></div>
 <div class="registration-container">
     <div class="form-container">
         <div class="register-card">
@@ -16,12 +14,12 @@
 
             <!-- Success Message -->
             {% if request.args.get('success') %}
-                <p style="color: green;">{{ request.args.get('success') }}</p>
+                <p class="success-message">{{ request.args.get('success') }}</p>
             {% endif %}
 
             <!-- Error Message -->
             {% if error %}
-                <p style="color: red;">{{ error }}</p>
+                <p class="error-message">{{ error }}</p>
             {% endif %}
 
             <!-- Profile Information and Update Forms -->
@@ -135,169 +133,23 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    $(document).ready(function() {
-        // Initialize Autocomplete
-        initializeAutocomplete('#location-input', "{{ url_for('user_views.city_suggestions') }}");
-        initializeAutocomplete('#cert_type', "{{ url_for('user_views.certification_suggestions') }}");
-        initializeAutocomplete('#skill-input', "{{ url_for('user_views.skill_suggestions') }}");
-
-        // Handle profile picture upload
-        $('#profile-picture-input').on('change', function() {
-            var formData = new FormData();
-            var file = this.files[0];
-            formData.append('profile_picture', file);
-
-            $.ajax({
-                url: "{{ url_for('user_views.upload_profile_picture') }}",
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(response) {
-                    if(response.success) {
-                        $('#profile-picture').attr('src', response.profile_picture_url);
-                        showNotification('Profile picture updated successfully.', 'success');
-                    } else {
-                        showNotification(response.message, 'error');
-                    }
-                },
-                error: handleAjaxError
-            });
-        });
-
-        // Handle adding a new certification
-        $('#add-certification-form').on('submit', function(e) {
-            e.preventDefault();
-            var formData = new FormData(this);
-
-            $.ajax({
-                url: "{{ url_for('user_views.upload_certification') }}",
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(response) {
-                    if(response.success) {
-                        // Append the new certification to the list
-                        $('#certifications-list').append(`
-                            <li id="cert-${response.certifications[0].id}">
-                                <a href="${response.certifications[0].url}" target="_blank">${response.certifications[0].filename}</a> (${response.certifications[0].type})
-                                <button type="button" class="delete-cert-button" data-id="${response.certifications[0].id}">Delete</button>
-                            </li>
-                        `);
-                        // Clear the form
-                        $('#add-certification-form')[0].reset();
-                        showNotification('Certification added successfully.', 'success');
-                    } else {
-                        showNotification(response.message, 'error');
-                    }
-                },
-                error: handleAjaxError
-            });
-        });
-
-        // Handle certification deletion
-        $(document).on('click', '.delete-cert-button', function() {
-            var certId = $(this).data('id');
-            if(confirm('Are you sure you want to delete this certification?')) {
-                $.ajax({
-                    url: "{{ url_for('user_views.delete_certification') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ cert_id: certId }),
-                    success: function(response) {
-                        if(response.success) {
-                            $(`#cert-${certId}`).remove();
-                            showNotification('Certification deleted successfully.', 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: handleAjaxError
-                });
-            }
-        });
-
-        // Handle individual field updates
-        $('.update-field-button').on('click', function() {
-            var field = $(this).data('field');
-            var value = $(`#${field}-input`).val();
-
-            $.ajax({
-                url: "{{ url_for('user_views.update_profile_field') }}",
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ field: field, value: value }),
-                success: function(response) {
-                    if(response.success) {
-                        showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
-                    } else {
-                        showNotification(response.message, 'error');
-                    }
-                },
-                error: handleAjaxError
-            });
-        });
-
-        // Handle adding a new skill
-        $('#add-skill-form').on('submit', function(e) {
-            e.preventDefault();
-            var skill = $('#skill-input').val().trim();
-
-            if(skill === "") {
-                showNotification('Skill cannot be empty.', 'error');
-                return;
-            }
-
-            $.ajax({
-                url: "{{ url_for('user_views.add_skill') }}",
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ skill: skill }),
-                success: function(response) {
-                    if(response.success) {
-                        // Append the new skill to the list
-                        $('#skills-list').append(`
-                            <li id="skill-${response.skill.id}">
-                                ${response.skill.skill}
-                                <button type="button" class="delete-skill-button" data-id="${response.skill.id}">Delete</button>
-                            </li>
-                        `);
-                        // Clear the input
-                        $('#skill-input').val('');
-                        showNotification('Skill added successfully.', 'success');
-                    } else {
-                        showNotification(response.message, 'error');
-                    }
-                },
-                error: handleAjaxError
-            });
-        });
-
-        // Handle skill deletion
-        $(document).on('click', '.delete-skill-button', function() {
-            var skillId = $(this).data('id');
-            if(confirm('Are you sure you want to delete this skill?')) {
-                $.ajax({
-                    url: "{{ url_for('user_views.delete_skill') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ skill_id: skillId }),
-                    success: function(response) {
-                        if(response.success) {
-                            $(`#skill-${skillId}`).remove();
-                            showNotification('Skill deleted successfully.', 'success');
-                        } else {
-                            showNotification(response.message, 'error');
-                        }
-                    },
-                    error: handleAjaxError
-                });
-            }
-        });
-    });
-</script>
+    <!-- Pass configuration variables to JavaScript -->
+    <script>
+        window.CONFIG = {
+            citySuggestionsUrl: "{{ url_for('user_views.city_suggestions') }}",
+            certificationSuggestionsUrl: "{{ url_for('user_views.certification_suggestions') }}",
+            skillSuggestionsUrl: "{{ url_for('user_views.skill_suggestions') }}",
+            occupationSuggestionsUrl: "{{ url_for('user_views.get_occupation_suggestions') }}",
+            uploadProfilePictureUrl: "{{ url_for('user_views.upload_profile_picture') }}",
+            uploadCertificationUrl: "{{ url_for('user_views.upload_certification') }}",
+            deleteCertificationUrl: "{{ url_for('user_views.delete_certification') }}",
+            updateProfileFieldUrl: "{{ url_for('user_views.update_profile_field') }}",
+            addSkillUrl: "{{ url_for('user_views.add_skill') }}",
+            deleteSkillUrl: "{{ url_for('user_views.delete_skill') }}"
+        };
+    </script>
+    <!-- Include page-specific JavaScript -->
+    <script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
 {% endblock %}
 
 {% block footer %}

@@ -2,100 +2,11 @@
 
 {% block head %}
     <title>Work History</title>
-    <script>
-        $(document).ready(function() {
-            // Initialize datepickers
-            $('.date-picker').datepicker({
-                dateFormat: 'yy-mm-dd'
-            });
-
-            // Initialize occupation autocomplete
-            $('#job_title').autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.get_occupation_suggestions') }}",
-                        type: 'GET',
-                        data: { query: request.term },
-                        success: function(data) {
-                            response(data.suggestions);
-                        },
-                        error: function() {
-                            response([]);
-                        }
-                    });
-                },
-                minLength: 2, // Minimum characters before autocomplete starts
-                select: function(event, ui) {
-                    console.log("Selected: " + ui.item.value);
-                }
-            });
-
-            // Handle adding work history
-            $('#add-work-history-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = {
-                    job_title: $('#job_title').val(),
-                    company: $('#company').val(),
-                    description: $('#description').val(),
-                    date_from: $('#date_from').val(),
-                    date_to: $('#date_to').val()
-                };
-
-                $.ajax({
-                    url: "{{ url_for('user_views.add_work_history') }}",
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function(response) {
-                        if(response.success) {
-                            // Append the new work history entry to the list
-                            $('#work-history-list').append(`
-                                <li id="work-${response.work_history.id}">
-                                    <strong>${response.work_history.job_title}</strong> at <em>${response.work_history.company}</em><br>
-                                    ${response.work_history.description}<br>
-                                    <small>${response.work_history.date_from} - ${response.work_history.date_to || 'Present'}</small>
-                                    <button type="button" class="delete-work-button" data-id="${response.work_history.id}">Delete</button>
-                                </li>
-                            `);
-                            // Clear the form
-                            $('#add-work-history-form')[0].reset();
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function() {
-                        alert('An error occurred while adding work history.');
-                    }
-                });
-            });
-
-            // Handle deleting work history
-            $(document).on('click', '.delete-work-button', function() {
-                var workId = $(this).data('id');
-                if(confirm('Are you sure you want to delete this work history entry?')) {
-                    $.ajax({
-                        url: "{{ url_for('user_views.delete_work_history') }}",
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ work_id: workId }),
-                        success: function(response) {
-                            if(response.success) {
-                                $(`#work-${workId}`).remove();
-                            } else {
-                                alert(response.message);
-                            }
-                        },
-                        error: function() {
-                            alert('An error occurred while deleting work history.');
-                        }
-                    });
-                }
-            });
-        });
-    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/work_history.css') }}">
 {% endblock %}
 
 {% block body %}
+<div id="notification-container"></div>
 <div class="container">
     <h2>Work History</h2>
 
@@ -145,4 +56,21 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Pass configuration variables to JavaScript -->
+    <script>
+        window.CONFIG = {
+            occupationSuggestionsUrl: "{{ url_for('user_views.get_occupation_suggestions') }}",
+            addWorkHistoryUrl: "{{ url_for('user_views.add_work_history') }}",
+            deleteWorkHistoryUrl: "{{ url_for('user_views.delete_work_history') }}"
+        };
+    </script>
+    <!-- Include page-specific JavaScript -->
+    <script src="{{ url_for('static', filename='js/work_history.js') }}"></script>
+{% endblock %}
+
+{% block footer %}
+    {{ super() }}
 {% endblock %}
