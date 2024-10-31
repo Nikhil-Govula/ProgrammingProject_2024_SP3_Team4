@@ -1,0 +1,209 @@
+{# src/templates/employer/view_applications.html #}
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Applications for {{ job.job_title }}</title>
+    <style>
+        .applications-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .application-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        .applicant-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .applicant-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .applicant-info {
+            flex-grow: 1;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            background-color: #ffd700;
+            color: #000;
+        }
+
+        .status-accepted {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .status-rejected {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .skill-tag {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-accept {
+            background-color: #4CAF50;
+        }
+
+        .btn-reject {
+            background-color: #f44336;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="applications-container">
+        <h2>Applications for {{ job.job_title }}</h2>
+        <p>Total Applications: {{ applications|length }}</p>
+
+        {% for app in applications %}
+            <div class="application-card">
+                <div class="applicant-header">
+                    <img src="{{ app.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" 
+                         alt="Profile Picture" 
+                         class="applicant-photo">
+                    <div class="applicant-info">
+                        <h3>{{ app.user.first_name }} {{ app.user.last_name }}</h3>
+                        <p>{{ app.user.email }}</p>
+                        <span class="status-badge status-{{ app.application.status|lower }}">
+                            {{ app.application.status }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h4>Skills</h4>
+                    <div class="skills-list">
+                        {% for skill in app.user.skills %}
+                            <span class="skill-tag">{{ skill.skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="work-history-section">
+                    <h4>Work History</h4>
+                    {% for work in app.user.work_history %}
+                        <div class="work-entry">
+                            <p><strong>{{ work.job_title }}</strong> at {{ work.company }}</p>
+                            <p>{{ work.date_from }} - {{ work.date_to }}</p>
+                            <p>{{ work.description }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="action-buttons">
+                    {% if app.application.status == 'Pending' %}
+                        <button class="btn btn-accept" 
+                                onclick="updateStatus('{{ app.application.application_id }}', 'Accepted')">
+                            Accept
+                        </button>
+                        <button class="btn btn-reject" 
+                                onclick="updateStatus('{{ app.application.application_id }}', 'Rejected')">
+                            Reject
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p>No applications received yet.</p>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function updateStatus(applicationId, status) {
+            // Show loading state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Updating...';
+            button.disabled = true;
+
+            fetch(`/employer/jobs/applications/${applicationId}/update-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: status
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showNotification('success', 'Status updated successfully');
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to update status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', error.message);
+                // Reset button state
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('fade-out');
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+    </script>
+{% endblock %}

@@ -1,24 +1,175 @@
 {% extends 'base.html' %}
 
+{% block head %}
+<title>Your Applications</title>
+<style>
+    .view-applications-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-heading {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .applications-list {
+        margin-top: 30px;
+    }
+
+    .application-card {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .application-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-info {
+        color: #666;
+        font-size: 0.9em;
+        margin: 10px 0;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.9em;
+        font-weight: 500;
+        margin: 10px 0;
+    }
+
+    .status-pending {
+        background-color: #ffeeba;
+        color: #856404;
+    }
+
+    .status-accepted {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .application-date {
+        color: #666;
+        font-size: 0.8em;
+        margin-top: 10px;
+    }
+
+    .view-job-button {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .view-job-button:hover {
+        background-color: #2980b9;
+        text-decoration: none;
+        color: white;
+    }
+
+    .no-applications {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        color: #666;
+    }
+
+    .no-applications a {
+        color: #3498db;
+        text-decoration: none;
+    }
+
+    .no-applications a:hover {
+        text-decoration: underline;
+    }
+
+    .inactive-job {
+        background-color: #f8f9fa;
+        border: 1px dashed #dee2e6;
+    }
+
+    .job-status-message {
+        color: #856404;
+        background-color: #fff3cd;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
 {% block body %}
-<div class="container view-applications-container">
+<div class="view-applications-container">
     <h1 class="section-heading">Your Job Applications</h1>
-    <p>Below are the jobs you've applied for and their current status:</p>
+    <p>Track the status of your job applications below:</p>
 
     <div class="applications-list">
         {% if applications %}
             {% for application in applications %}
-                <div class="application-card card mb-4">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ application.job.title }}</h4>
-                        <p class="card-text"><strong>Company:</strong> {{ application.job.company }}</p>
-                        <p class="card-text"><strong>Application Status:</strong> {{ application.status }}</p>
-                        <a href="{{ url_for('user_views.view_job_details', job_id=application.job.id) }}" class="btn btn-primary">View Job</a>
+                <div class="application-card {% if not application.job %}inactive-job{% endif %}">
+                    {% if application.job %}
+                        <h3>{{ application.job.job_title }}</h3>
+
+                        <div class="company-info">
+                            <p><strong>Company:</strong> {{ application.job.company_name }}</p>
+                            <p><strong>Location:</strong> {{ application.job.city }}, {{ application.job.country }}</p>
+                        </div>
+                    {% else %}
+                        <div class="job-status-message">
+                            <h3>Job Posting No Longer Available</h3>
+                            <p>This job posting has been removed or is no longer active.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="status-badge status-{{ application.status.lower() }}">
+                        Status: {{ application.status }}
                     </div>
+
+                    <div class="application-date">
+                        Applied on: {{ application.date_applied[:10] }}
+                    </div>
+
+                    {% if application.job %}
+                        <div style="margin-top: 15px;">
+                            <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
+                               class="view-job-button">
+                                View Job Details
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
         {% else %}
-            <p>You haven't applied for any jobs yet. Start applying now to see your applications here.</p>
+            <div class="no-applications">
+                <h3>No Applications Yet</h3>
+                <p>You haven't applied for any jobs yet.</p>
+                <p>Start your job search now!</p>
+                <a href="{{ url_for('user_views.view_all_jobs') }}" class="view-job-button">
+                    Browse Available Jobs
+                </a>
+            </div>
         {% endif %}
     </div>
 </div>

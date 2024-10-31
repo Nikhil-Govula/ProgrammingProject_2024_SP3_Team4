@@ -1,5 +1,6 @@
 from flask import g
 
+from ..models import User
 from ..models.employer_model import Employer
 from ..controllers.user_controller import UserController  # For password validation
 from ..services.email_service import send_reset_email
@@ -236,3 +237,33 @@ class EmployerController:
 
         success, message = job.remove_work_history_entry(occupation, duration)
         return success, message
+
+    @staticmethod
+    def get_job_applications(job_id, employer_id):
+        """
+        Get all applications for a specific job
+        Ensures the employer owns the job before returning applications
+        """
+        job = Job.get_by_id(job_id)
+        if not job or job.employer_id != employer_id:
+            return None, "Job not found or unauthorized"
+
+        applications = job.get_applications()
+        # Get user details for each application
+        detailed_applications = []
+        for app in applications:
+            user = User.get_by_id(app['user_id'])
+            if user:
+                detailed_applications.append({
+                    'application': app,
+                    'user': {
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'email': user.email,
+                        'skills': user.skills,
+                        'work_history': user.work_history,
+                        'profile_picture_url': user.profile_picture_url
+                    }
+                })
+
+        return detailed_applications, "Success"

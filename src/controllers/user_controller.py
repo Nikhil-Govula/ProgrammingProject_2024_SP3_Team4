@@ -412,16 +412,35 @@ class UserController:
         return Job.get_by_id(job_id)
 
     @staticmethod
-    def apply_for_job(user_id, job_id):
-        # Check if the user has already applied for this job
+    def has_applied_for_job(user_id, job_id):
+        """
+        Check if a user has already applied for a specific job.
+        """
+        # Add debug logging
+        print(f"Checking application for user {user_id} and job {job_id}")
         existing_application = Application.get_by_user_and_job(user_id, job_id)
-        if existing_application:
-            return False, "You have already applied for this job."
+        print(f"Found application: {existing_application}")
+        return existing_application is not None
+
+    @staticmethod
+    def apply_for_job(user_id, job_id):
+        # Check if the job exists and is still active
+        job = Job.get_by_id(job_id)
+        if not job or not job.is_active:
+            return False, "This job is no longer available."
+
+        # Check if the user has already applied
+        if UserController.has_applied_for_job(user_id, job_id):
+            return False, "You have already applied for this position."
 
         # Create a new application
         application = Application(user_id=user_id, job_id=job_id)
-        success, message = application.save()
-        return success, message
+        success = application.save()
+
+        if success:
+            return True, "Your application has been submitted successfully!"
+        else:
+            return False, "There was an error submitting your application. Please try again."
 
     # New method to get all recommended jobs based on user profile and preferences
     @staticmethod
@@ -459,8 +478,37 @@ class UserController:
     # New method for retrieving user's job applications
     @staticmethod
     def get_user_applications(user_id):
+        """
+        Get all applications for a user with associated job details
+        """
         applications = Application.get_by_user_id(user_id)
-        return applications
+
+        # For each application, fetch and attach the associated job
+        for application in applications:
+            try:
+                job = Job.get_by_id(application.job_id)
+                if job and job.is_active:  # Make sure job exists and is active
+                    # Create a simple dictionary with required job info
+                    application.job = {
+                        'job_title': job.job_title,
+                        'company_name': job.company_name,
+                        'city': job.city,
+                        'country': job.country,
+                        'is_active': job.is_active
+                    }
+                else:
+                    application.job = None
+            except Exception as e:
+                print(f"Error fetching job for application {application.application_id}: {e}")
+                application.job = None
+
+        # Sort applications by date_applied (most recent first)
+        return sorted(applications, key=lambda x: x.date_applied, reverse=True)
+
+    @staticmethod
+    def get_application(user_id, job_id):
+        """Get the application details for a specific user and job."""
+        return Application.get_by_user_and_job(user_id, job_id)
 
     # New method for tracking user applications
     @staticmethod

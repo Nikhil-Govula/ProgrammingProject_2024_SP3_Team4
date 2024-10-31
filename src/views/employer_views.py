@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, make_r
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
-from ..models import Job
+from ..models import Job, Application
 
 employer_bp = Blueprint('employer_views', __name__, url_prefix='/employer')
 
@@ -315,3 +315,48 @@ def delete_job(job_id):
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
+
+@employer_bp.route('/jobs/<job_id>/applications', methods=['GET'])
+@auth_required(user_type='employer')
+def view_job_applications(job_id):
+    applications, message = EmployerController.get_job_applications(job_id, g.user.employer_id)
+    if not applications:
+        flash(message, 'error')
+        return redirect(url_for('employer_views.view_jobs'))
+
+    job = Job.get_by_id(job_id)
+    return render_template('employer/view_applications.html',
+                           applications=applications,
+                           job=job)
+
+
+@employer_bp.route('/jobs/applications/<application_id>/update-status', methods=['POST'])
+@auth_required(user_type='employer')
+def update_application_status(application_id):  # Add application_id parameter here
+    data = request.get_json()
+    new_status = data.get('status')
+
+    # Get the application
+    application = Application.get_by_id(application_id)
+    if not application:
+        return jsonify({
+            'success': False,
+            'message': 'Application not found'
+        }), 404
+
+    # Verify the employer owns the job
+    job = Job.get_by_id(application.job_id)
+    if not job or job.employer_id != g.user.employer_id:
+        return jsonify({
+            'success': False,
+            'message': 'Unauthorized'
+        }), 403
+
+    # Update the status
+    success = Application.update_status(application_id, new_status)
+
+    return jsonify({
+        'success': success,
+        'message': 'Status updated successfully' if success else 'Failed to update status'
+    })

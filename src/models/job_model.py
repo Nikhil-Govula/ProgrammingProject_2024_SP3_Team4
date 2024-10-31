@@ -206,3 +206,12 @@ class Job:
         if item:
             return Job(**item)
         return None
+
+    def get_applications(self):
+        """Get all applications for this job"""
+        response = DynamoDB.scan(
+            'Applications',
+            FilterExpression='job_id = :jid',
+            ExpressionAttributeValues={':jid': self.job_id}
+        )
+        return response.get('Items', [])
