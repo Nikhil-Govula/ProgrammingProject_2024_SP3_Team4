@@ -320,12 +320,16 @@ def delete_job(job_id):
 @employer_bp.route('/jobs/<job_id>/applications', methods=['GET'])
 @auth_required(user_type='employer')
 def view_job_applications(job_id):
-    applications, message = EmployerController.get_job_applications(job_id, g.user.employer_id)
-    if not applications:
-        flash(message, 'error')
+    job = Job.get_by_id(job_id)
+    if not job:
+        flash("Job not found", 'error')
         return redirect(url_for('employer_views.view_jobs'))
 
-    job = Job.get_by_id(job_id)
+    if job.employer_id != g.user.employer_id:
+        flash("You don't have permission to view these applications", 'error')
+        return redirect(url_for('employer_views.view_jobs'))
+
+    applications = job.get_applications()
     return render_template('employer/view_applications.html',
                            applications=applications,
                            job=job)

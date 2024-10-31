@@ -1,3 +1,4 @@
+// main.js
 $(document).ready(function() {
     // Notification Function
     window.showNotification = function(message, type = 'success') {

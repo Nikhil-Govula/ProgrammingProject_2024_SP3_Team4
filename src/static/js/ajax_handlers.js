@@ -1,3 +1,4 @@
+// ajax_handlers.js
 $(document).ready(function() {
     // Example: Common AJAX form submission handler
     window.submitForm = function(formSelector, successCallback) {
