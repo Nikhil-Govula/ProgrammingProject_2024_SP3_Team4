@@ -36,6 +36,7 @@
         <div>
             <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job</a>
             <button id="editSelectedJob" class="btn btn-edit-disabled" disabled>Edit Selected Job</button>
+            <button id="viewApplications" class="btn btn-edit-disabled" disabled>View Applications</button>
         </div>
     </div>
 
@@ -99,7 +100,8 @@
     <!-- Pass configuration variables to JavaScript -->
     <script>
         window.CONFIG = {
-            editJobUrlTemplate: "{{ url_for('employer_views.edit_job', job_id='__JOB_ID__') }}"
+            editJobUrlTemplate: "{{ url_for('employer_views.edit_job', job_id='__JOB_ID__') }}",
+            viewApplicationsUrlTemplate: "{{ url_for('employer_views.view_job_applications', job_id='__JOB_ID__') }}"
         };
     </script>
     <!-- Include DataTables and centralized JavaScript file -->

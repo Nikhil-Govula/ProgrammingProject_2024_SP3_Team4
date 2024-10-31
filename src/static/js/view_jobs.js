@@ -32,19 +32,27 @@ $(document).ready(function() {
             $(this).removeClass('selected');
             selectedJobId = null;
             $('#editSelectedJob').addClass('btn-edit-disabled').prop('disabled', true);
+            $('#viewApplications').addClass('btn-edit-disabled').prop('disabled', true);
         } else {
             table.$('tr.selected').removeClass('selected');
             $(this).addClass('selected');
             selectedJobId = $(this).data('job-id');
             $('#editSelectedJob').removeClass('btn-edit-disabled').prop('disabled', false);
+            $('#viewApplications').removeClass('btn-edit-disabled').prop('disabled', false);
         }
     });
 
     // Handle edit button click
     $('#editSelectedJob').click(function() {
         if (selectedJobId) {
-            // Redirect to the edit page for the selected job
             window.location.href = `/employer/jobs/edit/${selectedJobId}`;
+        }
+    });
+
+    // Handle view applications button click
+    $('#viewApplications').click(function() {
+        if (selectedJobId) {
+            window.location.href = `/employer/jobs/${selectedJobId}/applications`;
         }
     });
 
