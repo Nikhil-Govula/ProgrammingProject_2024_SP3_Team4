@@ -42,18 +42,19 @@
 
                 {# Header links if USER logged in #}
                 {% if g.user_type == 'user' %}
-                    <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">View All Jobs</a>
-                    <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
+                    <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button-header">View All Jobs</a>
+                    <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button-header">Saved Jobs</a>
                     {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
                     {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
                     {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
-                    <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button">Dashboard</a>
-                    <a href="{{ url_for('user_views.logout') }}" class="dashboard-button logout">Logout</a>
+                    <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
+                    <a href="{{ url_for('user_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if EMPLOYER logged in #}
                 {% elif g.user_type == 'employer' %}
-                    <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">Manage Job Postings</a>
-                    <a href="{{ url_for('employer_views.dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('employer_views.view_jobs') }}" class="dashboard-button-header">Manage Job Postings</a>
+                    <a href="{{ url_for('employer_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
+                    <a href="{{ url_for('employer_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if ADMIN logged in #}
                 {% elif g.user_type == 'admin' %}
