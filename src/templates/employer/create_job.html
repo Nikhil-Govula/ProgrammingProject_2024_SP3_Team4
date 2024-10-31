@@ -3,6 +3,34 @@
 {% block head %}
     <title>Create Job Posting</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/create_job.css') }}">
+    <!-- Include TinyMCE Library for rich text formatting -->
+    <script src="https://cdn.tiny.cloud/1/ow07p4zhtnk3s4yh3m47nl9hrm4jn3n5ehjf5prbuv3m0jpa/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        tinymce.init({
+            selector: '#description, #requirements', // Textareas where you need TinyMCE
+            plugins: 'lists link',
+            toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | link',
+            height: 300
+        });
+    </script>
+    <script>
+        document.getElementById('create-job-form').addEventListener('submit', function(e) {
+            const description = tinymce.get('description').getContent();
+            const requirements = tinymce.get('requirements').getContent();
+
+            // Check if the required TinyMCE fields are empty
+            if (!description || !requirements) {
+                e.preventDefault(); // Prevent form submission
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Populate hidden textareas with TinyMCE content for submission
+            document.getElementById('description').value = description;
+            document.getElementById('requirements').value = requirements;
+        });
+    </script>
+
 {% endblock %}
 
 {% block body %}
@@ -29,7 +57,7 @@
         <div class="form-group">
             <label for="description">Job Description</label>
             <div class="dynamic-input-group">
-                <textarea name="description" id="description" required></textarea>
+                <textarea name="description" id="description"></textarea>
             </div>
         </div>
 
@@ -37,7 +65,7 @@
         <div class="form-group">
             <label for="requirements">Requirements</label>
             <div class="dynamic-input-group">
-                <textarea name="requirements" id="requirements" required></textarea>
+                <textarea name="requirements" id="requirements"></textarea>
             </div>
         </div>
 

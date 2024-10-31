@@ -33,6 +33,15 @@
 
 {% block scripts %}
 <script>
+    // Function to format date in dd/mm/yyyy format
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
     function loadJobDetails(jobId) {
         fetch(`/user/job_details/${jobId}`, {
             method: 'GET',
@@ -56,7 +65,7 @@
                     <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
                     <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
                     <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
-                    <p class="date-posted"><strong>Date Posted:</strong> ${data.date_posted.split('T')[0]}</p>
+                    <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
 
                     <div class="section">
                         <h3>Job Description</h3>
