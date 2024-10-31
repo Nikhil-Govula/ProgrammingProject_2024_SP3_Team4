@@ -179,63 +179,6 @@ class Job:
         return sorted_jobs
 
     @staticmethod
-    def get_recommended_jobs(user):
-        """
-        Get personalized job recommendations based on user's profile factors:
-        - Skills match
-        - Location match
-        - Certification match
-        - Work history relevance
-
-        Returns jobs sorted by match score
-        """
-        response = DynamoDB.scan(
-            'Jobs',
-            FilterExpression='is_active = :active',
-            ExpressionAttributeValues={':active': True}
-        )
-
-        jobs = [Job(**item) for item in response.get('Items', [])]
-        scored_jobs = []
-
-        for job in jobs:
-            score = 0
-
-            # Skills matching (highest weight - 40%)
-            user_skills = {skill['skill'].lower() for skill in user.skills}
-            job_skills = {skill.lower() for skill in job.skills}
-            if job_skills and user_skills:  # Avoid division by zero
-                skills_match = len(user_skills.intersection(job_skills)) / len(job_skills)
-                score += skills_match * 40
-
-            # Location matching (30%)
-            if user.city and user.country:
-                if job.city.lower() == user.city.lower() and job.country.lower() == user.country.lower():
-                    score += 30
-                elif job.country.lower() == user.country.lower():
-                    score += 15
-
-            # Certification matching (20%)
-            user_certs = {cert['type'].lower() for cert in user.certifications}
-            job_certs = {cert.lower() for cert in job.certifications}
-            if job_certs and user_certs:
-                cert_match = len(user_certs.intersection(job_certs)) / len(job_certs)
-                score += cert_match * 20
-
-            # Work history relevance (10%)
-            user_job_titles = {work['job_title'].lower() for work in user.work_history}
-            if job.job_title.lower() in user_job_titles:
-                score += 10
-
-            scored_jobs.append((job, score))
-
-        # Sort by score descending and date posted
-        scored_jobs.sort(key=lambda x: (x[1], x[0].date_posted), reverse=True)
-
-        # Return only the jobs, not the scores
-        return [job for job, score in scored_jobs]
-
-    @staticmethod
     def get_by_id(job_id):
         """
         Retrieve a job by its ID.
