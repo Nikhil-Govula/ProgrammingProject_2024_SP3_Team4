@@ -582,29 +582,47 @@ def view_all_jobs():
         total_pages=total_pages
     )
 
+
 @user_bp.route('/jobs/<job_id>', methods=['GET'])
 @auth_required(user_type='user')
 def view_job_details(job_id):
-    """
-    Render a page displaying detailed information about a specific job.
-    """
     job = UserController.get_job_by_id(job_id)
     if not job:
         flash("Job not found or is no longer available.", 'error')
         return redirect(url_for('user_views.view_all_jobs'))
-    return render_template('user/job_detail.html', job=job)
 
+    user_id = g.user.user_id
+    print(f"Checking application status for user {user_id} and job {job_id}")
+
+    # Get the application if it exists
+    application = UserController.get_application(user_id, job_id)
+    has_applied = application is not None
+
+    return render_template('user/job_detail.html',
+                           job=job,
+                           has_applied=has_applied,
+                           application=application)
 
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
 @auth_required(user_type='user')
 def apply_for_job(job_id):
     user = g.user
+
+    if UserController.has_applied_for_job(user.user_id, job_id):
+        return jsonify({
+            'success': False,
+            'message': 'You have already applied for this position.'
+        }), 400
+
     success, message = UserController.apply_for_job(user.user_id, job_id)
-    if success:
-        flash("Your application has been submitted successfully.", "success")
-    else:
-        flash(message, "error")
-    return redirect(url_for('user_views.view_job_details', job_id=job_id))
+
+    response_data = {
+        'success': success,
+        'message': message,
+        'reload': True  # Add this flag to trigger a page reload
+    }
+
+    return jsonify(response_data), 200 if success else 400
 
 # **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
 
