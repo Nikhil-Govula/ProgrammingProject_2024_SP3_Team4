@@ -1,39 +1,119 @@
 {% extends 'base.html' %}
 
 {% block body %}
-<div class="content">
-    <div class="available-jobs-section">
-        <h2 class="section-title">Available Jobs</h2>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="notification {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="job-list-container">
-            {% if jobs %}
-                {% for job in jobs %}
-                    <div class="job-card">
-                        <div class="job-header">
-                            <img src="{{ url_for('static', filename='images/company_logo_placeholder.png') }}" alt="Company Logo" class="company-logo">
-                            <h3 class="job-title">{{ job.job_title }}</h3>
+    <div class="job-board-container">
+        <!-- Left Section: Job List -->
+        <div class="job-list-section">
+            <h2 class="section-title">Available Jobs</h2>
+            <div class="job-list-container">
+                {% if jobs %}
+                    {% for job in jobs %}
+                        <div class="job-list-item" onclick="loadJobDetails('{{ job.job_id }}')">
+                            <div class="job-list-info">
+                                <h4 class="job-title">{{ job.job_title }}</h4>
+                                <p class="company-name">{{ job.company_name }}</p>
+                                <p class="job-location">{{ job.city }}, {{ job.country }}</p>
+                            </div>
                         </div>
-                        <div class="job-details">
-                            <p><strong>Company:</strong> {{ job.company_name }}</p>
-                            <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
-                            <p><strong>Salary:</strong> ${{ "{:,.2f}".format(job.salary) }}</p>
-                            <p><strong>Date Posted:</strong> {{ job.date_posted[:10] }}</p>
-                        </div>
-                        <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}" class="view-details-button">View Details</a>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-jobs-message">No jobs are currently available. Please check back later.</p>
-            {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="no-jobs-message">No jobs are currently available. Please check back later.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Section: Job Details -->
+        <div class="job-details-section" id="job-details">
+            <div id="job-details-content" class="job-details-content">
+                <p>Select a job from the left to see details here.</p>
+            </div>
         </div>
     </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadJobDetails(jobId) {
+        fetch(`/user/job_details/${jobId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            document.getElementById('job-details-content').innerHTML = `
+                <div class="job-detail-container">
+                    <h2 class="job-title-detail">${data.job_title}</h2>
+                    <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
+                    <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
+                    <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
+                    <p class="date-posted"><strong>Date Posted:</strong> ${data.date_posted.split('T')[0]}</p>
+
+                    <div class="section">
+                        <h3>Job Description</h3>
+                        <p>${data.description}</p>
+                    </div>
+
+                    <div class="section">
+                        <h3>Requirements</h3>
+                        <p>${data.requirements}</p>
+                    </div>
+
+                    ${data.certifications.length > 0 ? `
+                        <div class="section">
+                            <h3>Certifications</h3>
+                            <ul class="certifications">
+                                ${data.certifications.map(cert => `<li>${cert}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${data.skills.length > 0 ? `
+                        <div class="section">
+                            <h3>Skills</h3>
+                            <ul class="skills">
+                                ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching job details:', error);
+            document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
+        });
+    }
+
+    function applyForJob(jobId) {
+        // Post the application request
+        fetch(`/apply/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Application submitted successfully!');
+                loadJobDetails(jobId); // Reload details to update the application status
+            } else {
+                alert('Failed to apply: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error applying for job:', error);
+        });
+    }
+</script>
 {% endblock %}

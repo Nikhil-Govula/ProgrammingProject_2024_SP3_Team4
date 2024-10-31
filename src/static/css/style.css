@@ -305,97 +305,190 @@ p {
 /* ==========================================================================
    Available Jobs Styles
    ========================================================================== */
-.available-jobs-section {
+/* Job Board Layout */
+.job-board-container {
+    justify-content: center;
+    display: flex;
     width: 100%;
-    max-width: 1200px;
-    padding: 40px;
-    background: linear-gradient(to bottom, #a0e9ff, #38b6ff);
+    gap: 25px;
+    padding: 20px;
+}
+
+.job-list-header {
+    width: 30%;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.job-list-header h2 {
+    color: #0073b1;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Left Section: Job List */
+.job-list-section {
+    width: 30%;
+    background-color: #ffffff;
+    padding: 20px;
     border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .section-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-align: center;
+    display: flex;
+    font-size: 1.6rem;
     margin-bottom: 20px;
-    color: #ffffff;
+    color: #0073b1;
+    font-weight: 700;
+    justify-content: center;
 }
 
 .job-list-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    gap: 20px;
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
 }
 
-.job-card {
-    width: 300px;
-    background: #fff;
+.job-list-item {
+    background-color: #f7f7f7;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.job-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-
-.job-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     margin-bottom: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.company-logo {
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
-    border-radius: 5px;
-    background: #f3f3f3;
+.job-list-item:hover {
+    background-color: #e9f4ff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.job-list-info {
+    display: flex;
+    flex-direction: column;
 }
 
 .job-title {
-    font-size: 1.4rem;
-    font-weight: 600;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 0 0 8px 0;
     color: #333;
 }
 
-.job-details {
+.company-name,
+.job-location {
+    font-size: 1rem;
+    color: #777;
+}
+
+/* Right Section: Job Details */
+.job-details-section {
+    width: 65%;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    min-height: 80vh;
+    overflow-y: auto;
+}
+
+.job-detail-container {
+    line-height: 1.6;
+}
+
+.job-title-detail {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0073b1;
     margin-bottom: 15px;
 }
 
-.job-details p {
-    margin: 5px 0;
-    font-size: 0.9rem;
+.company-info,
+.location-info,
+.salary-info,
+.date-posted {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.section {
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.section h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.section p,
+.section ul {
+    font-size: 1rem;
     color: #555;
 }
 
-.view-details-button {
-    display: block;
-    width: 100%;
-    text-align: center;
-    padding: 10px;
-    background-color: #38b6ff;
-    color: #fff;
-    text-decoration: none;
+.section ul {
+    padding-left: 20px;
+}
+
+.section ul li {
+    margin-bottom: 5px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .job-board-container {
+        flex-direction: column;
+    }
+
+    .job-list-section,
+    .job-details-section {
+        width: 100%;
+    }
+
+    .job-list-section {
+        margin-bottom: 20px;
+    }
+}
+
+/* Scroll Bar for Job List */
+.job-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.job-list-container::-webkit-scrollbar-thumb {
+    background-color: #0073b1;
+    border-radius: 10px;
+}
+
+.job-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px;
     border-radius: 5px;
-    font-weight: 600;
-    transition: background-color 0.3s;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
 }
 
-.view-details-button:hover {
-    background-color: #3299cc;
+.notification.success {
+    background-color: #2ecc71;
 }
 
-.no-jobs-message {
-    width: 100%;
-    text-align: center;
-    color: #666;
-    font-size: 1.2rem;
-    margin: 40px 0;
+.notification.error {
+    background-color: #e74c3c;
 }
 
 /* ==========================================================================
@@ -537,6 +630,106 @@ p {
             color: black;
             text-decoration: none;
         }
+
+/* ==========================================================================
+   Profile Picture in Navbar
+   ========================================================================== */
+.container {
+    padding: 2rem;
+    width: -webkit-fill-available;
+    margin: 0 auto;
+}
+
+.section-heading {
+    font-size: 2.5rem;
+    color: #05386b;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.interview-sections {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.tips-section, .video-section, .resources-section {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.interview-tips-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.tip-card {
+    background-color: #f4dec8;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tip-card h3 {
+    font-size: 1.25rem;
+    color: #333;
+}
+
+.tip-card p {
+    color: #555;
+    margin: 0.5rem 0;
+}
+
+.learn-more-btn {
+    background-color: #5cdb95;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.learn-more-btn:hover {
+    background-color: #379683;
+}
+
+.video-section h2, .resources-section h2 {
+    font-size: 1.75rem;
+    color: #05386b;
+}
+
+.video-container {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.resources-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.resources-section li {
+    padding: 0.5rem 0;
+}
+
+.resources-section li a {
+    color: #379683;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.resources-section li a:hover {
+    color: #05386b;
+    text-decoration: underline;
+}
 
 /* ==========================================================================
    User Registration Page Styles

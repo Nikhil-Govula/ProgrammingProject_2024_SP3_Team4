@@ -583,25 +583,27 @@ def view_all_jobs():
     )
 
 
-@user_bp.route('/jobs/<job_id>', methods=['GET'])
+@user_bp.route('/job_details/<job_id>', methods=['GET'])
 @auth_required(user_type='user')
-def view_job_details(job_id):
+def get_job_details(job_id):
     job = UserController.get_job_by_id(job_id)
     if not job:
-        flash("Job not found or is no longer available.", 'error')
-        return redirect(url_for('user_views.view_all_jobs'))
+        return jsonify({'error': 'Job not found'}), 404
 
-    user_id = g.user.user_id
-    print(f"Checking application status for user {user_id} and job {job_id}")
+    return jsonify({
+        "job_id": job.job_id,
+        "job_title": job.job_title,
+        "company_name": job.company_name,
+        "city": job.city,
+        "country": job.country,
+        "salary": f"{job.salary:,.2f}",
+        "date_posted": job.date_posted,
+        "description": job.description,
+        "requirements": job.requirements,
+        "certifications": job.certifications or [],
+        "skills": job.skills or [],
+    })
 
-    # Get the application if it exists
-    application = UserController.get_application(user_id, job_id)
-    has_applied = application is not None
-
-    return render_template('user/job_detail.html',
-                           job=job,
-                           has_applied=has_applied,
-                           application=application)
 
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
 @auth_required(user_type='user')
@@ -619,7 +621,7 @@ def apply_for_job(job_id):
     response_data = {
         'success': success,
         'message': message,
-        'reload': True  # Add this flag to trigger a page reload
+        'reload': False  # No need for full reload, just update the status
     }
 
     return jsonify(response_data), 200 if success else 400

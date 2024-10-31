@@ -625,3 +625,8 @@ class UserController:
                 'registration_link': 'https://example.com/register'
             }
         ]
+
+    # New method for getting interview tips
+    @staticmethod
+    def get_interview_tips():
+        return []
