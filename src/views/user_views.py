@@ -20,6 +20,7 @@ from ..services.google_auth_service import GoogleAuthService
 
 user_bp = Blueprint('user_views', __name__, url_prefix='/user')
 
+
 @user_bp.route('/login', methods=['GET', 'POST'])
 def login_user():
     if request.method == 'POST':
@@ -69,6 +70,7 @@ def register_user():
 
     return render_template('user/register_user.html')
 
+
 @user_bp.route('/verify/<token>', methods=['GET'])
 def verify_account(token):
     success, message = User.verify_account(token)
@@ -86,6 +88,7 @@ def dashboard():
     user = g.user
     return render_template('user/dashboard.html', user=user)
 
+
 @user_bp.route('/logout', methods=['GET'])
 def logout():
     session_id = request.cookies.get('session_id')
@@ -95,6 +98,7 @@ def logout():
     response.set_cookie('session_id', '', expires=0)
     return response
 
+
 # **New Routes for Reset Password**
 
 @user_bp.route('/reset_password', methods=['GET', 'POST'])
@@ -102,8 +106,10 @@ def reset_password():
     if request.method == 'POST':
         email = request.form['email']
         success, message, was_locked = UserController.reset_password(email)
-        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked, email=email)
+        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked,
+                               email=email)
     return render_template('user/reset_password.html')
+
 
 @user_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
@@ -220,8 +226,8 @@ def revoke():
     credentials = Credentials(**session['credentials'])
 
     revoke = requests.post('https://oauth2.googleapis.com/revoke',
-        params={'token': credentials.token},
-        headers = {'content-type': 'application/x-www-form-urlencoded'})
+                           params={'token': credentials.token},
+                           headers={'content-type': 'application/x-www-form-urlencoded'})
 
     status_code = getattr(revoke, 'status_code', 500)
     if status_code == 200:
@@ -235,6 +241,7 @@ def revoke():
 def view_profile():
     user = g.user
     return render_template('user/profile.html', user=user)
+
 
 @user_bp.route('/profile/edit', methods=['GET', 'POST'])
 @auth_required(user_type='user')
@@ -268,6 +275,7 @@ def edit_profile():
 
     return render_template('user/profile_edit.html', user=user)
 
+
 @user_bp.route('/upload_profile_picture', methods=['POST'])
 @auth_required(user_type='user')
 def upload_profile_picture():
@@ -285,6 +293,7 @@ def upload_profile_picture():
         return jsonify({'success': True, 'profile_picture_url': new_profile_picture_url}), 200
     else:
         return jsonify({'success': False, 'message': 'Invalid file type for profile picture.'}), 400
+
 
 @user_bp.route('/upload_certification', methods=['POST'])
 @auth_required(user_type='user')
@@ -323,7 +332,6 @@ def upload_certification():
     }), 200
 
 
-
 @user_bp.route('/delete_certification', methods=['POST'])
 @auth_required(user_type='user')
 def delete_certification():
@@ -349,6 +357,7 @@ def delete_certification():
 
     return jsonify({'success': True, 'message': 'Certification deleted successfully.'}), 200
 
+
 @user_bp.route('/update_field', methods=['POST'])
 @auth_required(user_type='user')
 def update_profile_field():
@@ -373,6 +382,7 @@ def update_profile_field():
     else:
         return jsonify({'success': False, 'message': message}), 400
 
+
 @user_bp.route('/change_password', methods=['GET', 'POST'])
 @auth_required(user_type='user')
 def change_password():
@@ -395,6 +405,7 @@ def change_password():
             return render_template('user/change_password.html', error=message)
 
     return render_template('user/change_password.html')
+
 
 @user_bp.route('/city_suggestions', methods=['GET'])
 def city_suggestions():
@@ -431,6 +442,7 @@ def view_work_history():
 
     return render_template('user/work_history.html', user=user, work_history=sorted_work_history)
 
+
 @user_bp.route('/add_work_history', methods=['POST'])
 @auth_required(user_type='user')
 def add_work_history():
@@ -461,6 +473,7 @@ def add_work_history():
     else:
         return jsonify({'success': False, 'message': message}), 400
 
+
 @user_bp.route('/delete_work_history', methods=['POST'])
 @auth_required(user_type='user')
 def delete_work_history():
@@ -479,6 +492,7 @@ def delete_work_history():
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
 
 @user_bp.route('/get_occupation_suggestions', methods=['GET'])
 def get_occupation_suggestions():
@@ -500,6 +514,7 @@ def get_occupation_suggestions():
         current_app.logger.error(f"Error calling OccupationAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
 
+
 @user_bp.route('/certification_suggestions', methods=['GET'])
 def certification_suggestions():
     query = request.args.get('query', '').strip()
@@ -520,11 +535,13 @@ def certification_suggestions():
         current_app.logger.error(f"Error calling CertificationAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
 
+
 @user_bp.route('/skills', methods=['GET'])
 @auth_required(user_type='user')
 def view_skills():
     user = g.user
     return render_template('user/skills.html', user=user)
+
 
 @user_bp.route('/add_skill', methods=['POST'])
 @auth_required(user_type='user')
@@ -540,6 +557,7 @@ def add_skill():
     else:
         return jsonify({'success': False, 'message': error}), 400
 
+
 @user_bp.route('/delete_skill', methods=['POST'])
 @auth_required(user_type='user')
 def delete_skill():
@@ -553,6 +571,7 @@ def delete_skill():
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
 
 @user_bp.route('/skill_suggestions', methods=['GET'])
 def skill_suggestions():
@@ -573,6 +592,7 @@ def skill_suggestions():
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling SkillAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
+
 
 # src/views/user_views.py
 
@@ -622,6 +642,7 @@ def get_job_details(job_id):
         "skills": job.skills or [],
     })
 
+
 @user_bp.route('/jobs/<job_id>', methods=['GET'])
 @auth_required(user_type='user')
 def view_job_details(job_id):
@@ -641,6 +662,20 @@ def view_job_details(job_id):
                            job=job,
                            has_applied=has_applied,
                            application=application)
+
+
+@user_bp.route('/remove_application/<application_id>', methods=['POST'])
+@auth_required(user_type='user')
+def remove_job_application(application_id):
+    user = g.user
+    success, message = UserController.delete_by_application_id(application_id)
+
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+
+    return '', 200 if success else 400
 
 
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
@@ -664,6 +699,7 @@ def apply_for_job(job_id):
 
     return jsonify(response_data), 200 if success else 400
 
+
 # **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
 
 
@@ -674,6 +710,7 @@ def recommended_jobs():
     recommended_jobs = UserController.get_recommended_jobs(user)
     print(f"Recommended Jobs for user {user.user_id}: {recommended_jobs}")
     return render_template('user/recommended_jobs.html', jobs=recommended_jobs)
+
 
 @user_bp.route('/saved_jobs', methods=['GET'])
 @auth_required(user_type='user')
@@ -690,6 +727,7 @@ def view_applications():
     applications = UserController.get_user_applications(user.user_id)
     return render_template('user/view_applications.html', applications=applications)
 
+
 @user_bp.route('/track_applications', methods=['GET'])
 @auth_required(user_type='user')
 def track_applications():
@@ -697,11 +735,13 @@ def track_applications():
     applications = UserController.get_user_applications(user.user_id)
     return render_template('user/track_applications.html', applications=applications)
 
+
 @user_bp.route('/interview_tips', methods=['GET'])
 @auth_required(user_type='user')
 def interview_tips():
     tips = UserController.get_interview_tips()
     return render_template('user/interview_tips.html', tips=tips)
+
 
 @user_bp.route('/networking_events', methods=['GET'])
 @auth_required(user_type='user')

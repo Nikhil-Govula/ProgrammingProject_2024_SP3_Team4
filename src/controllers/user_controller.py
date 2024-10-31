@@ -676,3 +676,7 @@ class UserController:
     @staticmethod
     def get_interview_tips():
         return []
+
+    @staticmethod
+    def delete_by_application_id(application_id):
+        return Application.delete_by_application_id(application_id)

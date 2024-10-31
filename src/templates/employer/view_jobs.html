@@ -56,7 +56,6 @@
         <thead>
             <tr>
                 <th>Job Title</th>
-                <th>Description</th>
                 <th>Salary</th>
                 <th>City</th>
                 <th>Country</th>
@@ -65,9 +64,9 @@
         </thead>
         <tbody>
         {% for job in jobs %}
-            <tr data-job-id="{{ job.job_id }}">
+            <tr data-job-id="{{ job.job_id }}" onclick="selectJob('{{ job.job_id }}')">
                 <td>{{ job.job_title }}</td>
-                <td>{{ job.description }}</td>
+{#                <td>{{ job.description }}</td>#}
                 <td>${{ "{:,.2f}".format(job.salary) }}</td>
                 <td>{{ job.city }}</td>
                 <td>{{ job.country }}</td>
@@ -107,4 +106,26 @@
     <!-- Include DataTables and centralized JavaScript file -->
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="{{ url_for('static', filename='js/view_jobs.js') }}"></script>
+    <script>
+        // JavaScript function to handle job selection
+        function selectJob(jobId) {
+            const rows = document.querySelectorAll('#jobsTable tbody tr');
+            rows.forEach(row => row.classList.remove('selected'));
+            const selectedRow = document.querySelector(`[data-job-id="${jobId}"]`);
+            selectedRow.classList.add('selected');
+
+            // Enable buttons and set appropriate URLs
+            document.getElementById('editSelectedJob').disabled = false;
+            document.getElementById('editSelectedJob').classList.remove('btn-edit-disabled');
+            document.getElementById('editSelectedJob').onclick = () => {
+                window.location.href = window.CONFIG.editJobUrlTemplate.replace('__JOB_ID__', jobId);
+            };
+
+            document.getElementById('viewApplications').disabled = false;
+            document.getElementById('viewApplications').classList.remove('btn-edit-disabled');
+            document.getElementById('viewApplications').onclick = () => {
+                window.location.href = window.CONFIG.viewApplicationsUrlTemplate.replace('__JOB_ID__', jobId);
+            };
+        }
+    </script>
 {% endblock %}

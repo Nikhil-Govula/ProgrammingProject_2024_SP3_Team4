@@ -137,3 +137,14 @@ class DynamoDB:
         except ClientError as e:
             print(e.response['Error']['Message'])
             return {}
+
+    @classmethod
+    def delete_item(cls, table_name, key):
+        table = cls.dynamodb.Table(table_name)
+        try:
+            table.delete_item(Key=key)
+            print(f"delete action performed on {table_name}")
+            return True
+        except ClientError as e:
+            logging.error(f"Error deleting item from {table_name}: {str(e)}")
+            return False

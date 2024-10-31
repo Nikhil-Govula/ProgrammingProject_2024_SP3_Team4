@@ -4,25 +4,17 @@
 <title>Your Applications</title>
 <style>
     .view-applications-container {
-        max-width: 800px;
+        width: 50%;
         margin: 20px auto;
         padding: 20px;
         background-color: white;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-
-    .section-heading {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .applications-list {
-        margin-top: 30px;
-    }
-
     .application-card {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
         background-color: #ffffff;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
@@ -36,19 +28,19 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .company-info {
-        color: #666;
-        font-size: 0.9em;
-        margin: 10px 0;
+    .application-info-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
     }
 
     .status-badge {
         display: inline-block;
         padding: 5px 10px;
         border-radius: 15px;
-        font-size: 0.9em;
+        font-size: 1em;
         font-weight: 500;
-        margin: 10px 0;
     }
 
     .status-pending {
@@ -68,54 +60,35 @@
 
     .application-date {
         color: #666;
-        font-size: 0.8em;
-        margin-top: 10px;
+        font-size: 1em;
     }
 
-    .view-job-button {
+    .view-job-button, .remove-job-button {
         display: inline-block;
         padding: 8px 16px;
-        background-color: #3498db;
-        color: white;
         text-decoration: none;
         border-radius: 4px;
         transition: background-color 0.2s;
     }
 
-    .view-job-button:hover {
-        background-color: #2980b9;
-        text-decoration: none;
+    .view-job-button {
+        background-color: #3498db;
         color: white;
     }
 
-    .no-applications {
-        text-align: center;
-        padding: 40px 20px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        color: #666;
-    }
-
-    .no-applications a {
-        color: #3498db;
+    .view-job-button:hover {
+        background-color: #2980b9;
         text-decoration: none;
     }
 
-    .no-applications a:hover {
-        text-decoration: underline;
+    .remove-job-button {
+        background-color: #e74c3c;
+        color: white;
     }
 
-    .inactive-job {
-        background-color: #f8f9fa;
-        border: 1px dashed #dee2e6;
-    }
-
-    .job-status-message {
-        color: #856404;
-        background-color: #fff3cd;
-        padding: 10px;
-        border-radius: 4px;
-        margin: 10px 0;
+    .remove-job-button:hover {
+        background-color: #c0392b;
+        text-decoration: none;
     }
 </style>
 {% endblock %}
@@ -124,41 +97,41 @@
 <div class="view-applications-container">
     <h1 class="section-heading">Your Job Applications</h1>
     <p>Track the status of your job applications below:</p>
-
     <div class="applications-list">
         {% if applications %}
             {% for application in applications %}
                 <div class="application-card {% if not application.job %}inactive-job{% endif %}">
+                    <h2>{{ application.job.job_title if application.job else 'Job Posting No Longer Available' }}</h2>
                     {% if application.job %}
-                        <h3>{{ application.job.job_title }}</h3>
-
                         <div class="company-info">
                             <p><strong>Company:</strong> {{ application.job.company_name }}</p>
                             <p><strong>Location:</strong> {{ application.job.city }}, {{ application.job.country }}</p>
                         </div>
                     {% else %}
                         <div class="job-status-message">
-                            <h3>Job Posting No Longer Available</h3>
                             <p>This job posting has been removed or is no longer active.</p>
                         </div>
                     {% endif %}
 
-                    <div class="status-badge status-{{ application.status.lower() }}">
-                        Status: {{ application.status }}
-                    </div>
-
-                    <div class="application-date">
-                        Applied on: {{ application.date_applied[:10] }}
-                    </div>
-
-                    {% if application.job %}
-                        <div style="margin-top: 15px;">
-                            <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
-                               class="view-job-button">
-                                View Job Details
-                            </a>
+                    <div class="application-info-container">
+                        <div class="status-badge status-{{ application.status.lower() }}">
+                            Status: {{ application.status }}
                         </div>
-                    {% endif %}
+                        <div class="application-date">
+                            Applied on: {{ application.date_applied[:10] }}
+                        </div>
+                        {% if application.job %}
+                            <div>
+                                <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
+                                   class="view-job-button">View Job Details</a>
+                            </div>
+                        {% else %}
+                            <div>
+                                <a href="#" onclick="removeApplication('{{ application.application_id }}')"
+                                   class="remove-job-button">Remove record!</a>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         {% else %}
@@ -173,4 +146,30 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    function removeApplication(applicationId) {
+        fetch(`/user/remove_application/${applicationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                {% if csrf_token %}
+                'X-CSRFToken': '{{ csrf_token() }}'
+                {% endif %}
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Handle successful removal, e.g., reload the page
+                window.location.reload();
+            } else {
+                alert('Failed to remove job application.');
+            }
+        })
+        .catch(error => {
+            console.error('Error removing job application:', error);
+        });
+    }
+</script>
+
 {% endblock %}

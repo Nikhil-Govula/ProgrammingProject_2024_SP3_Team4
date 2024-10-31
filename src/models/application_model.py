@@ -4,6 +4,7 @@ import uuid
 import datetime
 from ..services.database_service import DynamoDB
 
+
 class Application:
     def __init__(self, user_id, job_id, application_id=None, status='Pending', date_applied=None):
         self.application_id = application_id or str(uuid.uuid4())
@@ -92,3 +93,20 @@ class Application:
         if item:
             return Application(**item)
         return None
+
+    @staticmethod
+    def delete_by_application_id(application_id):
+        try:
+            # Use DynamoDB client to delete the application by application_id
+            DynamoDB.delete_item(
+                'Applications',
+                key={
+                    'application_id': application_id
+                }
+            )
+            print(f"Application: {application_id} successfully!")
+            return True, "Application removed successfully."
+        except Exception as e:
+            print(f"Error deleting application: {e}")
+            return False, "An error occurred while deleting the application."
+

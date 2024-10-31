@@ -67,6 +67,11 @@
                     <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
                     <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
 
+                    <form action="/user/jobs/${jobId}/apply" method="POST">
+                        <button type="submit" class="apply-button">Apply Now</button>
+                    </form>
+                    <hr>
+
                     <div class="section">
                         <h3>Job Description</h3>
                         <p>${data.description}</p>
@@ -102,27 +107,22 @@
             document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
         });
     }
-
-    function applyForJob(jobId) {
-        // Post the application request
-        fetch(`/apply/${jobId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Application submitted successfully!');
-                loadJobDetails(jobId); // Reload details to update the application status
-            } else {
-                alert('Failed to apply: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error applying for job:', error);
-        });
-    }
 </script>
 {% endblock %}
+
+<style>
+    .apply-button {
+        background-color: #0073b1;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    .apply-button:hover {
+        background-color: #005a8d;
+    }
+</style>

@@ -306,11 +306,10 @@ p {
    ========================================================================== */
 /* Job Board Layout */
 .job-board-container {
-    justify-content: center;
     display: flex;
     width: 100%;
-    gap: 25px;
-    padding: 20px;
+    padding: 3em 20px 20px;
+    justify-content: space-around;
 }
 
 .job-list-header {
@@ -348,6 +347,7 @@ p {
 .job-list-container {
     max-height: calc(100% - 60px);
     overflow-y: auto;
+    padding-right: 20px;
 }
 
 .job-list-item {
