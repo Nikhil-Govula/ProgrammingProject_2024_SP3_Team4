@@ -88,122 +88,94 @@
 
 {% block body %}
     <div class="applications-container">
-        <h2>Applications for {{ job.job_title }}</h2>
-        <p>Total Applications: {{ applications|length }}</p>
+        <div class="applications-header">
+            <h2>Applications for {{ job.job_title }}</h2>
+            <a href="{{ url_for('employer_views.view_jobs') }}" class="back-button">
+                Back to Job Listings
+            </a>
+        </div>
 
-        {% for app in applications %}
-            <div class="application-card">
-                <div class="applicant-header">
-                    <img src="{{ app.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" 
-                         alt="Profile Picture" 
-                         class="applicant-photo">
-                    <div class="applicant-info">
-                        <h3>{{ app.user.first_name }} {{ app.user.last_name }}</h3>
-                        <p>{{ app.user.email }}</p>
-                        <span class="status-badge status-{{ app.application.status|lower }}">
-                            {{ app.application.status }}
-                        </span>
-                    </div>
-                </div>
+        {% if applications and applications|length > 0 %}
+            <p class="applications-count">Total Applications: {{ applications|length }}</p>
 
-                <div class="skills-section">
-                    <h4>Skills</h4>
-                    <div class="skills-list">
-                        {% for skill in app.user.skills %}
-                            <span class="skill-tag">{{ skill.skill }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="work-history-section">
-                    <h4>Work History</h4>
-                    {% for work in app.user.work_history %}
-                        <div class="work-entry">
-                            <p><strong>{{ work.job_title }}</strong> at {{ work.company }}</p>
-                            <p>{{ work.date_from }} - {{ work.date_to }}</p>
-                            <p>{{ work.description }}</p>
+            {% for app in applications %}
+                <div class="application-card">
+                    <div class="applicant-header">
+                        <img src="{{ app['user']['profile_picture_url'] or url_for('static', filename='images/default_profile.png') }}"
+                             alt="Profile Picture"
+                             class="applicant-photo">
+                        <div class="applicant-info">
+                            <h3>{{ app['user']['first_name'] }} {{ app['user']['last_name'] }}</h3>
+                            <p>{{ app['user']['email'] }}</p>
+                            <span class="status-badge status-{{ app['application']['status']|lower }}">
+                                {{ app['application']['status'] }}
+                            </span>
                         </div>
-                    {% endfor %}
-                </div>
+                    </div>
 
-                <div class="action-buttons">
-                    {% if app.application.status == 'Pending' %}
-                        <button class="btn btn-accept" 
-                                onclick="updateStatus('{{ app.application.application_id }}', 'Accepted')">
-                            Accept
-                        </button>
-                        <button class="btn btn-reject" 
-                                onclick="updateStatus('{{ app.application.application_id }}', 'Rejected')">
-                            Reject
-                        </button>
-                    {% endif %}
+                    <div class="skills-section">
+                        <h4>Skills</h4>
+                        <div class="skills-list">
+                            {% if app['user']['skills'] and app['user']['skills']|length > 0 %}
+                                {% for skill in app['user']['skills'] %}
+                                    <span class="skill-tag">{{ skill['skill'] }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <p class="no-data-message">No skills listed</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="work-history-section">
+                        <h4>Work History</h4>
+                        {% if app['user']['work_history'] and app['user']['work_history']|length > 0 %}
+                            {% for work in app['user']['work_history'] %}
+                                <div class="work-entry">
+                                    <p><strong>{{ work['job_title'] }}</strong> at {{ work['company'] }}</p>
+                                    <p>{{ work['date_from'] }} - {{ work['date_to'] }}</p>
+                                    <p>{{ work['description'] }}</p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data-message">No work history available</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="action-buttons">
+                        {% if app['application']['status'] == 'Pending' %}
+                            <button class="btn btn-accept"
+                                    onclick="updateStatus('{{ app['application']['application_id'] }}', 'Accepted')">
+                                Accept
+                            </button>
+                            <button class="btn btn-reject"
+                                    onclick="updateStatus('{{ app['application']['application_id'] }}', 'Rejected')">
+                                Reject
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-applications">
+                <img src="{{ url_for('static', filename='images/no_applications.png') }}"
+                     alt="No Applications"
+                     class="no-applications-icon">
+                <h3>No Applications Yet</h3>
+                <p>There are currently no applications for this position.</p>
+                <p>Check back later or consider updating the job posting to attract more candidates.</p>
+                <div class="no-applications-actions">
+                    <a href="{{ url_for('employer_views.edit_job', job_id=job.job_id) }}" class="btn btn-primary">
+                        Update Job Posting
+                    </a>
+                    <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">
+                        Return to Job Listings
+                    </a>
                 </div>
             </div>
-        {% else %}
-            <p>No applications received yet.</p>
-        {% endfor %}
+        {% endif %}
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        function updateStatus(applicationId, status) {
-            // Show loading state
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Updating...';
-            button.disabled = true;
-
-            fetch(`/employer/jobs/applications/${applicationId}/update-status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: status
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    showNotification('success', 'Status updated successfully');
-                    // Reload the page after a short delay
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } else {
-                    throw new Error(data.message || 'Failed to update status');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('error', error.message);
-                // Reset button state
-                button.textContent = originalText;
-                button.disabled = false;
-            });
-        }
-
-        function showNotification(type, message) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('fade-out');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/view_applications.js') }}"></script>
 {% endblock %}
