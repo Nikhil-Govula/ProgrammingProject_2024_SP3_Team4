@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from config import store_secret, Config
 from ..controllers import UserController
 from ..decorators.auth_required import auth_required
+from ..models import User
 from ..services import SessionManager
 from ..services.google_auth_service import GoogleAuthService
 
@@ -26,6 +27,9 @@ def login_user():
         password = request.form['password']
         user, error_message = UserController.login(email, password)
         if user:
+            if not user.is_active:
+                flash("Your account is not active. Please check your email to verify your account.", "error")
+                return render_template('user/login_user.html')
             session_id = SessionManager.create_session(user.user_id, 'user')
             if session_id:
                 response = make_response(redirect(url_for('user_views.dashboard')))
@@ -37,6 +41,7 @@ def login_user():
         else:
             return render_template('user/login_user.html', error=error_message)
     return render_template('user/login_user.html')
+
 
 @user_bp.route('/register', methods=['GET', 'POST'])
 def register_user():
@@ -56,11 +61,24 @@ def register_user():
         # Register the new user
         success, message = UserController.register_user(email, password, first_name, last_name, phone_number)
         if success:
+            flash(message, 'success')  # Flash the success message
             return redirect(url_for('user_views.login_user'))
         else:
-            return render_template('user/register_user.html', error=message)
+            flash(message, 'error')  # Optionally flash error message
+            return render_template('user/register_user.html')
 
     return render_template('user/register_user.html')
+
+@user_bp.route('/verify/<token>', methods=['GET'])
+def verify_account(token):
+    success, message = User.verify_account(token)
+    if success:
+        flash("Your account has been verified successfully! You can now log in.", "success")
+        return redirect(url_for('user_views.login_user'))
+    else:
+        flash(message, "error")
+        return render_template('user/verify_account.html'), 400
+
 
 @user_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='user')
@@ -138,7 +156,7 @@ def start_oauth_flow():
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'  # Force consent to receive a new refresh_token
+        # prompt='consent'  # Force consent to receive a new refresh_token
     )
 
     # Store the state in the session for validation in the callback
@@ -654,6 +672,7 @@ def apply_for_job(job_id):
 def recommended_jobs():
     user = g.user
     recommended_jobs = UserController.get_recommended_jobs(user)
+    print(f"Recommended Jobs for user {user.user_id}: {recommended_jobs}")
     return render_template('user/recommended_jobs.html', jobs=recommended_jobs)
 
 @user_bp.route('/saved_jobs', methods=['GET'])

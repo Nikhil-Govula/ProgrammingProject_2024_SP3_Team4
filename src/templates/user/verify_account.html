@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="user-verification">
+    <div class="verification-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% if not success %}
+            <a href="{{ url_for('user_views.login_user') }}" class="dashboard-button">Go to Login</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

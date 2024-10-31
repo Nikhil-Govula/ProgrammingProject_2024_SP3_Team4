@@ -4,6 +4,7 @@ import uuid
 import boto3
 from botocore.exceptions import ClientError
 from dateutil import parser
+from flask import url_for
 from werkzeug.utils import secure_filename
 
 from config import Config
@@ -11,9 +12,10 @@ from ..models.user_model import User
 from ..models.job_model import Job
 from ..models.application_model import Application
 from ..services import DynamoDB
-from ..services.email_service import send_reset_email
+from ..services.email_service import send_reset_email, send_verification_email
 import bcrypt
 import datetime
+
 
 class UserController:
     @staticmethod
@@ -21,9 +23,18 @@ class UserController:
         user = User.get_by_email(email)
         if user:
             if not user.is_active:
-                return None, "This account has been deactivated. Please contact support for assistance."
+                # Check if the user has a verification token
+                if user.verification_token and user.verification_token_expiration:
+                    return None, (
+                        "Your account is not active. A verification link has been sent to your email. "
+                        "Please verify your account before logging in."
+                    )
+                else:
+                    return None, "This account has been deactivated. Please contact support for assistance."
+
             if user.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
+
             if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                 user.reset_failed_attempts()
                 user.unlock_account()
@@ -31,9 +42,32 @@ class UserController:
             else:
                 user.increment_failed_attempts()
                 if user.account_locked:
-                    return None, "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    return None, (
+                        "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    )
                 return None, "Invalid email or password."
+
         return None, "Invalid email or password."
+
+    @staticmethod
+    def resend_verification_email(email):
+        user = User.get_by_email(email)
+        if user:
+            if user.is_active:
+                return False, "Account is already active. You can log in directly."
+
+            # Generate a new verification token
+            verification_token = user.generate_verification_token()
+
+            # Send verification email
+            verification_link = url_for('user_views.verify_account', token=verification_token, _external=True)
+            email_sent = send_verification_email(email, verification_link)
+
+            if email_sent:
+                return True, "A new verification link has been sent to your email."
+            else:
+                return False, "Failed to send verification email. Please try again later."
+        return False, "No account found with this email address."
 
     @staticmethod
     def reset_password(email):
@@ -99,7 +133,7 @@ class UserController:
         if existing_user:
             return False, "A user with this email already exists."
 
-        # Create new user
+        # Create new user with is_active=False
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         new_user = User(
             user_id=None,  # Will be generated automatically
@@ -107,10 +141,22 @@ class UserController:
             password=hashed_password.decode('utf-8'),
             first_name=first_name,
             last_name=last_name,
-            phone_number=phone_number
+            phone_number=phone_number,
+            is_active=False  # User is inactive until email verification
         )
         new_user.save()
-        return True, "User registered successfully."
+
+        # Generate verification token
+        verification_token = new_user.generate_verification_token()
+
+        # Send verification email
+        verification_link = url_for('user_views.verify_account', token=verification_token, _external=True)
+        email_sent = send_verification_email(email, verification_link)
+
+        if email_sent:
+            return True, "Registration successful! Please check your email to verify your account."
+        else:
+            return False, "Registration successful, but failed to send verification email. Please contact support."
 
     @staticmethod
     def update_profile(user_id, user_type, first_name, last_name, email, phone_number, profile_picture,
