@@ -86,14 +86,39 @@ class EmployerController:
                 return False, "Token expired", False
         return False, "Invalid token", False
 
+    def ensure_list(item):
+        """
+        Ensures that the input is a list. If it's not, wraps it in a list.
+        If the input is None or empty, returns an empty list.
+        """
+        if isinstance(item, list):
+            return item
+        elif item:
+            return [item]
+        else:
+            return []
+
     @staticmethod
     def create_job(employer_id, job_title, description, requirements, salary, city, country, certifications, skills,
                    work_history, company_name):
+        # Helper function to ensure lists
+        def ensure_list(item):
+            if isinstance(item, list):
+                return item
+            elif item:
+                return [item]
+            else:
+                return []
+
+        # Convert certifications, skills, and work_history to lists
+        certifications = ensure_list(certifications)
+        skills = ensure_list(skills)
+        work_history = ensure_list(work_history)
+
         try:
             print(f"Salary before conversion: {salary}")
             salary_decimal = Decimal(salary)
             print(f"Salary after conversion: {salary_decimal}")
-
         except (ValueError, TypeError) as e:
             return False, f"Invalid salary value: {salary}"
 

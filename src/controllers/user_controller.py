@@ -10,6 +10,7 @@ from config import Config
 from ..models.user_model import User
 from ..models.job_model import Job
 from ..models.application_model import Application
+from ..services import DynamoDB
 from ..services.email_service import send_reset_email
 import bcrypt
 import datetime
@@ -442,11 +443,100 @@ class UserController:
         else:
             return False, "There was an error submitting your application. Please try again."
 
-    # New method to get all recommended jobs based on user profile and preferences
     @staticmethod
     def get_recommended_jobs(user):
-        user_skills = user.get_skills()  # Assuming User model has get_skills method
-        return Job.get_recommended_jobs(user_skills)  # A method that filters jobs based on skills
+        """
+        Get personalized job recommendations based on user's profile factors:
+        - Skills match
+        - Location match
+        - Certification match
+        - Work history relevance
+
+        Returns a list of dictionaries with job details and matched reasons.
+        Only includes jobs with at least one matched reason.
+        """
+        response = DynamoDB.scan(
+            'Jobs',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+
+        jobs = [Job(**item) for item in response.get('Items', [])]
+        scored_jobs = []
+
+        for job in jobs:
+            score = 0
+            matched_reasons = {
+                'skills': [],
+                'location': '',
+                'certifications': [],
+                'work_history': []
+            }
+
+            # Skills matching (highest weight - 40%)
+            user_skills = {skill['skill'].lower() for skill in user.skills}
+            job_skills = {skill.lower() for skill in job.skills}
+            if job_skills and user_skills:
+                matched_skills = user_skills.intersection(job_skills)
+                skills_match = len(matched_skills) / len(job_skills)
+                score += skills_match * 40
+                if matched_skills:
+                    matched_reasons['skills'] = list(matched_skills)
+
+            # Location matching (30%)
+            if user.city and user.country:
+                if job.city.lower() == user.city.lower() and job.country.lower() == user.country.lower():
+                    score += 30
+                    matched_reasons['location'] = 'Exact match'
+                elif job.country.lower() == user.country.lower():
+                    score += 15
+                    matched_reasons['location'] = 'Country match'
+
+            # Certification matching (20%)
+            user_certs = {cert['type'].lower() for cert in user.certifications}
+            job_certs = {cert.lower() for cert in job.certifications}
+            if job_certs and user_certs:
+                matched_certs = user_certs.intersection(job_certs)
+                cert_match = len(matched_certs) / len(job_certs)
+                score += cert_match * 20
+                if matched_certs:
+                    matched_reasons['certifications'] = list(matched_certs)
+
+            # Work history relevance (10%)
+            user_job_titles = {work['job_title'].lower() for work in user.work_history}
+            if job.job_title.lower() in user_job_titles:
+                score += 10
+                matched_reasons['work_history'].append(job.job_title.lower())
+
+            # Determine if there's at least one matched reason
+            has_match = (
+                    bool(matched_reasons['skills']) or
+                    bool(matched_reasons['location']) or
+                    bool(matched_reasons['certifications']) or
+                    bool(matched_reasons['work_history'])
+            )
+
+            if has_match:
+                scored_jobs.append({
+                    'job': job,
+                    'score': score,
+                    'matched_reasons': matched_reasons
+                })
+
+        # Sort jobs by score descending and date posted
+        scored_jobs.sort(key=lambda x: (x['score'], x['job'].date_posted), reverse=True)
+
+        # Prepare the final list with job and matched reasons
+        recommended_jobs = []
+        for entry in scored_jobs:
+            job = entry['job']
+            reasons = entry['matched_reasons']
+            recommended_jobs.append({
+                'job': job,
+                'matched_reasons': reasons
+            })
+
+        return recommended_jobs
 
     # New method to get saved jobs for the user
     @staticmethod

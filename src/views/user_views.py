@@ -626,6 +626,7 @@ def apply_for_job(job_id):
 
 # **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
 
+
 @user_bp.route('/recommended_jobs', methods=['GET'])
 @auth_required(user_type='user')
 def recommended_jobs():

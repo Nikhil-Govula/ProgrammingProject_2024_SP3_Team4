@@ -18,10 +18,13 @@ Employer Registration | JobTrunk
                         <h1>Employer Registration</h1>
                         <a href="{{ url_for('user_views.login_user') }}">Login as an employee?</a>
                     </div>
+                    <!-- templates/register_employer.html -->
                     <form action="{{ url_for('employer_views.register_employer') }}" method="POST">
-                        <div class="form-group split">
-                            <input type="text" name="first_name" placeholder="First name" required>
-                            <input type="text" name="last_name" placeholder="Last name" required>
+                        <div class="form-group">
+                            <input type="text" name="company_name" placeholder="Company name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="contact_person" placeholder="Contact person" required>
                         </div>
                         <div class="form-group">
                             <input type="email" name="email" placeholder="Email address" required>
@@ -42,6 +45,7 @@ Employer Registration | JobTrunk
 
                         <button type="submit" class="register-button">Register</button>
                     </form>
+
                     <div class="footer-links">
                         <hr>
                         <p>Already have an account? <a href="{{ url_for('employer_views.login_employer') }}">Log in</a></p>
