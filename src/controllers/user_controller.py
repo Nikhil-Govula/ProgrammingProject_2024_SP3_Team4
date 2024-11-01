@@ -23,21 +23,29 @@ class UserController:
         user = User.get_by_email(email)
         if user:
             if not user.is_active:
-                # Check if the user has a verification token
-                if user.verification_token and user.verification_token_expiration:
+                # Generate a new verification token
+                token = user.generate_verification_token()
+
+                # Generate the full verification link
+                verification_link = url_for('user_views.verify_account', token=token, _external=True)
+
+                # Send verification email
+                email_sent = send_verification_email(user.email, verification_link, role='user')
+
+                if email_sent:
                     return None, (
-                        "Your account is not active. A verification link has been sent to your email. "
+                        "Your account is not active. A new verification link has been sent to your email. "
                         "Please verify your account before logging in."
                     )
                 else:
-                    return None, "This account has been deactivated. Please contact support for assistance."
+                    return None, "Your account is not active and failed to send a new verification email. Please try again later."
 
             if user.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
 
             if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                 user.reset_failed_attempts()
-                user.unlock_account()
+                user.unlock_account()  # Unlock account on successful login
                 return user, None
             else:
                 user.increment_failed_attempts()
@@ -46,7 +54,6 @@ class UserController:
                         "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
                     )
                 return None, "Invalid email or password."
-
         return None, "Invalid email or password."
 
     @staticmethod
