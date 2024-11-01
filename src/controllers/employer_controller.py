@@ -1,9 +1,9 @@
-from flask import g
+from flask import g, url_for
 
 from ..models import User
 from ..models.employer_model import Employer
 from ..controllers.user_controller import UserController  # For password validation
-from ..services.email_service import send_reset_email
+from ..services.email_service import send_reset_email, send_verification_email
 from ..models.job_model import Job
 import datetime
 import bcrypt
@@ -15,18 +15,59 @@ class EmployerController:
         employer = Employer.get_by_email(email)
         if employer:
             if not employer.is_active:
-                return None, "This account has been deactivated. Please contact support for assistance."
+                # Generate a new verification token
+                token = employer.generate_verification_token()
+
+                # Generate the full verification link
+                verification_link = url_for('employer_views.verify_account', token=token, _external=True)
+
+                # Send verification email
+                email_sent = send_verification_email(employer.email, verification_link, role='employer')
+
+                if email_sent:
+                    return None, (
+                        "Your account is not active. A new verification link has been sent to your email. "
+                        "Please verify your account before logging in."
+                    )
+                else:
+                    return None, "Your account is not active and failed to send a new verification email. Please try again later."
+
             if employer.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
+
             if bcrypt.checkpw(password.encode('utf-8'), employer.password.encode('utf-8')):
                 employer.reset_failed_attempts()
+                employer.unlock_account()  # Unlock account on successful login
                 return employer, None
             else:
                 employer.increment_failed_attempts()
                 if employer.account_locked:
-                    return None, "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    return None, (
+                        "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    )
                 return None, "Invalid email or password."
         return None, "Invalid email or password."
+
+    @staticmethod
+    def resend_verification_email(email):
+        employer = Employer.get_by_email(email)
+        if employer:
+            if employer.is_active:
+                return False, "Account is already active. You can log in directly."
+
+            # Generate a new verification token
+            verification_token = employer.generate_verification_token()
+
+            # Send verification email
+            verification_link = url_for('employer_views.verify_account', token=verification_token, _external=True)
+            email_sent = send_verification_email(email, verification_link)
+
+            if email_sent:
+                return True, "A new verification link has been sent to your email."
+            else:
+                return False, "Failed to send verification email. Please try again later."
+        return False, "No account found with this email address."
+
 
     @staticmethod
     def register_employer(email, password, company_name, contact_person, phone_number):
@@ -50,9 +91,24 @@ class EmployerController:
         )
         success = new_employer.save()
         if success:
-            return True, "Employer registered successfully."
+            # Generate verification token
+            token = new_employer.generate_verification_token()
+
+            # Generate the full verification link
+            verification_link = url_for('employer_views.verify_account', token=token, _external=True)
+
+            # Send verification email with the full link
+            if send_verification_email(email, verification_link, role='employer'):
+                return True, "Employer registered successfully. Please check your email to verify your account."
+            else:
+                return False, "Failed to send verification email. Please try again."
         else:
             return False, "Failed to register employer."
+
+    @staticmethod
+    def verify_account(token):
+        success, message = Employer.verify_account(token)
+        return success, message
 
     @staticmethod
     def reset_password(email):

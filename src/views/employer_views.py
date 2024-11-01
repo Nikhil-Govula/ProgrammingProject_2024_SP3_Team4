@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, make_r
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
 from ..services import SessionManager
-from ..models import Job, Application
+from ..models import Job, Application, Employer, User
 
 employer_bp = Blueprint('employer_views', __name__, url_prefix='/employer')
 
@@ -52,6 +52,17 @@ def register_employer():
             return render_template('employer/register_employer.html', error=message)
 
     return render_template('employer/register_employer.html')
+
+@employer_bp.route('/verify/<token>', methods=['GET'])
+def verify_account(token):
+    success, message = Employer.verify_account(token)
+    if success:
+        flash("Your account has been verified successfully! You can now log in.", "success")
+        return redirect(url_for('employer_views.login_employer'))
+    else:
+        flash(message, "error")
+        return render_template('employer/verify_account.html'), 400
+
 
 @employer_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='employer')
