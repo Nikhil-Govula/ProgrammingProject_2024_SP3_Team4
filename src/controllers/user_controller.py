@@ -600,16 +600,25 @@ class UserController:
         if not user:
             return False, "User not found."
 
-        job = Job.get_by_id(job_id)
-        if not job:
-            return False, "Job not found."
-
         if job_id in user.saved_jobs:
             return False, "Job already saved."
 
         user.saved_jobs.append(job_id)
         user.save()
         return True, "Job saved successfully."
+
+    @staticmethod
+    def remove_saved_job(user_id, job_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        if job_id not in user.saved_jobs:
+            return False, "Job not found in saved jobs."
+
+        user.saved_jobs.remove(job_id)
+        user.save()
+        return True, "Job removed from saved jobs."
 
     # New method for retrieving user's job applications
     @staticmethod

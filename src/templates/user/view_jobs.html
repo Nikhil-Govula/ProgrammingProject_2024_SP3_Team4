@@ -1,10 +1,12 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 {% extends 'base.html' %}
 
 {% block body %}
+    <h2 class="available-jobs-section-title">Available Jobs</h2>
     <div class="job-board-container">
         <!-- Left Section: Job List -->
         <div class="job-list-section">
-            <h2 class="section-title">Available Jobs</h2>
             <div class="job-list-container">
                 {% if jobs %}
                     {% for job in jobs %}
@@ -42,6 +44,8 @@
         return `${day}/${month}/${year}`;
     }
 
+    let bookmarkedJobs = new Set();  // Keep track of bookmarked jobs
+
     function loadJobDetails(jobId) {
         fetch(`/user/job_details/${jobId}`, {
             method: 'GET',
@@ -59,8 +63,12 @@
             if (data.error) {
                 throw new Error(data.error);
             }
+            const isBookmarked = bookmarkedJobs.has(jobId) ? 'gold' : 'grey';
             document.getElementById('job-details-content').innerHTML = `
                 <div class="job-detail-container">
+                    <div class="bookmark-icon" onclick="toggleBookmark('${jobId}')">
+                        <i class="fas fa-bookmark" style="color:${isBookmarked}"></i>
+                    </div>
                     <h2 class="job-title-detail">${data.job_title}</h2>
                     <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
                     <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
@@ -107,6 +115,59 @@
             document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
         });
     }
+
+    function toggleBookmark(jobId) {
+        const bookmarkIcon = document.querySelector('.bookmark-icon i');
+
+        // Toggle the visual state
+        if (bookmarkedJobs.has(jobId)) {
+            console.log("unsaving job ", jobId)
+            bookmarkedJobs.delete(jobId);
+            bookmarkIcon.style.color = 'grey';
+            removeBookmark(jobId);
+        } else {
+            bookmarkedJobs.add(jobId);
+            bookmarkIcon.style.color = 'gold';
+            saveBookmark(jobId);
+        }
+    }
+
+    function saveBookmark(jobId) {
+        console.log("running saveBookmark()")
+        // Make a request to save the bookmarked job
+        fetch(`/user/jobs/${jobId}/bookmark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to bookmark the job');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving bookmark:', error);
+        });
+    }
+
+    function removeBookmark(jobId) {
+        // Make a request to remove the bookmarked job
+        fetch(`/user/jobs/${jobId}/remove_bookmark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to remove bookmark');
+            }
+        })
+        .catch(error => {
+            console.error('Error removing bookmark:', error);
+        });
+    }
 </script>
 {% endblock %}
 
@@ -124,5 +185,13 @@
 
     .apply-button:hover {
         background-color: #005a8d;
+    }
+
+    .bookmark-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 24px;
     }
 </style>

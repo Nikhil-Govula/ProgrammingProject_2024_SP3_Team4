@@ -678,6 +678,30 @@ def remove_job_application(application_id):
     return '', 200 if success else 400
 
 
+@user_bp.route('/jobs/<job_id>/bookmark', methods=['POST'])
+@auth_required(user_type='user')
+def bookmark_job(job_id):
+    print("bookmark_job")
+    user = g.user
+    success, message = UserController.save_job(user.user_id, job_id)
+    if success:
+        return '', 200
+    else:
+        return jsonify({'error': message}), 400
+
+
+@user_bp.route('/jobs/<job_id>/remove_bookmark', methods=['POST'])
+@auth_required(user_type='user')
+def remove_bookmark_job(job_id):
+    print("remove_bookmark_job")
+    user = g.user
+    success, message = UserController.remove_saved_job(user.user_id, job_id)
+    if success:
+        return '', 200
+    else:
+        return jsonify({'error': message}), 400
+
+
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
 @auth_required(user_type='user')
 def apply_for_job(job_id):

@@ -1,26 +1,236 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 {% extends 'base.html' %}
 
 {% block body %}
-<div class="container saved-jobs-container">
-    <h1 class="section-heading">Saved Jobs</h1>
-    <p>Here are the jobs you've saved to review later:</p>
+    <h2 class="saved-section-title">Saved Jobs</h2>
+    <div class="saved-jobs-container">
+        <!-- Left Section: Job List -->
+        <div class="job-list-section">
+            <div class="job-list-container">
+                {% if jobs %}
+                    {% for job in jobs %}
+                        <div class="job-list-item" onclick="loadJobDetails('{{ job.job_id }}')">
+                            <div class="job-list-info">
+                                <h4 class="job-title">{{ job.job_title }}</h4>
+                                <p class="company-name">{{ job.company_name }}</p>
+                                <p class="job-location"><i class="fas fa-map-marker-alt"></i> {{ job.city }}, {{ job.country }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-jobs-message">No jobs are currently available. Please check back later.</p>
+                {% endif %}
+            </div>
+        </div>
 
-    <div class="saved-jobs-list">
-        {% if saved_jobs %}
-            {% for job in saved_jobs %}
-                <div class="job-card card mb-4">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ job.title }}</h4>
-                        <p class="card-text"><strong>Company:</strong> {{ job.company }}</p>
-                        <p class="card-text"><strong>Location:</strong> {{ job.location }}</p>
-                        <a href="{{ url_for('user_views.view_job_details', job_id=job.id) }}" class="btn btn-primary">View Job Details</a>
-                        <button class="btn btn-danger btn-unsave">Unsave Job</button>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>You haven't saved any jobs yet. Start exploring and save jobs for future consideration.</p>
-        {% endif %}
+        <!-- Right Section: Job Details -->
+        <div class="job-details-section" id="job-details">
+            <div id="job-details-content" class="job-details-content">
+                <p>Select a job from the left to see details here.</p>
+            </div>
+        </div>
     </div>
-</div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    let bookmarkedJobs = new Set();  // Track bookmarked jobs
+
+    function loadJobDetails(jobId) {
+        fetch(`/user/job_details/${jobId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            document.getElementById('job-details-content').innerHTML = `
+                <div class="job-detail-container">
+                    <div
+                        class="bookmark-icon" onclick="toggleSaveJob('${jobId}')">&#9733; Unsave
+                    </div>
+                    <h2 class="job-title-detail">${data.job_title}</h2>
+                    <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
+                    <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
+                    <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
+                    <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
+
+                    <form action="/user/jobs/${jobId}/apply" method="POST">
+                        <button type="submit" class="apply-button">Apply Now</button>
+                    </form>
+
+                    <div class="section">
+                        <h3>Job Description</h3>
+                        <p>${data.description}</p>
+                    </div>
+
+                    <div class="section">
+                        <h3>Requirements</h3>
+                        <p>${data.requirements}</p>
+                    </div>
+
+                    ${data.certifications.length > 0 ? `
+                        <div class="section">
+                            <h3>Certifications</h3>
+                            <ul class="certifications">
+                                ${data.certifications.map(cert => `<li>${cert}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${data.skills.length > 0 ? `
+                        <div class="section">
+                            <h3>Skills</h3>
+                            <ul class="skills">
+                                ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching job details:', error);
+            document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
+        });
+    }
+
+    function toggleSaveJob(jobId) {
+        fetch(`/user/jobs/${jobId}/remove_bookmark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                {% if csrf_token %}
+                'X-CSRFToken': '{{ csrf_token() }}'
+                {% endif %}
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log("Job unsaved!");
+                window.location.reload();
+            } else {
+                alert('Failed to update job save status.');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating job save status:', error);
+        });
+    }
+</script>
+{% endblock %}
+
+<style>
+
+    .job-list-section {
+        width: 35%;
+        background-color: #f7f9fc;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .job-list-item {
+        background: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .job-list-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .job-details-section {
+        width: 60%;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .job-detail-container {
+        position: relative;
+    }
+
+    .bookmark-icon {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        cursor: pointer;
+        font-size: 30px;
+    }
+
+    .job-title-detail {
+        font-size: 26px;
+        font-weight: bold;
+        color: #0073b1;
+        margin-bottom: 10px;
+    }
+
+    .company-info, .location-info, .salary-info, .date-posted {
+        font-size: 18px;
+        color: #555;
+        margin-bottom: 10px;
+    }
+
+    .apply-button {
+        background-color: #0073b1;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    .apply-button:hover {
+        background-color: #005a8d;
+    }
+
+    .job-details-content .section h3 {
+        font-size: 20px;
+        color: #333;
+        margin-top: 20px;
+        margin-bottom: 10px;
+    }
+
+    .job-details-content .skills, .job-details-content .certifications {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 10px;
+    }
+
+    .job-details-content .skills li, .job-details-content .certifications li {
+        font-size: 16px;
+        color: #555;
+        background: #f1f1f1;
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+</style>

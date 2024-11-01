@@ -104,7 +104,7 @@ class Application:
                     'application_id': application_id
                 }
             )
-            print(f"Application: {application_id} successfully!")
+            print(f"Application: {application_id} removed successfully!")
             return True, "Application removed successfully."
         except Exception as e:
             print(f"Error deleting application: {e}")

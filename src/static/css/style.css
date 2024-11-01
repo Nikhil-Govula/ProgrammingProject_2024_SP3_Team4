@@ -88,6 +88,7 @@ p {
     align-items: center;
     padding-top: 100px;
     width: 100%;
+    flex-direction: column;
 }
 
 /* ==========================================================================
@@ -306,10 +307,11 @@ p {
    ========================================================================== */
 /* Job Board Layout */
 .job-board-container {
+    width: -webkit-fill-available;
     display: flex;
-    width: 100%;
-    padding: 3em 20px 20px;
-    justify-content: space-around;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
 .job-list-header {
@@ -335,31 +337,35 @@ p {
     overflow-y: auto;
 }
 
-.section-title {
+.available-jobs-section-title {
     display: flex;
     font-size: 1.6rem;
-    margin-bottom: 20px;
     color: #0073b1;
     font-weight: 700;
     justify-content: center;
+    width: -webkit-fill-available;
+    background: white;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
 }
 
 .job-list-container {
-    max-height: calc(100% - 60px);
+    max-height: 100%;
     overflow-y: auto;
     padding-right: 20px;
 }
 
 .job-list-item {
-    background-color: #f7f7f7;
+    background-color: #dcdcdc;
     padding-left: 10px;
     padding-top: 15px;
     padding-bottom: 1px;
     margin-bottom: 15px;
     border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.3s, box-shadow 0.3s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color;
+    box-shadow: inset 0px 0px 20px 0px rgba(0, 0, 0, 0.1);
 }
 
 .job-list-item:hover {
@@ -948,4 +954,28 @@ p {
 .flash.error {
     background-color: #e74c3c;
     color: white;
+}
+
+/* -----
+Saved jobs page
+ */
+.saved-jobs-container {
+    width: -webkit-fill-available;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.saved-section-title {
+    display: flex;
+    font-size: 1.6rem;
+    color: #0073b1;
+    font-weight: 700;
+    justify-content: center;
+    width: -webkit-fill-available;
+    background: white;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
 }
