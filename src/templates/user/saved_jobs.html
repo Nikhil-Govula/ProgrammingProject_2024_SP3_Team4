@@ -43,6 +43,24 @@
         return `${day}/${month}/${year}`;
     }
 
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch('/user/get_bookmarked_jobs', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.bookmarkedJobs) {
+                bookmarkedJobs = new Set(data.bookmarkedJobs); // Set bookmarkedJobs to fetched data
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching bookmarked jobs:', error);
+        });
+    });
+
     let bookmarkedJobs = new Set();  // Track bookmarked jobs
 
     function loadJobDetails(jobId) {
@@ -62,10 +80,11 @@
             if (data.error) {
                 throw new Error(data.error);
             }
+            const isBookmarked = bookmarkedJobs.has(jobId) ? 'gold' : 'grey';
             document.getElementById('job-details-content').innerHTML = `
                 <div class="job-detail-container">
-                    <div
-                        class="bookmark-icon" onclick="toggleSaveJob('${jobId}')">&#9733; Unsave
+                    <div class="bookmark-icon" onclick="toggleBookmark('${jobId}')">
+                        <i class="fas fa-bookmark" style="color:${isBookmarked}"></i>
                     </div>
                     <h2 class="job-title-detail">${data.job_title}</h2>
                     <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
@@ -103,6 +122,31 @@
                                 ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
                             </ul>
                         </div>
+
+                        <style>
+                            .apply-button {
+                                background-color: #0073b1;
+                                color: white;
+                                padding: 10px 20px;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                font-weight: bold;
+                                transition: background-color 0.2s;
+                            }
+
+                            .apply-button:hover {
+                                background-color: #005a8d;
+                            }
+
+                            .bookmark-icon {
+                                position: absolute;
+                                right: 100px;
+                                cursor: pointer;
+                                font-size: 48px;
+                                transition: color 0.2s;
+                            }
+                        </style>
                     ` : ''}
                 </div>
             `;
@@ -113,124 +157,57 @@
         });
     }
 
-    function toggleSaveJob(jobId) {
+    function toggleBookmark(jobId) {
+        const bookmarkIcon = document.querySelector('.bookmark-icon i');
+
+        // Toggle the visual state
+        if (bookmarkedJobs.has(jobId)) {
+            console.log("unsaving job ", jobId)
+            bookmarkedJobs.delete(jobId);
+            bookmarkIcon.style.color = 'grey';
+            removeBookmark(jobId);
+        } else {
+            bookmarkedJobs.add(jobId);
+            bookmarkIcon.style.color = 'gold';
+            saveBookmark(jobId);
+        }
+    }
+
+    function saveBookmark(jobId) {
+        console.log("running saveBookmark()")
+        // Make a request to save the bookmarked job
+        fetch(`/user/jobs/${jobId}/bookmark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to bookmark the job');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving bookmark:', error);
+        });
+    }
+
+    function removeBookmark(jobId) {
+        // Make a request to remove the bookmarked job
         fetch(`/user/jobs/${jobId}/remove_bookmark`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                {% if csrf_token %}
-                'X-CSRFToken': '{{ csrf_token() }}'
-                {% endif %}
             },
         })
         .then(response => {
-            if (response.ok) {
-                console.log("Job unsaved!");
-                window.location.reload();
-            } else {
-                alert('Failed to update job save status.');
+            if (!response.ok) {
+                throw new Error('Failed to remove bookmark');
             }
         })
         .catch(error => {
-            console.error('Error updating job save status:', error);
+            console.error('Error removing bookmark:', error);
         });
     }
 </script>
 {% endblock %}
-
-<style>
-
-    .job-list-section {
-        width: 35%;
-        background-color: #f7f9fc;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .job-list-item {
-        background: #fff;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 10px;
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .job-list-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .job-details-section {
-        width: 60%;
-        background: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        position: relative;
-    }
-
-    .job-detail-container {
-        position: relative;
-    }
-
-    .bookmark-icon {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        cursor: pointer;
-        font-size: 30px;
-    }
-
-    .job-title-detail {
-        font-size: 26px;
-        font-weight: bold;
-        color: #0073b1;
-        margin-bottom: 10px;
-    }
-
-    .company-info, .location-info, .salary-info, .date-posted {
-        font-size: 18px;
-        color: #555;
-        margin-bottom: 10px;
-    }
-
-    .apply-button {
-        background-color: #0073b1;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.2s;
-    }
-
-    .apply-button:hover {
-        background-color: #005a8d;
-    }
-
-    .job-details-content .section h3 {
-        font-size: 20px;
-        color: #333;
-        margin-top: 20px;
-        margin-bottom: 10px;
-    }
-
-    .job-details-content .skills, .job-details-content .certifications {
-        list-style: none;
-        padding-left: 0;
-        margin-top: 10px;
-    }
-
-    .job-details-content .skills li, .job-details-content .certifications li {
-        font-size: 16px;
-        color: #555;
-        background: #f1f1f1;
-        padding: 8px;
-        border-radius: 5px;
-        margin-bottom: 5px;
-    }
-</style>

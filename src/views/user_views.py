@@ -702,6 +702,14 @@ def remove_bookmark_job(job_id):
         return jsonify({'error': message}), 400
 
 
+@user_bp.route('/get_bookmarked_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def get_bookmarked_jobs():
+    user = g.user
+    bookmarked_jobs = user.saved_jobs  # Assuming `saved_jobs` is a list of job IDs saved by the user
+    return jsonify({'bookmarkedJobs': bookmarked_jobs}), 200
+
+
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
 @auth_required(user_type='user')
 def apply_for_job(job_id):
