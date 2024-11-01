@@ -2,95 +2,6 @@
 
 {% block head %}
 <title>Your Applications</title>
-<style>
-    .view-applications-container {
-        width: 50%;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    .application-card {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: transform 0.2s ease-in-out;
-    }
-
-    .application-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .application-info-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 20px;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 1em;
-        font-weight: 500;
-    }
-
-    .status-pending {
-        background-color: #ffeeba;
-        color: #856404;
-    }
-
-    .status-accepted {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .status-rejected {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .application-date {
-        color: #666;
-        font-size: 1em;
-    }
-
-    .view-job-button, .remove-job-button {
-        display: inline-block;
-        padding: 8px 16px;
-        text-decoration: none;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-    }
-
-    .view-job-button {
-        background-color: #3498db;
-        color: white;
-    }
-
-    .view-job-button:hover {
-        background-color: #2980b9;
-        text-decoration: none;
-    }
-
-    .remove-job-button {
-        background-color: #e74c3c;
-        color: white;
-    }
-
-    .remove-job-button:hover {
-        background-color: #c0392b;
-        text-decoration: none;
-    }
-</style>
 {% endblock %}
 
 {% block body %}
@@ -118,7 +29,7 @@
                             Status: {{ application.status }}
                         </div>
                         <div class="application-date">
-                            Applied on: {{ application.date_applied[:10] }}
+                            Applied on: <span class="applied-date" data-date="{{ application.date_applied }}"></span>
                         </div>
                         {% if application.job %}
                             <div>
@@ -148,6 +59,15 @@
 </div>
 
 <script>
+    // Function to format date in dd/mm/yyyy format
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
     function removeApplication(applicationId) {
         fetch(`/user/remove_application/${applicationId}`, {
             method: 'POST',
@@ -170,6 +90,14 @@
             console.error('Error removing job application:', error);
         });
     }
-</script>
 
+    // Format the applied dates on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateElements = document.querySelectorAll(".applied-date");
+        dateElements.forEach(element => {
+            const date = element.getAttribute("data-date");
+            element.textContent = formatDate(date);
+        });
+    });
+</script>
 {% endblock %}

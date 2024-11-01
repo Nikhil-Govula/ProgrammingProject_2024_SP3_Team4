@@ -86,7 +86,8 @@ def verify_account(token):
 @auth_required(user_type='user')
 def dashboard():
     user = g.user
-    return render_template('user/dashboard.html', user=user)
+    recommended_jobs = UserController.get_recommended_jobs(user)
+    return render_template('user/dashboard.html', user=user, jobs=recommended_jobs)
 
 
 @user_bp.route('/logout', methods=['GET'])

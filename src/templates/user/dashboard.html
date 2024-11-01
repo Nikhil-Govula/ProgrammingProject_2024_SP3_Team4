@@ -1,46 +1,166 @@
 {% extends 'base.html' %}
 
 {% block body %}
+    <div class="dashboard-main-container">
+        <!-- Left Section: Recommended Jobs -->
+        <div class="recommended-jobs-container">
+            <div class="dashboard-header">
+                <h1>Recommended Jobs</h1>
+                <p>Jobs matched to your profile and preferences</p>
+            </div>
 
-<div class="dashboard-container">
-    <header class="dashboard-header">
-        <h1>Welcome, {{ user.first_name }} {{ user.last_name }}</h1>
-        <p>Your personalized job search dashboard</p>
-    </header>
+            {% if jobs %}
+                <div class="job-list-container">
+                    {% for entry in jobs %}
+                        {% set job = entry.job %}
+                        {% set reasons = entry.matched_reasons %}
+                        <div class="job-card">
+                            <!-- Job Header -->
+                            <div class="job-header row">
+                                <div class="col-3">
+                                    <img src="{{ job.company_logo_url|default(url_for('static', filename='images/company_logo_placeholder.svg')) }}"
+                                         alt="{{ job.company_name }} logo"
+                                         class="company-logo">
+                                </div>
+                                <div class="col-9">
+                                    <h2 class="job-title">{{ job.job_title }}</h2>
+                                </div>
+                            </div>
 
-    <div class="profile-summary">
-        <h2>Your Profile</h2>
-        <p class="profileInfo">Email: {{ user.email }}</p>
-        <div class="profile-actions">
-            <a href="{{ url_for('user_views.view_profile') }}" class="dashboard-button">View Profile</a>
-            <a href="{{ url_for('user_views.edit_profile') }}" class="dashboard-button">Edit Profile</a>
+                            <!-- Job Details -->
+                            <div class="job-details row">
+                                <div class="col-12">
+                                    <p><strong>Company:</strong> {{ job.company_name }}</p>
+                                </div>
+                                <div class="col-12">
+                                    <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
+                                </div>
+                                <div class="col-12">
+                                    <p><strong>Salary:</strong> ${{ job.salary }}</p>
+                                </div>
+                                {% if job.skills %}
+                                    <div class="col-12">
+                                        <p><strong>Required Skills:</strong></p>
+                                        <div class="skills-list row">
+                                            {% for skill in job.skills %}
+                                                <div class="col-4">
+                                                    <span class="skill-tag">{{ skill }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="col-12">
+                                    <p><strong>Posted:</strong> <span class="posted-date"
+                                                                      data-date="{{ job.date_posted }}"></span></p>
+                                </div>
+                            </div>
+
+                            <!-- Matched Reasons -->
+                            <div class="matched-reasons row">
+                                <div class="col-12">
+                                    <p><strong>Why This Job is Recommended:</strong></p>
+                                    <ul>
+                                        {% if reasons.skills %}
+                                            <li><strong>Skills Match:</strong> {{ reasons.skills | join(', ') }}</li>
+                                        {% endif %}
+                                        {% if reasons.location %}
+                                            <li><strong>Location Match:</strong> {{ reasons.location }}</li>
+                                        {% endif %}
+                                        {% if reasons.certifications %}
+                                            <li><strong>Certifications
+                                                Match:</strong> {{ reasons.certifications | join(', ') }}</li>
+                                        {% endif %}
+                                        {% if reasons.work_history %}
+                                            <li><strong>Relevant Work
+                                                History:</strong> {{ reasons.work_history | join(', ') }}</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- View Details Button -->
+                            <div class="row" style="display: flex; align-items: end;">
+                                <div class="col-12 text-center">
+                                    <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}"
+                                       class="view-job-button">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-jobs-message">
+                    <p>No recommended jobs found. Please update your profile with more information to get better
+                        matches.</p>
+                    <a href="{{ url_for('user_views.edit_profile') }}" class="dashboard-button">Update Profile</a>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Right Section: Job Details -->
+        <div class="dashboard-container">
+            <header class="dashboard-header">
+                <h1>Welcome, {{ user.first_name }} {{ user.last_name }}</h1>
+                <p>Your personalized job search dashboard</p>
+            </header>
+
+            <div class="profile-summary">
+                <h2>Your Profile</h2>
+                <p class="profileInfo">Email: {{ user.email }}</p>
+                <div class="profile-actions">
+                    <a href="{{ url_for('user_views.view_profile') }}" class="dashboard-button">View Profile</a>
+                    <a href="{{ url_for('user_views.edit_profile') }}" class="dashboard-button">Edit Profile</a>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h2>Job Opportunities</h2>
+                <div class="job-actions">
+                    <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">Browse All Jobs</a>
+                    <a href="{{ url_for('user_views.recommended_jobs') }}" class="dashboard-button">Recommended Jobs</a>
+                    <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h2>Applications</h2>
+                <div class="application-actions">
+                    <a href="{{ url_for('user_views.view_applications') }}" class="dashboard-button">View Your
+                        Applications</a>
+                    <a href="{{ url_for('user_views.track_applications') }}" class="dashboard-button">Track Application
+                        Status</a>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h2>Career Resources</h2>
+                <div class="resources-actions">
+                    <a href="{{ url_for('user_views.interview_tips') }}" class="dashboard-button">Interview Tips</a>
+                    <a href="{{ url_for('user_views.networking_events') }}" class="dashboard-button">Networking
+                        Events</a>
+                </div>
+            </div>
         </div>
     </div>
+{% endblock %}
 
-    <div class="dashboard-section">
-        <h2>Job Opportunities</h2>
-        <div class="job-actions">
-            <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button">Browse All Jobs</a>
-            <a href="{{ url_for('user_views.recommended_jobs') }}" class="dashboard-button">Recommended Jobs</a>
-            <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button">Saved Jobs</a>
-        </div>
-    </div>
+{% block scripts %}
+    <script>
+        // Function to format date in dd/mm/yyyy format
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
-    <div class="dashboard-section">
-        <h2>Applications</h2>
-        <div class="application-actions">
-            <a href="{{ url_for('user_views.view_applications') }}" class="dashboard-button">View Your Applications</a>
-            <a href="{{ url_for('user_views.track_applications') }}" class="dashboard-button">Track Application Status</a>
-        </div>
-    </div>
-
-    <div class="dashboard-section">
-        <h2>Career Resources</h2>
-        <div class="resources-actions">
-            <a href="{{ url_for('user_views.interview_tips') }}" class="dashboard-button">Interview Tips</a>
-            <a href="{{ url_for('user_views.networking_events') }}" class="dashboard-button">Networking Events</a>
-        </div>
-    </div>
-</div>
-
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateElements = document.querySelectorAll(".posted-date");
+            dateElements.forEach(element => {
+                const date = element.getAttribute("data-date");
+                element.textContent = formatDate(date);
+            });
+        });
+    </script>
 {% endblock %}

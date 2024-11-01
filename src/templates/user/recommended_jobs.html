@@ -16,7 +16,7 @@
                 {% set reasons = entry.matched_reasons %}
                 <div class="job-card">
                     <div class="job-header">
-                        <img src="{{ job.company_logo_url|default(url_for('static', filename='images/default_company.png')) }}"
+                        <img src="{{ job.company_logo_url|default(url_for('static', filename='images/company_logo_placeholder.svg')) }}"
                              alt="{{ job.company_name }} logo"
                              class="company-logo">
                         <h2 class="job-title">{{ job.job_title }}</h2>
