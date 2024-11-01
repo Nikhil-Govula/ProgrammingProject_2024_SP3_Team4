@@ -190,37 +190,32 @@ class Job:
 
     def get_applications(self):
         """Get all applications for this job with user details"""
-        from ..models import User  # Import here to avoid circular imports
+        from .user_model import User  # Import here to avoid circular imports
 
         response = DynamoDB.scan(
             'Applications',
-            FilterExpression='job_id = :jid',
-            ExpressionAttributeValues={':jid': self.job_id}
+            FilterExpression='job_id = :job_id',
+            ExpressionAttributeValues={':job_id': self.job_id}
         )
 
         applications = []
-        for app_data in response.get('Items', []):
-            # Convert the raw application data to an Application object
-            application = Application(**app_data)
-
-            # Get the user details
-            user = User.get_by_id(application.user_id)
+        for item in response.get('Items', []):
+            user = User.get_by_id(item['user_id'])
             if user:
-                application_dict = {
+                applications.append({
                     'application': {
-                        'application_id': application.application_id,
-                        'status': application.status,
-                        'date_applied': application.date_applied
+                        'application_id': item['application_id'],
+                        'status': item.get('status', 'Pending'),
+                        'date_applied': item.get('date_applied'),
+                        'user_id': item['user_id']  # Make sure this is included
                     },
                     'user': {
+                        'user_id': user.user_id,
                         'first_name': user.first_name,
                         'last_name': user.last_name,
                         'email': user.email,
-                        'skills': user.skills,
-                        'work_history': user.work_history,
-                        'profile_picture_url': user.profile_picture_url
+                        'profile_picture_url': user.profile_picture_url,
+                        'skills': user.skills
                     }
-                }
-                applications.append(application_dict)
-
+                })
         return applications

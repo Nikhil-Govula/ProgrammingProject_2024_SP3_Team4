@@ -113,6 +113,12 @@
                         </div>
                     </div>
 
+                    <!-- Chat Button -->
+                     <a href="{{ url_for('employer_views.chat_with_user', user_id=app['application']['user_id'], job_id=job.job_id) }}"
+                       class="chat-button btn">
+                        Chat with Applicant
+                    </a>
+
                     <div class="skills-section">
                         <h4>Skills</h4>
                         <div class="skills-list">
@@ -126,20 +132,7 @@
                         </div>
                     </div>
 
-                    <div class="work-history-section">
-                        <h4>Work History</h4>
-                        {% if app['user']['work_history'] and app['user']['work_history']|length > 0 %}
-                            {% for work in app['user']['work_history'] %}
-                                <div class="work-entry">
-                                    <p><strong>{{ work['job_title'] }}</strong> at {{ work['company'] }}</p>
-                                    <p>{{ work['date_from'] }} - {{ work['date_to'] }}</p>
-                                    <p>{{ work['description'] }}</p>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="no-data-message">No work history available</p>
-                        {% endif %}
-                    </div>
+                    <!-- Rest of the application card details -->
 
                     <div class="action-buttons">
                         {% if app['application']['status'] == 'Pending' %}
@@ -172,6 +165,7 @@
         {% endif %}
     </div>
 {% endblock %}
+
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/view_applications.js') }}"></script>

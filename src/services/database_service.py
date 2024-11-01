@@ -63,19 +63,21 @@ class DynamoDB:
                 return False
 
     @classmethod
-    def scan(cls, table_name, FilterExpression=None, ExpressionAttributeValues=None):
+    def scan(cls, table_name, FilterExpression=None, ExpressionAttributeValues=None, ExpressionAttributeNames=None):
         table = cls.dynamodb.Table(table_name)
         try:
-            if FilterExpression and ExpressionAttributeValues:
-                response = table.scan(
-                    FilterExpression=FilterExpression,
-                    ExpressionAttributeValues=ExpressionAttributeValues
-                )
-            else:
-                response = table.scan()
+            scan_kwargs = {}
+            if FilterExpression:
+                scan_kwargs['FilterExpression'] = FilterExpression
+            if ExpressionAttributeValues:
+                scan_kwargs['ExpressionAttributeValues'] = ExpressionAttributeValues
+            if ExpressionAttributeNames:
+                scan_kwargs['ExpressionAttributeNames'] = ExpressionAttributeNames
+
+            response = table.scan(**scan_kwargs)
             return response
         except ClientError as e:
-            logging.error(f"Error scanning table {table_name}: {str(e)}")
+            print(f"Error scanning table {table_name}: {str(e)}")
             return None
 
     @classmethod
