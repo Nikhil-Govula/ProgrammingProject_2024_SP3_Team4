@@ -18,7 +18,16 @@ Employer Registration | JobTrunk
                         <h1>Employer Registration</h1>
                         <a href="{{ url_for('user_views.login_user') }}">Login as an employee?</a>
                     </div>
-                    <!-- templates/register_employer.html -->
+
+                    <!-- Display Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
                     <form action="{{ url_for('employer_views.register_employer') }}" method="POST">
                         <div class="form-group">
                             <input type="text" name="company_name" placeholder="Company name" required>
@@ -39,6 +48,7 @@ Employer Registration | JobTrunk
                             <input type="password" name="confirm_password" placeholder="Confirm password" required>
                         </div>
 
+                        <!-- Display Error Messages (if any) -->
                         {% if error %}
                             <p style="color: red;">{{ error }}</p>
                         {% endif %}

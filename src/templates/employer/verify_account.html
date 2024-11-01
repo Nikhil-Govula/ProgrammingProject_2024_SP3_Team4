@@ -1,0 +1,31 @@
+<!-- templates/employer/verify_account.html -->
+{% extends "base.html" %}
+
+{% block title %}
+Account Verification | JobTrunk
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Add any additional head elements if necessary -->
+{% endblock %}
+
+{% block body %}
+    <div class="verification-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="verification-message">
+            {% if success %}
+                <p>Your account has been verified successfully! You can now <a href="{{ url_for('employer_views.login_employer') }}">log in</a>.</p>
+            {% else %}
+                <p>Verification failed: {{ message }}</p>
+                <p>Please try registering again or contact support.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
