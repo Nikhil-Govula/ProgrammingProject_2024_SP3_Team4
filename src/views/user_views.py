@@ -765,14 +765,6 @@ def view_applications():
     return render_template('user/view_applications.html', applications=applications)
 
 
-@user_bp.route('/track_applications', methods=['GET'])
-@auth_required(user_type='user')
-def track_applications():
-    user = g.user
-    applications = UserController.get_user_applications(user.user_id)
-    return render_template('user/track_applications.html', applications=applications)
-
-
 @user_bp.route('/interview_tips', methods=['GET'])
 @auth_required(user_type='user')
 def interview_tips():
