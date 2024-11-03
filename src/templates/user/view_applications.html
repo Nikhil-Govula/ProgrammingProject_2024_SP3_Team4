@@ -7,7 +7,7 @@
 {% block body %}
 <div class="view-applications-container">
     <h1 class="section-heading">Your Job Applications</h1>
-    <p>Track the status of your job applications below:</p>
+    <p style="font-size: larger">Track the status of your job applications below:</p>
     <div class="applications-list">
         {% if applications %}
             {% for application in applications %}
@@ -32,6 +32,11 @@
                             Applied on: <span class="applied-date" data-date="{{ application.date_applied }}"></span>
                         </div>
                         {% if application.job %}
+                            <div>
+                                <button id="revoke-button-{{ application.application_id }}" class="apply-button-revoke {{ 'revoke' if application.status == 'Applied' else '' }}" onclick="revokeApplication('{{ application.application_id }}')">
+                                    Revoke Application
+                                </button>
+                            </div>
                             <div>
                                 <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
                                    class="view-job-button">View Job Details</a>
@@ -68,6 +73,29 @@
         return `${day}/${month}/${year}`;
     }
 
+    function revokeApplication(applicationId) {
+        fetch(`/user/remove_application/${applicationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                {% if csrf_token %}
+                'X-CSRFToken': '{{ csrf_token() }}'
+                {% endif %}
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Handle successful removal, e.g., reload the page
+                window.location.reload();
+            } else {
+                alert('Failed to revoke job application.');
+            }
+        })
+        .catch(error => {
+            console.error('Error revoking job application:', error);
+        });
+    }
+
     function removeApplication(applicationId) {
         fetch(`/user/remove_application/${applicationId}`, {
             method: 'POST',
@@ -100,4 +128,32 @@
         });
     });
 </script>
+
+<style>
+    .apply-button-revoke {
+        background-color: #ff4b5c;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    .apply-button {
+        background-color: #0073b1;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    .apply-button:hover {
+        background-color: #005a8d;
+    }
+</style>
 {% endblock %}
