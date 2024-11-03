@@ -256,7 +256,7 @@ class UserController:
         if user.profile_picture_url:
             try:
                 old_key = \
-                user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
+                    user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
                 s3.delete_object(Bucket=Config.S3_BUCKET_NAME, Key=old_key)
             except Exception as e:
                 print(f"Error deleting old profile picture: {e}")
@@ -281,7 +281,6 @@ class UserController:
         except ClientError as e:
             print(f"Error uploading to S3: {e}")
             return None, "Failed to upload profile picture. Please try again."
-
 
     @staticmethod
     def allowed_certification_file(filename):
@@ -696,3 +695,16 @@ class UserController:
     @staticmethod
     def delete_by_application_id(application_id):
         return Application.delete_by_application_id(application_id)
+
+    @staticmethod
+    def revoke_application(user_id, job_id):
+        application = Application.get_by_user_and_job(user_id, job_id)
+        if not application:
+            return False, "Application not found."
+
+        # Delete the application
+        success = Application.delete_by_application_id(application.application_id)
+        if success:
+            return True, "Application successfully revoked."
+        else:
+            return False, "Failed to revoke the application. Please try again."

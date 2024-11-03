@@ -3,6 +3,7 @@
 {% extends 'base.html' %}
 
 {% block body %}
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
     <h2 class="available-jobs-section-title">Available Jobs</h2>
     <div class="job-board-container">
         <!-- Left Section: Job List -->
@@ -34,182 +35,259 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // Function to format date in dd/mm/yyyy format
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        fetch('/user/get_bookmarked_jobs', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.bookmarkedJobs) {
-                bookmarkedJobs = new Set(data.bookmarkedJobs); // Set bookmarkedJobs to fetched data
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching bookmarked jobs:', error);
-        });
-    });
-
-
-    let bookmarkedJobs = new Set();  // Keep track of bookmarked jobs
-
-    function loadJobDetails(jobId) {
-        fetch(`/user/job_details/${jobId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            const isBookmarked = bookmarkedJobs.has(jobId) ? 'gold' : 'grey';
-            document.getElementById('job-details-content').innerHTML = `
-                <div class="job-detail-container">
-                    <div class="bookmark-icon" onclick="toggleBookmark('${jobId}')">
-                        <i class="fas fa-bookmark" style="color:${isBookmarked}"></i>
-                    </div>
-                    <h2 class="job-title-detail">${data.job_title}</h2>
-                    <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
-                    <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
-                    <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
-                    <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
-
-                    <form action="/user/jobs/${jobId}/apply" method="POST">
-                        <button type="submit" class="apply-button">Apply Now</button>
-                    </form>
-
-                    <div class="section">
-                        <h3>Job Description</h3>
-                        <p>${data.description}</p>
-                    </div>
-
-                    <div class="section">
-                        <h3>Requirements</h3>
-                        <p>${data.requirements}</p>
-                    </div>
-
-                    ${data.certifications.length > 0 ? `
-                        <div class="section">
-                            <h3>Certifications</h3>
-                            <ul class="certifications">
-                                ${data.certifications.map(cert => `<li>${cert}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
-
-                    ${data.skills.length > 0 ? `
-                        <div class="section">
-                            <h3>Skills</h3>
-                            <ul class="skills">
-                                ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
-                            </ul>
-                        </div>
-
-                        <style>
-                            .apply-button {
-                                background-color: #0073b1;
-                                color: white;
-                                padding: 10px 20px;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: bold;
-                                transition: background-color 0.2s;
-                            }
-
-                            .apply-button:hover {
-                                background-color: #005a8d;
-                            }
-
-                            .bookmark-icon {
-                                position: absolute;
-                                right: 100px;
-                                cursor: pointer;
-                                font-size: 48px;
-                                transition: color 0.2s;
-                            }
-                        </style>
-                    ` : ''}
-                </div>
-            `;
-        })
-        .catch(error => {
-            console.error('Error fetching job details:', error);
-            document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
-        });
-    }
-
-    function toggleBookmark(jobId) {
-        const bookmarkIcon = document.querySelector('.bookmark-icon i');
-
-        // Toggle the visual state
-        if (bookmarkedJobs.has(jobId)) {
-            console.log("unsaving job ", jobId)
-            bookmarkedJobs.delete(jobId);
-            bookmarkIcon.style.color = 'grey';
-            removeBookmark(jobId);
-        } else {
-            bookmarkedJobs.add(jobId);
-            bookmarkIcon.style.color = 'gold';
-            saveBookmark(jobId);
+    <script>
+        // Function to format date in dd/mm/yyyy format
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
         }
-    }
 
-    function saveBookmark(jobId) {
-        console.log("running saveBookmark()")
-        // Make a request to save the bookmarked job
-        fetch(`/user/jobs/${jobId}/bookmark`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to bookmark the job');
-            }
-        })
-        .catch(error => {
-            console.error('Error saving bookmark:', error);
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('/user/get_bookmarked_jobs', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.bookmarkedJobs) {
+                        bookmarkedJobs = new Set(data.bookmarkedJobs); // Set bookmarkedJobs to fetched data
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching bookmarked jobs:', error);
+                });
         });
-    }
 
-    function removeBookmark(jobId) {
-        // Make a request to remove the bookmarked job
-        fetch(`/user/jobs/${jobId}/remove_bookmark`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to remove bookmark');
+        let bookmarkedJobs = new Set();  // Keep track of bookmarked jobs
+
+        function loadJobDetails(jobId) {
+            fetch(`/user/job_details/${jobId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Network response was not ok: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    const isBookmarked = bookmarkedJobs.has(jobId) ? 'gold' : 'grey';
+                    const hasApplied = data.has_applied;
+
+                    // Set the button class based on application status
+                    const buttonClass = hasApplied ? 'revoke-button' : 'apply-button';
+
+                    document.getElementById('job-details-content').innerHTML = `
+        <div class="job-detail-container">
+            <div class="bookmark-icon" onclick="toggleBookmark('${jobId}')">
+                <i class="fas fa-bookmark" style="color:${isBookmarked}"></i>
+            </div>
+            <h2 class="job-title-detail">${data.job_title}</h2>
+            <p class="company-info"><strong>Company:</strong> ${data.company_name}</p>
+            <p class="location-info"><strong>Location:</strong> ${data.city}, ${data.country}</p>
+            <p class="salary-info"><strong>Salary:</strong> $${data.salary}</p>
+            <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
+
+            <button id="apply-button" class="${buttonClass}" onclick="applyForJob('${jobId}', ${hasApplied})">
+                ${hasApplied ? 'Revoke Application' : 'Apply Now'}
+            </button>
+
+            <div class="section">
+                <h3>Job Description</h3>
+                <p>${data.description}</p>
+            </div>
+
+            <div class="section">
+                <h3>Requirements</h3>
+                <p>${data.requirements}</p>
+            </div>
+
+            ${data.certifications.length > 0 ? `
+                <div class="section">
+                    <h3>Certifications</h3>
+                    <ul class="certifications">
+                        ${data.certifications.map(cert => `<li>${cert}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+
+            ${data.skills.length > 0 ? `
+                <div class="section">
+                    <h3>Skills</h3>
+                    <ul class="skills">
+                        ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+        </div>
+
+        <style>
+            .apply-button {
+                background-color: #0073b1;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.2s;
             }
-        })
-        .catch(error => {
-            console.error('Error removing bookmark:', error);
-        });
-    }
-</script>
+
+            .apply-button:hover {
+                background-color: #005a8d;
+            }
+
+            .revoke-button {
+                background-color: #d9534f; /* Red color for revoke */
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.2s;
+            }
+
+            .revoke-button:hover {
+                background-color: #c9302c;
+            }
+
+            .bookmark-icon {
+                position: absolute;
+                right: 100px;
+                cursor: pointer;
+                font-size: 48px;
+                transition: color 0.2s;
+            }
+        </style>
+    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching job details:', error);
+                    document.getElementById('job-details-content').innerHTML = `<p class="error-message">An error occurred while fetching the job details: ${error.message}</p>`;
+                });
+        }
+
+
+        function applyForJob(jobId, hasApplied) {
+            const action = hasApplied ? 'revoke' : 'apply';
+            fetch(`/user/jobs/${jobId}/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    {% if csrf_token %}
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    {% endif %}
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success notification
+                        showNotification(data.message, 'success');
+
+                        // Update button text, the onclick handler, and the class
+                        const applyButton = document.getElementById('apply-button');
+                        hasApplied = !hasApplied; // Toggle application state
+                        applyButton.innerText = hasApplied ? 'Revoke Application' : 'Apply Now';
+                        applyButton.setAttribute('onclick', `applyForJob('${jobId}', ${hasApplied})`);
+
+                        // Change button class based on the action
+                        if (hasApplied) {
+                            applyButton.classList.remove('apply-button');
+                            applyButton.classList.add('revoke-button');
+                        } else {
+                            applyButton.classList.remove('revoke-button');
+                            applyButton.classList.add('apply-button');
+                        }
+                    } else {
+                        // Show error notification
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating application status:', error);
+                    showNotification('Error: Could not complete the request.', 'error');
+                });
+        }
+
+
+        function toggleBookmark(jobId) {
+            const bookmarkIcon = document.querySelector('.bookmark-icon i');
+
+            // Toggle the visual state
+            if (bookmarkedJobs.has(jobId)) {
+                console.log("unsaving job ", jobId)
+                bookmarkedJobs.delete(jobId);
+                bookmarkIcon.style.color = 'grey';
+                removeBookmark(jobId);
+            } else {
+                bookmarkedJobs.add(jobId);
+                bookmarkIcon.style.color = 'gold';
+                saveBookmark(jobId);
+            }
+        }
+
+        function saveBookmark(jobId) {
+            console.log("running saveBookmark()")
+            // Make a request to save the bookmarked job
+            fetch(`/user/jobs/${jobId}/bookmark`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to bookmark the job');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving bookmark:', error);
+                });
+        }
+
+        function removeBookmark(jobId) {
+            // Make a request to remove the bookmarked job
+            fetch(`/user/jobs/${jobId}/remove_bookmark`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to remove bookmark');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing bookmark:', error);
+                });
+        }
+
+        function showNotification(message, category) {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${category}`;
+            notification.innerText = message;
+            container.appendChild(notification);
+
+            // Remove the notification after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
 {% endblock %}

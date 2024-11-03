@@ -81,6 +81,9 @@
                 throw new Error(data.error);
             }
             const isBookmarked = bookmarkedJobs.has(jobId) ? 'gold' : 'grey';
+            const hasApplied = data.has_applied;
+            const buttonClass = hasApplied ? 'revoke-button' : 'apply-button';
+            const buttonText = hasApplied ? 'Revoke Application' : 'Apply Now';
             document.getElementById('job-details-content').innerHTML = `
                 <div class="job-detail-container">
                     <div class="bookmark-icon" onclick="toggleBookmark('${jobId}')">
@@ -93,7 +96,7 @@
                     <p class="date-posted"><strong>Date Posted:</strong> ${formatDate(data.date_posted)}</p>
 
                     <form action="/user/jobs/${jobId}/apply" method="POST">
-                        <button type="submit" class="apply-button">Apply Now</button>
+                        <button type="submit" class="${buttonClass}">${buttonText}</button>
                     </form>
 
                     <div class="section">
@@ -122,33 +125,48 @@
                                 ${data.skills.map(skill => `<li>${skill}</li>`).join('')}
                             </ul>
                         </div>
-
-                        <style>
-                            .apply-button {
-                                background-color: #0073b1;
-                                color: white;
-                                padding: 10px 20px;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                font-weight: bold;
-                                transition: background-color 0.2s;
-                            }
-
-                            .apply-button:hover {
-                                background-color: #005a8d;
-                            }
-
-                            .bookmark-icon {
-                                position: absolute;
-                                right: 100px;
-                                cursor: pointer;
-                                font-size: 48px;
-                                transition: color 0.2s;
-                            }
-                        </style>
                     ` : ''}
                 </div>
+
+                <style>
+                    .apply-button {
+                        background-color: #0073b1;
+                        color: white;
+                        padding: 10px 20px;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: background-color 0.2s;
+                    }
+
+                    .apply-button:hover {
+                        background-color: #005a8d;
+                    }
+
+                    .revoke-button {
+                        background-color: #d9534f; /* Red color for revoke */
+                        color: white;
+                        padding: 10px 20px;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: background-color 0.2s;
+                    }
+
+                    .revoke-button:hover {
+                        background-color: #c9302c;
+                    }
+
+                    .bookmark-icon {
+                        position: absolute;
+                        right: 100px;
+                        cursor: pointer;
+                        font-size: 48px;
+                        transition: color 0.2s;
+                    }
+                </style>
             `;
         })
         .catch(error => {

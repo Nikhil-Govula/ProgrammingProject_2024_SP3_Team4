@@ -40,14 +40,14 @@
                                 </div>
                                 {% if job.skills %}
                                     <div class="col-12">
-                                        <p><strong>Required Skills:</strong></p>
-                                        <div class="skills-list row">
+                                        <p style="margin-bottom: -10px;"><strong>Required Skills:</strong></p>
+                                        <ul class="skills-list row">
                                             {% for skill in job.skills %}
-                                                <div class="col-4">
+                                                <li class="col-4">
                                                     <span class="skill-tag">{{ skill }}</span>
-                                                </div>
+                                                </li>
                                             {% endfor %}
-                                        </div>
+                                        </ul>
                                     </div>
                                 {% endif %}
                                 <div class="col-12">
@@ -59,7 +59,7 @@
                             <!-- Matched Reasons -->
                             <div class="matched-reasons row">
                                 <div class="col-12">
-                                    <p><strong>Why This Job is Recommended:</strong></p>
+                                    <p style="margin-bottom: -10px;"><strong>Why This Job is Recommended:</strong></p>
                                     <ul>
                                         {% if reasons.skills %}
                                             <li><strong>Skills Match:</strong> {{ reasons.skills | join(', ') }}</li>

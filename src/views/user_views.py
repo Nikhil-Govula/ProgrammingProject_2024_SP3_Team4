@@ -629,6 +629,9 @@ def get_job_details(job_id):
     if not job:
         return jsonify({'error': 'Job not found'}), 404
 
+    user_id = g.user.user_id
+    has_applied = UserController.has_applied_for_job(user_id, job_id)
+
     return jsonify({
         "job_id": job.job_id,
         "job_title": job.job_title,
@@ -641,6 +644,7 @@ def get_job_details(job_id):
         "requirements": job.requirements,
         "certifications": job.certifications or [],
         "skills": job.skills or [],
+        "has_applied": has_applied  # Include application status
     })
 
 
@@ -665,18 +669,18 @@ def view_job_details(job_id):
                            application=application)
 
 
-@user_bp.route('/remove_application/<application_id>', methods=['POST'])
+@user_bp.route('/jobs/<job_id>/revoke', methods=['POST'])
 @auth_required(user_type='user')
-def remove_job_application(application_id):
+def revoke_application(job_id):
     user = g.user
-    success, message = UserController.delete_by_application_id(application_id)
+    success, message = UserController.revoke_application(user.user_id, job_id)
 
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'error')
+    response_data = {
+        'success': success,
+        'message': message,
+    }
 
-    return '', 200 if success else 400
+    return jsonify(response_data), 200 if success else 400
 
 
 @user_bp.route('/jobs/<job_id>/bookmark', methods=['POST'])
