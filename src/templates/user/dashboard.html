@@ -15,75 +15,86 @@
                         {% set job = entry.job %}
                         {% set reasons = entry.matched_reasons %}
                         <div class="job-card">
-                            <!-- Job Header -->
-                            <div class="job-header row">
-                                <div class="col-3">
-                                    <img src="{{ job.company_logo_url|default(url_for('static', filename='images/company_logo_placeholder.svg')) }}"
-                                         alt="{{ job.company_name }} logo"
-                                         class="company-logo">
+                            <div class="job-card-inner">
+                                <!-- Job Header -->
+                                <div class="job-header row">
+                                    <div class="col-3">
+                                        <img src="{{ job.company_logo_url|default(url_for('static', filename='images/company_logo_placeholder.svg')) }}"
+                                             alt="{{ job.company_name }} logo"
+                                             class="company-logo">
+                                    </div>
+                                    <div class="col-9" style="display: flex; align-items: center; flex-direction: column;">
+                                        <h2 class="job-title">{{ job.job_title }}</h2>
+                                        <p class="job-score">Match Score: {{ entry.score }}%</p>
+                                    </div>
                                 </div>
-                                <div class="col-9">
-                                    <h2 class="job-title">{{ job.job_title }}</h2>
-                                </div>
-                            </div>
 
-                            <!-- Job Details -->
-                            <div class="job-details row">
-                                <div class="col-12">
-                                    <p><strong>Company:</strong> {{ job.company_name }}</p>
-                                </div>
-                                <div class="col-12">
-                                    <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
-                                </div>
-                                <div class="col-12">
-                                    <p><strong>Salary:</strong> ${{ job.salary }}</p>
-                                </div>
-                                {% if job.skills %}
+                                <!-- Job Details -->
+                                <div class="job-details row">
                                     <div class="col-12">
-                                        <p style="margin-bottom: -10px;"><strong>Required Skills:</strong></p>
-                                        <ul class="skills-list row">
-                                            {% for skill in job.skills %}
-                                                <li class="col-4">
-                                                    <span class="skill-tag">{{ skill }}</span>
+                                        <p><strong>Company:</strong> {{ job.company_name }}</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <p><strong>Salary:</strong> ${{ job.salary }}</p>
+                                    </div>
+                                    {% if job.skills %}
+                                        <div class="col-12">
+                                            <p style="margin-bottom: -10px;"><strong>Required Skills:</strong></p>
+                                            <ul class="skills-list row">
+                                                {% for skill in job.skills %}
+                                                    <li class="col-4">
+                                                        <span class="skill-tag">{{ skill }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                    <div class="col-12">
+                                        <p><strong>Posted:</strong> <span class="posted-date"
+                                                                          data-date="{{ job.date_posted }}"></span></p>
+                                    </div>
+                                </div>
+
+                                <!-- Matched Reasons -->
+                                <div class="matched-reasons row">
+                                    <div class="col-12">
+                                        <p style="margin-bottom: -10px;"><strong>Why This Job is Recommended:</strong>
+                                        </p>
+                                        <ul>
+                                            {% if reasons.skills %}
+                                                <li>
+                                                    <strong>Skills Match:</strong>
+                                                    <ul>
+                                                        {% for skill in reasons.skills %}
+                                                            <li>{{ skill }}</li>
+                                                        {% endfor %}
+                                                    </ul>
                                                 </li>
-                                            {% endfor %}
+                                            {% endif %}
+                                            {% if reasons.location %}
+                                                <li><strong>Location Match:</strong> {{ reasons.location }}</li>
+                                            {% endif %}
+                                            {% if reasons.certifications %}
+                                                <li><strong>Certifications
+                                                    Match:</strong> {{ reasons.certifications | join(', ') }}</li>
+                                            {% endif %}
+                                            {% if reasons.work_history %}
+                                                <li><strong>Relevant Work
+                                                    History:</strong> {{ reasons.work_history | join(', ') }}</li>
+                                            {% endif %}
                                         </ul>
                                     </div>
-                                {% endif %}
-                                <div class="col-12">
-                                    <p><strong>Posted:</strong> <span class="posted-date"
-                                                                      data-date="{{ job.date_posted }}"></span></p>
-                                </div>
-                            </div>
-
-                            <!-- Matched Reasons -->
-                            <div class="matched-reasons row">
-                                <div class="col-12">
-                                    <p style="margin-bottom: -10px;"><strong>Why This Job is Recommended:</strong></p>
-                                    <ul>
-                                        {% if reasons.skills %}
-                                            <li><strong>Skills Match:</strong> {{ reasons.skills | join(', ') }}</li>
-                                        {% endif %}
-                                        {% if reasons.location %}
-                                            <li><strong>Location Match:</strong> {{ reasons.location }}</li>
-                                        {% endif %}
-                                        {% if reasons.certifications %}
-                                            <li><strong>Certifications
-                                                Match:</strong> {{ reasons.certifications | join(', ') }}</li>
-                                        {% endif %}
-                                        {% if reasons.work_history %}
-                                            <li><strong>Relevant Work
-                                                History:</strong> {{ reasons.work_history | join(', ') }}</li>
-                                        {% endif %}
-                                    </ul>
                                 </div>
                             </div>
 
                             <!-- View Details Button -->
-                            <div class="row" style="display: flex; align-items: end;">
+                            <div class="row" style="display: flex; align-items: end; width: min-content">
                                 <div class="col-12 text-center">
                                     <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}"
-                                       class="view-job-button">View Details</a>
+                                       class="view-job-button" style="text-wrap: nowrap;">View Details</a>
                                 </div>
                             </div>
                         </div>

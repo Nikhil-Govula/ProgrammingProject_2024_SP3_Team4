@@ -561,12 +561,10 @@ class UserController:
 
             # Location matching (30%)
             if user.city and user.country:
-                if job.city.lower() == user.city.lower() and job.country.lower() == user.country.lower():
+                if job.city.lower() == user.city.lower():
+                        # and job.country.lower() == user.country.lower():
                     score += 30
-                    matched_reasons['location'] = 'Exact match'
-                elif job.country.lower() == user.country.lower():
-                    score += 15
-                    matched_reasons['location'] = 'Country match'
+                    matched_reasons['location'] = 'City match'
 
             # Certification matching (20%)
             user_certs = {cert['type'].lower() for cert in user.certifications}
@@ -609,7 +607,8 @@ class UserController:
             reasons = entry['matched_reasons']
             recommended_jobs.append({
                 'job': job,
-                'matched_reasons': reasons
+                'matched_reasons': reasons,
+                'score': entry['score']
             })
 
         return recommended_jobs
