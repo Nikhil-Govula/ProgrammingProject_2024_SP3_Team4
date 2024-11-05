@@ -669,20 +669,6 @@ def view_job_details(job_id):
                            application=application)
 
 
-@user_bp.route('/jobs/<job_id>/revoke', methods=['POST'])
-@auth_required(user_type='user')
-def revoke_application(job_id):
-    user = g.user
-    success, message = UserController.revoke_application(user.user_id, job_id)
-
-    response_data = {
-        'success': success,
-        'message': message,
-    }
-
-    return jsonify(response_data), 200 if success else 400
-
-
 @user_bp.route('/jobs/<job_id>/bookmark', methods=['POST'])
 @auth_required(user_type='user')
 def bookmark_job(job_id):
@@ -727,6 +713,7 @@ def apply_for_job(job_id):
         }), 400
 
     success, message = UserController.apply_for_job(user.user_id, job_id)
+    print(f"apply JobID:\n{job_id}")
 
     response_data = {
         'success': success,
@@ -737,6 +724,19 @@ def apply_for_job(job_id):
     return jsonify(response_data), 200 if success else 400
 
 
+@user_bp.route('/jobs/<job_id>/revoke', methods=['POST'])
+@auth_required(user_type='user')
+def revoke_application(job_id):
+    user = g.user
+    success, message = UserController.revoke_application(user.user_id, job_id)
+    print(f"revoke JobID:\n{job_id}")
+
+    response_data = {
+        'success': success,
+        'message': message,
+    }
+
+    return jsonify(response_data), 200 if success else 400
 # **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
 
 

@@ -33,9 +33,8 @@
                         </div>
                         {% if application.job %}
                             <div>
-                                <button id="revoke-button-{{ application.application_id }}" class="apply-button-revoke {{ 'revoke' if application.status == 'Applied' else '' }}" onclick="revokeApplication('{{ application.application_id }}')">
-                                    Revoke Application
-                                </button>
+                                <a href="#" onclick="revokeApplication('{{ application.job_id }}')"
+                                   class="apply-button-revoke">Revoke Application!</a>
                             </div>
                             <div>
                                 <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
@@ -43,8 +42,8 @@
                             </div>
                         {% else %}
                             <div>
-                                <a href="#" onclick="removeApplication('{{ application.application_id }}')"
-                                   class="remove-job-button">Remove record!</a>
+                                <a href="#" onclick="revokeApplication('{{ application.application_id }}')"
+                                   class="apply-button-revoke">Remove record!</a>
                             </div>
                         {% endif %}
                     </div>
@@ -73,8 +72,9 @@
         return `${day}/${month}/${year}`;
     }
 
-    function revokeApplication(applicationId) {
-        fetch(`/user/remove_application/${applicationId}`, {
+    function revokeApplication(jobId) {
+        console.log("jobId: " + jobId)
+        fetch(`/user/jobs/${jobId}/revoke`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -96,29 +96,6 @@
         });
     }
 
-    function removeApplication(applicationId) {
-        fetch(`/user/remove_application/${applicationId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                {% if csrf_token %}
-                'X-CSRFToken': '{{ csrf_token() }}'
-                {% endif %}
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                // Handle successful removal, e.g., reload the page
-                window.location.reload();
-            } else {
-                alert('Failed to remove job application.');
-            }
-        })
-        .catch(error => {
-            console.error('Error removing job application:', error);
-        });
-    }
-
     // Format the applied dates on page load
     document.addEventListener("DOMContentLoaded", function() {
         const dateElements = document.querySelectorAll(".applied-date");
@@ -130,30 +107,6 @@
 </script>
 
 <style>
-    .apply-button-revoke {
-        background-color: #ff4b5c;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.2s;
-    }
 
-    .apply-button {
-        background-color: #0073b1;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.2s;
-    }
-
-    .apply-button:hover {
-        background-color: #005a8d;
-    }
 </style>
 {% endblock %}

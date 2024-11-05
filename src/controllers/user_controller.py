@@ -496,6 +496,30 @@ class UserController:
             return False, "There was an error submitting your application. Please try again."
 
     @staticmethod
+    def revoke_application(user_id, job_id):
+        # Check if the job exists and is still active
+        job = Job.get_by_id(job_id)
+        if not job or not job.is_active:
+            return False, "This job is no longer available."
+
+        application = Application.get_by_user_and_job(user_id, job_id)
+        if not application:
+            return False, "Application not found."
+
+        print(f"application\n{application}")
+
+        # Delete the application
+        success = Application.delete_by_application_id(application.application_id)
+        if success:
+            return True, "Application successfully revoked."
+        else:
+            return False, "Failed to revoke the application. Please try again."
+
+    @staticmethod
+    def delete_by_application_id(application_id):
+        return Application.delete_by_application_id(application_id)
+
+    @staticmethod
     def get_recommended_jobs(user):
         """
         Get personalized job recommendations based on user's profile factors:
@@ -691,20 +715,3 @@ class UserController:
     @staticmethod
     def get_interview_tips():
         return []
-
-    @staticmethod
-    def delete_by_application_id(application_id):
-        return Application.delete_by_application_id(application_id)
-
-    @staticmethod
-    def revoke_application(user_id, job_id):
-        application = Application.get_by_user_and_job(user_id, job_id)
-        if not application:
-            return False, "Application not found."
-
-        # Delete the application
-        success = Application.delete_by_application_id(application.application_id)
-        if success:
-            return True, "Application successfully revoked."
-        else:
-            return False, "Failed to revoke the application. Please try again."

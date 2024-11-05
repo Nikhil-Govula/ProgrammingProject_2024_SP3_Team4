@@ -31,6 +31,22 @@ class Application:
             return False, "An error occurred while submitting your application."
 
     @staticmethod
+    def delete_by_application_id(application_id):
+        try:
+            # Use DynamoDB client to delete the application by application_id
+            DynamoDB.delete_item(
+                'Applications',
+                key={
+                    'application_id': application_id
+                }
+            )
+            print(f"Application: {application_id} removed successfully!")
+            return True, "Application removed successfully."
+        except Exception as e:
+            print(f"Error deleting application: {e}")
+            return False, "An error occurred while deleting the application."
+
+    @staticmethod
     def get_by_user_id(user_id):
         response = DynamoDB.scan(
             'Applications',
@@ -93,20 +109,3 @@ class Application:
         if item:
             return Application(**item)
         return None
-
-    @staticmethod
-    def delete_by_application_id(application_id):
-        try:
-            # Use DynamoDB client to delete the application by application_id
-            DynamoDB.delete_item(
-                'Applications',
-                key={
-                    'application_id': application_id
-                }
-            )
-            print(f"Application: {application_id} removed successfully!")
-            return True, "Application removed successfully."
-        except Exception as e:
-            print(f"Error deleting application: {e}")
-            return False, "An error occurred while deleting the application."
-
