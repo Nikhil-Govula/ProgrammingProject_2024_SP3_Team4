@@ -1,135 +1,159 @@
 {% extends "base.html" %}
 
-{% block head %}
-    <title>Edit Profile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_profile.css') }}">
-{% endblock %}
-
 {% block body %}
-<div id="notification-container"></div>
-<div class="registration-container">
-    <div class="form-container">
-        <div class="register-card">
-            <h2>Edit Profile</h2>
+    <title>Edit Profile</title>
+    <div id="notification-container"></div>
+    <div class="user-profile">
+        <div class="profile-container" style="margin: 5vh auto 5vh">
+            <div class="register-card">
+                <h2>Edit Profile</h2>
 
-            <!-- Success Message -->
-            {% if request.args.get('success') %}
-                <p class="success-message">{{ request.args.get('success') }}</p>
-            {% endif %}
+                <!-- Success Message -->
+                {% if request.args.get('success') %}
+                    <p class="success-message">{{ request.args.get('success') }}</p>
+                {% endif %}
 
-            <!-- Error Message -->
-            {% if error %}
-                <p class="error-message">{{ error }}</p>
-            {% endif %}
+                <!-- Error Message -->
+                {% if error %}
+                    <p class="error-message">{{ error }}</p>
+                {% endif %}
 
-            <!-- Profile Information and Update Forms -->
-            <form id="profile-form" enctype="multipart/form-data">
                 <!-- Profile Picture -->
-                <div class="form-group">
-                    <label>Profile Picture:</label><br>
-                    <img src="{{ user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" id="profile-picture" class="profile-picture">
-                    <input type="file" id="profile-picture-input" accept="image/*">
+                <div class="form-group profile-picture-group">
+                    <label>Profile Picture:</label>
+                    <img src="{{ user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}"
+                         alt="Profile Picture" id="profile-picture" class="profile-picture">
+                    <input type="file" id="profile-picture-input" accept="image/*" class="file-input">
                 </div>
 
-                <!-- First Name -->
-                <div class="form-group">
-                    <label for="first_name-input">First Name:</label><br>
-                    <input type="text" id="first_name-input" name="first_name" placeholder="First Name" value="{{ user.first_name }}" required>
-                    <button type="button" class="update-field-button" data-field="first_name">Update</button>
-                </div>
+                <!-- Profile Information and Update Forms -->
+                <form id="profile-form" enctype="multipart/form-data" style="width: 100%">
+                    <!-- First Name -->
+                    <div class="form-group">
+                        <label for="first_name-input">First Name:</label>
+                        <input type="text" id="first_name-input" name="first_name" placeholder="First Name"
+                               value="{{ user.first_name }}" required>
+                        <button type="button" class="update-field-button" data-field="first_name"><i
+                                class="fas fa-save"></i> Update
+                        </button>
+                    </div>
 
-                <!-- Last Name -->
-                <div class="form-group">
-                    <label for="last_name-input">Last Name:</label><br>
-                    <input type="text" id="last_name-input" name="last_name" placeholder="Last Name" value="{{ user.last_name }}" required>
-                    <button type="button" class="update-field-button" data-field="last_name">Update</button>
-                </div>
+                    <!-- Last Name -->
+                    <div class="form-group">
+                        <label for="last_name-input">Last Name:</label>
+                        <input type="text" id="last_name-input" name="last_name" placeholder="Last Name"
+                               value="{{ user.last_name }}" required>
+                        <button type="button" class="update-field-button" data-field="last_name"><i
+                                class="fas fa-save"></i> Update
+                        </button>
+                    </div>
 
-                <!-- Email -->
-                <div class="form-group">
-                    <label for="email-input">Email Address:</label><br>
-                    <input type="email" id="email-input" name="email" placeholder="Email Address" value="{{ user.email }}" required>
-                    <button type="button" class="update-field-button" data-field="email">Update</button>
-                </div>
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email-input">Email Address:</label>
+                        <input type="email" id="email-input" name="email" placeholder="Email Address"
+                               value="{{ user.email }}" required>
+                        <button type="button" class="update-field-button" data-field="email"><i class="fas fa-save"></i>
+                            Update
+                        </button>
+                    </div>
 
-                <!-- Phone Number -->
-                <div class="form-group">
-                    <label for="phone_number-input">Phone Number:</label><br>
-                    <input type="text" id="phone_number-input" name="phone_number" placeholder="Phone Number" value="{{ user.phone_number }}" required>
-                    <button type="button" class="update-field-button" data-field="phone_number">Update</button>
-                </div>
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                        <label for="phone_number-input">Phone Number:</label>
+                        <input type="text" id="phone_number-input" name="phone_number" placeholder="Phone Number"
+                               value="{{ user.phone_number }}" required>
+                        <button type="button" class="update-field-button" data-field="phone_number"><i
+                                class="fas fa-save"></i> Update
+                        </button>
+                    </div>
 
-                <!-- Location Field -->
-                <div class="form-group">
-                    <label for="location-input">Location:</label><br>
-                    <input type="text" id="location-input" name="location" placeholder="Enter your city, country" value="{{ user.city + ', ' + user.country if user.city and user.country else '' }}" required>
-                    <button type="button" class="update-field-button" data-field="location">Update</button>
-                </div>
-            </form>
-
-            <!-- Add Certification Form -->
-            <div class="form-group">
-                <h3>Add Certification</h3>
-                <form id="add-certification-form" enctype="multipart/form-data">
-                    <label for="cert_type">Certification Type:</label><br>
-                    <input type="text" id="cert_type" name="cert_type" placeholder="e.g., Certificate IV in Accounting" required><br><br>
-
-                    <label for="cert_file">Certification File:</label><br>
-                    <input type="file" id="cert_file" name="certifications" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.doc,.xlsx,.xls" required><br><br>
-
-                    <button type="submit" class="register-button">Add Certification</button>
+                    <!-- Location -->
+                    <div class="form-group">
+                        <label for="location-input">Location:</label>
+                        <input type="text" id="location-input" name="location" placeholder="Enter your city, country"
+                               value="{{ user.city + ', ' + user.country if user.city and user.country else '' }}"
+                               required>
+                        <button type="button" class="update-field-button" data-field="location"><i
+                                class="fas fa-save"></i> Update
+                        </button>
+                    </div>
                 </form>
-            </div>
 
-            <!-- Existing Certifications -->
-            <div class="form-group">
-                <label>Existing Certifications:</label>
-                {% if user.certifications %}
-                    <ul id="certifications-list">
-                        {% for cert in user.certifications %}
-                            <li id="cert-{{ cert.id }}">
-                                <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
-                                <button type="button" class="delete-cert-button" data-id="{{ cert.id }}">Delete</button>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p id="no-certs-message">No certifications uploaded.</p>
-                {% endif %}
-            </div>
+                <!-- Add Certification Form -->
+                <div class="form-group certification-section">
+                    <h3>Add Certification</h3>
+                    <form id="add-certification-form" enctype="multipart/form-data">
+                        <label for="cert_type">Certification Type:</label>
+                        <input type="text" id="cert_type" name="cert_type"
+                               placeholder="e.g., Certificate IV in Accounting" required><br><br>
 
-            <!-- New Skills Section -->
-            <div class="form-group">
-                <h3>Skills</h3>
-                <form id="add-skill-form">
-                    <label for="skill-input">Add a Skill:</label><br>
-                    <input type="text" id="skill-input" name="skill" placeholder="e.g., Python" required>
-                    <button type="submit" class="register-button">Add Skill</button>
-                </form>
-            </div>
+                        <label for="cert_file">Certification File:</label>
+                        <input type="file" id="cert_file" name="certifications"
+                               accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.doc,.xlsx,.xls" required><br><br>
 
-            <!-- Existing Skills -->
-            <div class="form-group">
-                <label>Existing Skills:</label>
-                {% if user.skills %}
-                    <ul id="skills-list">
-                        {% for skill in user.skills %}
-                            <li id="skill-{{ skill.id }}">
-                                {{ skill.skill }}
-                                <button type="button" class="delete-skill-button" data-id="{{ skill.id }}">Delete</button>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p id="no-skills-message">No skills added.</p>
-                {% endif %}
-            </div>
+                        <button type="submit" class="register-button"><i class="fas fa-plus"></i> Add Certification
+                        </button>
+                    </form>
+                </div>
 
-            <hr>
-            <a href="{{ url_for('user_views.view_work_history') }}" class="btn">Manage Work History</a>
+                <!-- Existing Certifications -->
+                <div class="form-group existing-section">
+                    <label>Existing Certifications:</label>
+                    {% if user.certifications %}
+                        <ul id="certifications-list" class="certifications-list">
+                            {% for cert in user.certifications %}
+                                <li id="cert-{{ cert.id }}">
+                                    <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
+                                    <button type="button" class="delete-cert-button" data-id="{{ cert.id }}"><i
+                                            class="fas fa-trash"></i> Delete
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p id="no-certs-message">No certifications uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <!-- New Skills Section -->
+                <div class="form-group skill-section">
+                    <h3>Skills</h3>
+                    <form id="add-skill-form">
+                        <label for="skill-input">Add a Skill:</label>
+                        <input type="text" id="skill-input" name="skill" placeholder="e.g., Python" required>
+                        <br>
+                        <br>
+                        <button type="submit" class="register-button"><i class="fas fa-plus"></i> Add Skill</button>
+                    </form>
+                </div>
+
+                <!-- Existing Skills -->
+                <div class="form-group existing-section">
+                    <label>Existing Skills:</label>
+                    <br>
+                    {% if user.skills %}
+                        <ul id="skills-list" class="skills-list">
+                            {% for skill in user.skills %}
+                                <li id="skill-{{ skill.id }}">
+                                    {{ skill.skill }}
+                                    <button type="button" class="delete-skill-button" data-id="{{ skill.id }}"><i
+                                            class="fas fa-trash"></i> Delete
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p id="no-skills-message">No skills added.</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+                <a href="{{ url_for('user_views.view_work_history') }}" class="btn"><i class="fas fa-briefcase"></i>
+                    Manage Work History</a>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -148,10 +172,5 @@
             deleteSkillUrl: "{{ url_for('user_views.delete_skill') }}"
         };
     </script>
-    <!-- Include page-specific JavaScript -->
     <script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
-{% endblock %}
-
-{% block footer %}
-    {{ super() }}
 {% endblock %}

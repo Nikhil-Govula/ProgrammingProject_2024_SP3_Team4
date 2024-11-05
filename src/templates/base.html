@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet"/>
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <!-- DataTables Responsive CSS -->
@@ -30,55 +30,65 @@
 </head>
 
 <body>
-    <header class="header">
-        <div class="logo">JobTrunk</div>
-        <nav class="nav-links">
-{#            <nav>#}
-{#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
-{#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
-{#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
-{#            <a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a>#}
-            {% if g.user %}
+<header class="header">
+    {% if g.user_type == 'user' %}
+        <div href="{{ url_for('user_views.dashboard') }}" class="logo">JobTrunk</div>
+    {% elif g.user_type == 'employer' %}
+        <div href="{{ url_for('employer_views.dashboard') }}" class="logo">JobTrunk</div>
+    {% elif g.user_type == 'admin' %}
+        <div href="{{ url_for('admin_views.dashboard') }}" class="logo">JobTrunk</div>
+    {% endif %}
 
-                {# Header links if USER logged in #}
-                {% if g.user_type == 'user' %}
-                    <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button-header">View All Jobs</a>
-                    <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button-header">Saved Jobs</a>
-                    <a href="{{ url_for('user_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
-                    {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
-                    {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
-                    {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
-                    <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
-                    <a href="{{ url_for('user_views.logout') }}" class="dashboard-button-logout">Logout</a>
+
+    <nav class="nav-links">
+        {#            <nav>#}
+        {#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
+        {#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
+        {#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
+        {#            <a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a>#}
+        {% if g.user %}
+
+            {# Header links if USER logged in #}
+            {% if g.user_type == 'user' %}
+                <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button-header">View All Jobs</a>
+                <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button-header">Saved Jobs</a>
+                <a href="{{ url_for('user_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
+                {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
+                {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
+                {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
+                <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
+                <a href="{{ url_for('user_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if EMPLOYER logged in #}
-                {% elif g.user_type == 'employer' %}
-                    <a href="{{ url_for('employer_views.view_jobs') }}" class="dashboard-button-header">Manage Job Postings</a>
-                    <a href="{{ url_for('employer_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
-                    <a href="{{ url_for('employer_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
-                    <a href="{{ url_for('employer_views.logout') }}" class="dashboard-button-logout">Logout</a>
+            {% elif g.user_type == 'employer' %}
+                <a href="{{ url_for('employer_views.view_jobs') }}" class="dashboard-button-header">Manage Job
+                    Postings</a>
+                <a href="{{ url_for('employer_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
+                <a href="{{ url_for('employer_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
+                <a href="{{ url_for('employer_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if ADMIN logged in #}
-                {% elif g.user_type == 'admin' %}
-                    <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
-                {% endif %}
-
-                {# Profile icon #}
-                <a href="{{ url_for('user_views.view_profile') }}" class="profile-link">
-                    <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="nav-profile-picture">
-                </a>
-            {% else %}
-                <a href="{{ url_for('landing.landing') }}" class="login-link">Login</a>
+            {% elif g.user_type == 'admin' %}
+                <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
             {% endif %}
-        </nav>
-    </header>
 
-    <div class="content">
-        {% block body %}
-        {% endblock %}
-    </div>
+            {# Profile icon #}
+            <a href="{{ url_for('user_views.view_profile') }}" class="profile-link">
+                <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}"
+                     alt="Profile Picture" class="nav-profile-picture">
+            </a>
+        {% else %}
+            <a href="{{ url_for('landing.landing') }}" class="login-link">Login</a>
+        {% endif %}
+    </nav>
+</header>
 
-    {% block footer %}
+<div class="content">
+    {% block body %}
+    {% endblock %}
+</div>
+
+{% block footer %}
     <footer class="footer">
         <p>&copy; 2024 JobTrunk. All rights reserved. |
             <a href="#">Privacy Policy</a> |
@@ -87,14 +97,14 @@
             <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
         </p>
     </footer>
-    {% endblock %}
+{% endblock %}
 
-    <!-- Common Overlay Element -->
-    <div id="overlay" style="display: none;"></div>
+<!-- Common Overlay Element -->
+<div id="overlay" style="display: none;"></div>
 
-    {% block scripts %}
+{% block scripts %}
     <!-- Child templates can inject their specific JavaScript here -->
-    {% endblock %}
+{% endblock %}
 </body>
 
 </html>
