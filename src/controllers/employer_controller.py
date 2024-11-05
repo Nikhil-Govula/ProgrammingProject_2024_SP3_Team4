@@ -16,6 +16,23 @@ class EmployerController:
         employer = Employer.get_by_email(email)
         if employer:
             if not employer.is_active:
+                # Generate a new verification token
+                token = employer.generate_verification_token()
+
+                # Generate the full verification link
+                verification_link = url_for('employer_views.verify_account', token=token, _external=True)
+
+                # Send verification email
+                email_sent = send_verification_email(employer.email, verification_link, role='employer')
+
+                if email_sent:
+                    return None, (
+                        "Your account is not active. A new verification link has been sent to your email. "
+                        "Please verify your account before logging in."
+                    )
+                else:
+                    return None, "Your account is not active and failed to send a new verification email. Please try again later."
+                  
                 # Check if the employer has a verification token
                 if employer.verification_token and employer.verification_token_expiration:
                     return None, (
@@ -41,6 +58,27 @@ class EmployerController:
                 return None, "Invalid email or password."
 
         return None, "Invalid email or password."
+
+    @staticmethod
+    def resend_verification_email(email):
+        employer = Employer.get_by_email(email)
+        if employer:
+            if employer.is_active:
+                return False, "Account is already active. You can log in directly."
+
+            # Generate a new verification token
+            verification_token = employer.generate_verification_token()
+
+            # Send verification email
+            verification_link = url_for('employer_views.verify_account', token=verification_token, _external=True)
+            email_sent = send_verification_email(email, verification_link)
+
+            if email_sent:
+                return True, "A new verification link has been sent to your email."
+            else:
+                return False, "Failed to send verification email. Please try again later."
+        return False, "No account found with this email address."
+
 
     @staticmethod
     def register_employer(email, password, company_name, contact_person, phone_number):

@@ -1,11 +1,15 @@
+import datetime
+from datetime import datetime, timezone
+from datetime import datetime as dt
 import json
 import uuid
 import requests
+import time
 
 import boto3
 from botocore.exceptions import ClientError
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
-    jsonify, flash
+    jsonify, flash, Response, Flask
 from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -14,8 +18,8 @@ from werkzeug.utils import secure_filename
 from config import store_secret, Config
 from ..controllers import UserController
 from ..decorators.auth_required import auth_required
-from ..models import User
-from ..services import SessionManager
+from ..models import User, Employer, Message, Job
+from ..services import SessionManager, DynamoDB
 from ..services.google_auth_service import GoogleAuthService
 
 user_bp = Blueprint('user_views', __name__, url_prefix='/user')
@@ -777,3 +781,178 @@ def interview_tips():
 def networking_events():
     events = UserController.get_networking_events()
     return render_template('user/networking_events.html', events=events)
+
+
+@user_bp.route('/messages/<employer_id>', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def chat_with_employer(employer_id):
+    job_id = request.args.get('job_id')
+    employer = Employer.get_by_id(employer_id)
+    job = Job.get_by_id(job_id) if job_id else None
+
+    if not employer:
+        flash("Employer not found", "error")
+        return redirect(url_for('user_views.view_all_chats'))
+
+    if request.method == 'POST':
+        content = request.json.get('content')
+        if not content:
+            return jsonify({'success': False, 'message': 'Message content required'}), 400
+
+        message = Message(
+            sender_id=g.user.user_id,
+            receiver_id=employer_id,
+            sender_type='user',
+            content=content,
+            job_id=job_id
+        )
+        message.save()
+        return jsonify({
+            'success': True,
+            'message': {
+                'message_id': message.message_id,  # Add this line
+                'content': message.content,
+                'timestamp': message.timestamp,
+                'sender_type': message.sender_type
+            }
+        })
+
+    # Mark all messages in this conversation as read
+    messages = Message.get_conversation(g.user.user_id, employer_id, job_id)
+    for message in messages:
+        if message.receiver_id == g.user.user_id and not message.is_read:
+            message.mark_as_read()
+
+    return render_template(
+        'user/chat.html',
+        messages=messages,
+        employer=employer,
+        job=job,
+        job_id=job_id
+    )
+
+
+@user_bp.route('/messages', methods=['GET'])
+@auth_required(user_type='user')
+def view_all_chats():
+    user_id = g.user.user_id
+
+    # Get all messages for this user
+    response = DynamoDB.scan(
+        'Messages',
+        FilterExpression='sender_id = :user_id OR receiver_id = :user_id',
+        ExpressionAttributeValues={':user_id': user_id}
+    )
+
+    messages = response.get('Items', [])
+
+    # Create a dictionary to store the latest message for each conversation
+    conversations = {}
+    for msg in messages:
+        message = Message(**msg)
+        other_id = message.receiver_id if message.sender_id == user_id else message.sender_id
+
+        # Create a unique key combining employer_id and job_id
+        conversation_key = f"{other_id}_{message.job_id}"
+
+        if (conversation_key not in conversations or
+                message.timestamp > conversations[conversation_key]['latest_message'].timestamp):
+            # Get the employer information
+            employer = Employer.get_by_id(other_id)
+            # Get the job information
+            job = Job.get_by_id(message.job_id) if message.job_id else None
+
+            if employer:
+                conversations[conversation_key] = {
+                    'employer': employer,
+                    'latest_message': message,
+                    'unread_count': 0,
+                    'job_id': message.job_id,
+                    'job_title': job.job_title if job else 'General Discussion'
+                }
+
+    # Count unread messages for each conversation
+    for conv_key in conversations:
+        employer_id = conv_key.split('_')[0]
+        job_id = conversations[conv_key]['job_id']
+
+        unread_count = DynamoDB.scan(
+            'Messages',
+            FilterExpression=('sender_id = :other_id AND receiver_id = :user_id '
+                            'AND is_read = :is_read AND job_id = :job_id'),
+            ExpressionAttributeValues={
+                ':other_id': employer_id,
+                ':user_id': user_id,
+                ':is_read': False,
+                ':job_id': job_id
+            }
+        )
+        conversations[conv_key]['unread_count'] = len(unread_count.get('Items', []))
+
+    # Sort conversations by latest message timestamp
+    sorted_conversations = sorted(
+        conversations.values(),
+        key=lambda x: x['latest_message'].timestamp,
+        reverse=True
+    )
+
+    return render_template('user/messages.html', conversations=sorted_conversations)
+
+
+@user_bp.route('/messages/stream')
+@auth_required(user_type='user')
+def stream_messages():
+    from flask import copy_current_request_context, current_app
+
+    user_id = g.user.user_id
+    app = current_app._get_current_object()
+
+    @copy_current_request_context
+    def generate():
+        last_check = dt.now(timezone.utc).isoformat()
+        sent_message_ids = set()  # Track sent message IDs
+
+        try:
+            while True:
+                with app.app_context():
+                    try:
+                        new_messages = Message.get_new_messages(user_id, last_check, user_type='user')
+
+                        if new_messages:
+                            for message in new_messages:
+                                # Only send message if we haven't sent it before
+                                if message.message_id not in sent_message_ids:
+                                    sent_message_ids.add(message.message_id)
+                                    data = {
+                                        'message_id': message.message_id,  # Include message ID
+                                        'content': message.content,
+                                        'timestamp': message.timestamp,
+                                        'sender_type': message.sender_type,
+                                        'sender_id': message.sender_id,
+                                        'receiver_id': message.receiver_id,
+                                        'job_id': message.job_id,
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}'
+                                    }
+                                    yield f"data: {json.dumps(data)}\n\n"
+
+                        last_check = dt.now(timezone.utc).isoformat()
+
+                    except Exception as e:
+                        app.logger.error(f"Stream error: {str(e)}")
+                        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                        return
+
+                time.sleep(2)
+
+        except GeneratorExit:
+            pass
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        }
+    )

@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+.chat-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chat-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.company-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.company-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.company-details h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.job-title {
+    color: #666;
+    font-style: italic;
+}
+
+.message-list {
+    height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+    max-width: 70%;
+    position: relative;
+}
+
+.message.sent {
+    background: #0073b1;
+    color: white;
+    margin-left: auto;
+}
+
+.message.received {
+    background: #f1f1f1;
+    margin-right: auto;
+}
+
+.message-content {
+    margin-bottom: 5px;
+}
+
+.message-time {
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+.message-input {
+    display: flex;
+    gap: 10px;
+}
+
+.message-input textarea {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.message-input button {
+    padding: 10px 20px;
+    background: #0073b1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+.message-input button:hover {
+    background: #005682;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #0073b1;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="chat-container">
+    <a href="{{ url_for('user_views.view_all_chats') }}" class="back-link">← Back to Messages</a>
+    
+    <div class="chat-header">
+        <div class="company-info">
+            <img src="{{ url_for('static', filename='images/company_logo_placeholder.svg') }}" 
+                 alt="Company Logo" 
+                 class="company-logo">
+            <div class="company-details">
+                <h2>{{ employer.company_name }}</h2>
+                {% if job %}
+                    <div class="job-title">Regarding: {{ job.job_title }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="message-list" id="messageList">
+        {% for message in messages %}
+            <div class="message {% if message.sender_type == 'user' %}sent{% else %}received{% endif %}">
+                <div class="message-content">{{ message.content }}</div>
+                <div class="message-time" data-timestamp="{{ message.timestamp }}">
+                    {{ message.timestamp }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="message-input">
+        <textarea id="messageInput" placeholder="Type your message..."></textarea>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const messageList = document.getElementById('messageList');
+const messageInput = document.getElementById('messageInput');
+
+function formatTimestamp(isoTimestamp) {
+    const now = new Date();
+    const timestamp = new Date(isoTimestamp);
+    const diffInMilliseconds = now - timestamp;
+    const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
+
+    if (isNaN(timestamp.getTime())) {
+        return isoTimestamp;
+    }
+
+    if (diffInSeconds < 60) {
+        return 'Just now';
+    }
+
+    if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+    }
+
+    if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+    }
+
+    const options = {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    };
+
+    if (timestamp.getFullYear() !== now.getFullYear()) {
+        options.year = 'numeric';
+    }
+
+    return timestamp.toLocaleString('en-US', options);
+}
+
+function addMessage(content, timestamp, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type === 'user' ? 'sent' : 'received'}`;
+
+    messageDiv.innerHTML = `
+        <div class="message-content">${content}</div>
+        <div class="message-time" data-timestamp="${timestamp}">
+            ${formatTimestamp(timestamp)}
+        </div>
+    `;
+
+    messageList.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    messageList.scrollTop = messageList.scrollHeight;
+}
+
+async function sendMessage() {
+    const content = messageInput.value.trim();
+    if (!content) return;
+
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            // Add message immediately to the sender's view
+            addMessage(
+                data.message.content,
+                data.message.timestamp,
+                '{{ g.user_type }}'  // 'user' or 'employer' depending on sender
+            );
+
+            // Add message ID to processed set to prevent duplication from SSE
+            processedMessageIds.add(data.message.message_id);
+
+            // Clear input
+            messageInput.value = '';
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+    }
+}
+
+// Initialize timestamps and scrolling
+document.addEventListener('DOMContentLoaded', function() {
+    const timestamps = document.querySelectorAll('.message-time');
+    timestamps.forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatTimestamp(timestamp);
+    });
+    scrollToBottom();
+});
+
+// Update timestamps every minute
+setInterval(function() {
+    const timestamps = document.querySelectorAll('.message-time');
+    timestamps.forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatTimestamp(timestamp);
+    });
+}, 60000);
+
+// Handle Enter key
+messageInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+let processedMessageIds = new Set();
+
+function handleNewMessage(message) {
+    // Check if we've already processed this message
+    if (processedMessageIds.has(message.message_id)) {
+        return;
+    }
+
+    // Add message ID to processed set
+    processedMessageIds.add(message.message_id);
+
+    // Get the current conversation IDs
+    const currentOtherId = '{{ employer.employer_id if g.user_type == "user" else user.user_id }}';
+    const currentJobId = '{{ job_id }}';
+
+    // Check if message belongs to current conversation
+    const isRelevantMessage =
+        (message.sender_id === currentOtherId && message.receiver_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' && message.job_id === currentJobId) ||
+        (message.receiver_id === currentOtherId && message.sender_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' && message.job_id === currentJobId);
+
+    if (isRelevantMessage) {
+        addMessage(
+            message.content,
+            message.timestamp,
+            message.sender_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' ?
+                '{{ g.user_type }}' :
+                '{{ "employer" if g.user_type == "user" else "user" }}'
+        );
+        scrollToBottom();
+    }
+}
+
+let eventSource;
+
+function connectToMessageStream() {
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource('/user/messages/stream');
+
+    eventSource.onmessage = function(event) {
+        try {
+            const message = JSON.parse(event.data);
+
+            if (message.error) {
+                console.error('Stream error:', message.error);
+                return;
+            }
+
+            handleNewMessage(message);
+
+        } catch (error) {
+            console.error('Error processing message:', error);
+        }
+    };
+
+    eventSource.onerror = function(error) {
+        console.error('EventSource failed:', error);
+        eventSource.close();
+        setTimeout(connectToMessageStream, 5000);
+    };
+}
+
+// Connect when page loads
+document.addEventListener('DOMContentLoaded', connectToMessageStream);
+
+// Cleanup when page is unloaded
+window.addEventListener('beforeunload', function() {
+    if (eventSource) {
+        eventSource.close();
+    }
+});
+</script>
+{% endblock %}
