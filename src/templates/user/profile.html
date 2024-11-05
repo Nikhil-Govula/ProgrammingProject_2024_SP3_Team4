@@ -3,62 +3,61 @@
 {% block body %}
 <div class="user-profile">
     <div class="profile-container">
-        <div class="form-container">
-            <div class="profile-card">
-                <h2>My Profile</h2>
+        <div class="profile-card">
+            <h2>My Profile</h2>
 
-                <!-- Success Message -->
-                {% if request.args.get('success') %}
-                    <p class="success-message">{{ request.args.get('success') }}</p>
-                {% endif %}
+            <!-- Success Message -->
+            {% if request.args.get('success') %}
+                <p class="success-message">{{ request.args.get('success') }}</p>
+            {% endif %}
 
-                <!-- Error Message -->
-                {% if error %}
-                    <p class="error-message">{{ error }}</p>
-                {% endif %}
+            <!-- Error Message -->
+            {% if error %}
+                <p class="error-message">{{ error }}</p>
+            {% endif %}
 
-                <!-- Display User Information -->
-                <!-- Profile Picture -->
-                <div class="form-group">
-                    <label>Profile Picture:</label><br>
-                    <img src="{{ user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}" alt="Profile Picture" class="profile-picture">
-                </div>
+            <!-- Profile Picture -->
+            <div class="profile-info-group profile-picture-group" style="display: flex;border: none;background: none;padding: 0px;">
+                <img src="/static/images/default_profile.png" alt="Profile Picture" class="profile-picture">
+            </div>
 
+            <!-- User Details Section -->
+            <div class="profile-info-section">
                 <!-- First Name -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>First Name:</label>
-                    <p>{{ user.first_name }}</p>
+                    <span>{{ user.first_name }}</span>
                 </div>
 
                 <!-- Last Name -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Last Name:</label>
-                    <p>{{ user.last_name }}</p>
+                    <span>{{ user.last_name }}</span>
                 </div>
 
                 <!-- Email Address -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Email Address:</label>
-                    <p>{{ user.email }}</p>
+                    <span>{{ user.email }}</span>
                 </div>
 
                 <!-- Phone Number -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Phone Number:</label>
-                    <p>{{ user.phone_number }}</p>
+                    <span>{{ user.phone_number }}</span>
                 </div>
 
                 <!-- Location -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Location:</label>
-                    <p>{{ user.city }}, {{ user.country }}</p>
+                    <span>{{ user.city }}, {{ user.country }}</span>
                 </div>
 
                 <!-- Certifications List -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Certifications:</label>
                     {% if user.certifications %}
-                        <ul>
+                        <ul class="certifications-list">
                             {% for cert in user.certifications %}
                                 <li>
                                     <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
@@ -66,28 +65,29 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p>No certifications uploaded.</p>
+                        <span>No certifications uploaded.</span>
                     {% endif %}
                 </div>
 
                 <!-- Skills List -->
-                <div class="form-group">
+                <div class="profile-info-group">
                     <label>Skills:</label>
                     {% if user.skills %}
-                        <ul>
+                        <ul class="skills-list">
                             {% for skill in user.skills %}
                                 <li>{{ skill.skill }}</li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p>No skills added.</p>
+                        <span>No skills added.</span>
                     {% endif %}
                 </div>
+            </div>
 
-                <!-- Action Buttons -->
-                <a href="{{ url_for('user_views.edit_profile') }}" class="action-button">Edit Profile</a>
-                <hr>
-                <a href="{{ url_for('user_views.change_password') }}" class="action-button">Change Password</a>
+            <!-- Action Buttons -->
+            <div class="profile-actions">
+                <a href="{{ url_for('user_views.edit_profile') }}" class="action-button"><i class="fas fa-edit"></i> Edit Profile</a>
+                <a href="{{ url_for('user_views.change_password') }}" class="action-button"><i class="fas fa-lock"></i> Change Password</a>
             </div>
         </div>
     </div>

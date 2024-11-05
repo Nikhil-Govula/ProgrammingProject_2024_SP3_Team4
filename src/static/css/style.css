@@ -34,6 +34,138 @@ p {
 }
 
 /* ==========================================================================
+   Profile Container
+   ========================================================================== */
+.user-profile {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 40%;
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 900px;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Profile Card */
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.profile-card h2 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.success-message,
+.error-message {
+    font-size: 1em;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: white;
+    background-color: #4CAF50;
+}
+
+.error-message {
+    background-color: #e74c3c;
+}
+
+/* Profile Picture */
+.profile-picture-group {
+    align-self: center;
+}
+
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #5296e7;
+}
+
+/* Profile Info Section */
+.profile-info-section {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.profile-info-group {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+    background-color: #fafafa;
+}
+
+.profile-info-group label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.profile-info-group span {
+    display: block;
+    font-weight: 400;
+    margin-top: 5px;
+    color: #555;
+}
+
+/* List Styling */
+.certifications-list, .skills-list {
+    margin: 0;
+    padding: 10px 0;
+    list-style-type: disc;
+    padding-left: 20px;
+}
+
+.certifications-list li, .skills-list li {
+    margin-bottom: 5px;
+    color: #333;
+}
+
+/* Profile Actions */
+.profile-actions {
+    margin-top: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.action-button {
+    display: flex;
+    background-color: #0073b1;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.action-button i {
+    margin-right: 10px;
+}
+
+.action-button:hover {
+    background-color: #005682;
+}
+
+/* ==========================================================================
    Layout & Navigation
    ========================================================================== */
 .header {
