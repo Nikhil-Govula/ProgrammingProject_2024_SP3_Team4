@@ -90,7 +90,8 @@ def verify_account(token):
 @auth_required(user_type='user')
 def dashboard():
     user = g.user
-    return render_template('user/dashboard.html', user=user)
+    recommended_jobs = UserController.get_recommended_jobs(user)
+    return render_template('user/dashboard.html', user=user, jobs=recommended_jobs)
 
 
 @user_bp.route('/logout', methods=['GET'])
@@ -632,6 +633,9 @@ def get_job_details(job_id):
     if not job:
         return jsonify({'error': 'Job not found'}), 404
 
+    user_id = g.user.user_id
+    has_applied = UserController.has_applied_for_job(user_id, job_id)
+
     return jsonify({
         "job_id": job.job_id,
         "job_title": job.job_title,
@@ -644,6 +648,7 @@ def get_job_details(job_id):
         "requirements": job.requirements,
         "certifications": job.certifications or [],
         "skills": job.skills or [],
+        "has_applied": has_applied  # Include application status
     })
 
 
@@ -666,20 +671,6 @@ def view_job_details(job_id):
                            job=job,
                            has_applied=has_applied,
                            application=application)
-
-
-@user_bp.route('/remove_application/<application_id>', methods=['POST'])
-@auth_required(user_type='user')
-def remove_job_application(application_id):
-    user = g.user
-    success, message = UserController.delete_by_application_id(application_id)
-
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'error')
-
-    return '', 200 if success else 400
 
 
 @user_bp.route('/jobs/<job_id>/bookmark', methods=['POST'])
@@ -726,6 +717,7 @@ def apply_for_job(job_id):
         }), 400
 
     success, message = UserController.apply_for_job(user.user_id, job_id)
+    print(f"apply JobID:\n{job_id}")
 
     response_data = {
         'success': success,
@@ -736,6 +728,19 @@ def apply_for_job(job_id):
     return jsonify(response_data), 200 if success else 400
 
 
+@user_bp.route('/jobs/<job_id>/revoke', methods=['POST'])
+@auth_required(user_type='user')
+def revoke_application(job_id):
+    user = g.user
+    success, message = UserController.revoke_application(user.user_id, job_id)
+    print(f"revoke JobID:\n{job_id}")
+
+    response_data = {
+        'success': success,
+        'message': message,
+    }
+
+    return jsonify(response_data), 200 if success else 400
 # **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
 
 
@@ -762,14 +767,6 @@ def view_applications():
     user = g.user
     applications = UserController.get_user_applications(user.user_id)
     return render_template('user/view_applications.html', applications=applications)
-
-
-@user_bp.route('/track_applications', methods=['GET'])
-@auth_required(user_type='user')
-def track_applications():
-    user = g.user
-    applications = UserController.get_user_applications(user.user_id)
-    return render_template('user/track_applications.html', applications=applications)
 
 
 @user_bp.route('/interview_tips', methods=['GET'])

@@ -256,7 +256,7 @@ class UserController:
         if user.profile_picture_url:
             try:
                 old_key = \
-                user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
+                    user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
                 s3.delete_object(Bucket=Config.S3_BUCKET_NAME, Key=old_key)
             except Exception as e:
                 print(f"Error deleting old profile picture: {e}")
@@ -281,7 +281,6 @@ class UserController:
         except ClientError as e:
             print(f"Error uploading to S3: {e}")
             return None, "Failed to upload profile picture. Please try again."
-
 
     @staticmethod
     def allowed_certification_file(filename):
@@ -497,6 +496,30 @@ class UserController:
             return False, "There was an error submitting your application. Please try again."
 
     @staticmethod
+    def revoke_application(user_id, job_id):
+        # Check if the job exists and is still active
+        job = Job.get_by_id(job_id)
+        if not job or not job.is_active:
+            return False, "This job is no longer available."
+
+        application = Application.get_by_user_and_job(user_id, job_id)
+        if not application:
+            return False, "Application not found."
+
+        print(f"application\n{application}")
+
+        # Delete the application
+        success = Application.delete_by_application_id(application.application_id)
+        if success:
+            return True, "Application successfully revoked."
+        else:
+            return False, "Failed to revoke the application. Please try again."
+
+    @staticmethod
+    def delete_by_application_id(application_id):
+        return Application.delete_by_application_id(application_id)
+
+    @staticmethod
     def get_recommended_jobs(user):
         """
         Get personalized job recommendations based on user's profile factors:
@@ -538,12 +561,10 @@ class UserController:
 
             # Location matching (30%)
             if user.city and user.country:
-                if job.city.lower() == user.city.lower() and job.country.lower() == user.country.lower():
+                if job.city.lower() == user.city.lower():
+                        # and job.country.lower() == user.country.lower():
                     score += 30
-                    matched_reasons['location'] = 'Exact match'
-                elif job.country.lower() == user.country.lower():
-                    score += 15
-                    matched_reasons['location'] = 'Country match'
+                    matched_reasons['location'] = 'City match'
 
             # Certification matching (20%)
             user_certs = {cert['type'].lower() for cert in user.certifications}
@@ -586,7 +607,8 @@ class UserController:
             reasons = entry['matched_reasons']
             recommended_jobs.append({
                 'job': job,
-                'matched_reasons': reasons
+                'matched_reasons': reasons,
+                'score': entry['score']
             })
 
         return recommended_jobs
@@ -692,7 +714,3 @@ class UserController:
     @staticmethod
     def get_interview_tips():
         return []
-
-    @staticmethod
-    def delete_by_application_id(application_id):
-        return Application.delete_by_application_id(application_id)

@@ -9,6 +9,7 @@ import datetime
 import bcrypt
 from decimal import Decimal  # Import Decimal
 
+
 class EmployerController:
     @staticmethod
     def login(email, password):
@@ -31,6 +32,15 @@ class EmployerController:
                     )
                 else:
                     return None, "Your account is not active and failed to send a new verification email. Please try again later."
+                  
+                # Check if the employer has a verification token
+                if employer.verification_token and employer.verification_token_expiration:
+                    return None, (
+                        "Your account is not active. A verification link has been sent to your email. "
+                        "Please verify your account before logging in."
+                    )
+                else:
+                    return None, "This account has been deactivated. Please contact support for assistance."
 
             if employer.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
@@ -46,6 +56,7 @@ class EmployerController:
                         "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
                     )
                 return None, "Invalid email or password."
+
         return None, "Invalid email or password."
 
     @staticmethod
