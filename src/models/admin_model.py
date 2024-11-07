@@ -129,3 +129,21 @@ class Admin:
         except Exception as e:
             print(f"Error updating Admin: {e}")
             return False, str(e)
+
+
+def update_single_field(self, field, value):
+    """Update a single field for the admin."""
+    if hasattr(self, field):
+        setattr(self, field, value)
+        try:
+            update_values = {field: value}
+            success = DynamoDB.update_item(
+                'Admins',
+                {'admin_id': self.admin_id},
+                update_values
+            )
+            return success
+        except Exception as e:
+            print(f"Error updating field {field}: {e}")
+            return False
+    return False

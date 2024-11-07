@@ -1,3 +1,5 @@
+<!-- Filename: src/templates/admin/account_detail.html -->
+
 {% extends "base.html" %}
 
 {% block head %}
@@ -11,18 +13,20 @@
     {% if error %}
         <p class="error-message">{{ error }}</p>
     {% endif %}
-    <form method="POST" action="{{ url_for('admin_views.account_detail', account_type=account_type, account_id=account.admin_id if account_type == 'admin' else account.user_id if account_type == 'user' else account.employer_id) }}">
+    <form id="account-detail-form">
         <!-- Common Fields for All Account Types -->
         {% if account_type in ['admin', 'user'] %}
             <div class="form-group">
                 <label for="first_name">First Name:</label><br>
                 <input type="text" id="first_name" name="first_name" value="{{ account.first_name }}" required>
                 <button type="button" class="btn update-field-button" data-field="first_name">Update</button>
+                <span class="update-status" id="status_first_name"></span>
             </div>
             <div class="form-group">
                 <label for="last_name">Last Name:</label><br>
                 <input type="text" id="last_name" name="last_name" value="{{ account.last_name }}" required>
                 <button type="button" class="btn update-field-button" data-field="last_name">Update</button>
+                <span class="update-status" id="status_last_name"></span>
             </div>
         {% endif %}
 
@@ -30,11 +34,13 @@
             <label for="email">Email Address:</label><br>
             <input type="email" id="email" name="email" value="{{ account.email }}" required>
             <button type="button" class="btn update-field-button" data-field="email">Update</button>
+            <span class="update-status" id="status_email"></span>
         </div>
         <div class="form-group">
             <label for="phone_number">Phone Number:</label><br>
             <input type="tel" id="phone_number" name="phone_number" value="{{ account.phone_number }}">
             <button type="button" class="btn update-field-button" data-field="phone_number">Update</button>
+            <span class="update-status" id="status_phone_number"></span>
         </div>
 
         <!-- Conditional Fields for Non-Employer Accounts -->
@@ -42,8 +48,9 @@
             {% if account_type == 'user' %}
                 <div class="form-group">
                     <label for="location-input">Location:</label><br>
-                    <input type="text" id="location-input" name="location" value="{{ account.city + ', ' + account.country if account.city and account.country else '' }}">
+                    <input type="text" id="location" name="location" value="{{ account.city + ', ' + account.country if account.city and account.country else '' }}">
                     <button type="button" class="btn update-field-button" data-field="location">Update</button>
+                    <span class="update-status" id="status_location"></span>
                 </div>
             {% endif %}
         {% endif %}
@@ -54,11 +61,13 @@
                 <label for="company_name">Company Name:</label><br>
                 <input type="text" id="company_name" name="company_name" value="{{ account.company_name }}" required>
                 <button type="button" class="btn update-field-button" data-field="company_name">Update</button>
+                <span class="update-status" id="status_company_name"></span>
             </div>
             <div class="form-group">
                 <label for="contact_person">Contact Person:</label><br>
                 <input type="text" id="contact_person" name="contact_person" value="{{ account.contact_person }}">
                 <button type="button" class="btn update-field-button" data-field="contact_person">Update</button>
+                <span class="update-status" id="status_contact_person"></span>
             </div>
         {% endif %}
 
@@ -66,8 +75,8 @@
             <label for="password">Password: <small>(Leave blank to keep current password)</small></label><br>
             <input type="password" id="password" name="password" placeholder="New Password">
             <button type="button" class="btn update-field-button" data-field="password">Update Password</button>
+            <span class="update-status" id="status_password"></span>
         </div>
-        <!-- Note: Password updates might require special handling on the server side -->
     </form>
     <div class="account-actions">
         <button id="toggle-lock-btn" class="btn">
@@ -86,7 +95,8 @@
         window.CONFIG = {
             citySuggestionsUrl: "{{ url_for('user_views.city_suggestions') }}",
             accountDetailUrl: "{{ url_for('admin_views.account_detail', account_type=account_type, account_id=account.admin_id if account_type == 'admin' else account.user_id if account_type == 'user' else account.employer_id) }}",
-            accountType: "{{ account_type }}"
+            accountType: "{{ account_type }}",
+            updateFieldUrl: "{{ url_for('admin_views.update_field', account_type=account_type, account_id=account.admin_id if account_type == 'admin' else account.user_id if account_type == 'user' else account.employer_id) }}"
         };
     </script>
     <!-- Include page-specific JavaScript -->
