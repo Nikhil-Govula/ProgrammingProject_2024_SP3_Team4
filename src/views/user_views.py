@@ -75,16 +75,19 @@ def register_user():
     return render_template('user/register_user.html')
 
 
-@user_bp.route('/verify/<token>', methods=['GET'])
+@user_bp.route('/verify/<token>', methods=['GET', 'POST'])
 def verify_account(token):
-    success, message = User.verify_account(token)
-    if success:
-        flash("Your account has been verified successfully! You can now log in.", "success")
-        return redirect(url_for('user_views.login_user'))
+    if request.method == 'POST':
+        success, message = User.verify_account(token)
+        if success:
+            flash("Your account has been verified successfully! You can now log in.", "success")
+            return redirect(url_for('user_views.login_user'))
+        else:
+            flash(message, "error")
+            return render_template('user/verify_account.html', token=token), 400
     else:
-        flash(message, "error")
-        return render_template('user/verify_account.html'), 400
-
+        # For GET requests, render the verification confirmation page
+        return render_template('user/verify_account.html', token=token)
 
 @user_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='user')

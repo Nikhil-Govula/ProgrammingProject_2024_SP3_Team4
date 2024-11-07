@@ -1,18 +1,87 @@
 {% extends "base.html" %}
 
+{% block head %}
+    <title>Verify Your Account | JobTrunk</title>
+    <style>
+        /* Add any additional styles if necessary */
+        .user-verification {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+        .verification-container {
+            text-align: center;
+            padding: 40px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .flash {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .flash.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .verify-button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .verify-button:hover {
+            background-color: #218838;
+        }
+        .dashboard-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .dashboard-button:hover {
+            background-color: #0069d9;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
-<div class="user-verification">
-    <div class="verification-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
+    <div class="user-verification">
+        <div class="verification-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if not success %}
+                <h2>Verify Your Account</h2>
+                <p>Please click the button below to verify your account.</p>
+                <form method="POST" action="{{ url_for('user_views.verify_account', token=token) }}">
+                    <button type="submit" class="verify-button">Verify Account</button>
+                </form>
+            {% else %}
+                <div class="flash success">
+                    Your account has been successfully verified!
+                </div>
+                <a href="{{ url_for('user_views.login_user') }}" class="dashboard-button">Go to Login</a>
             {% endif %}
-        {% endwith %}
-        {% if not success %}
-            <a href="{{ url_for('user_views.login_user') }}" class="dashboard-button">Go to Login</a>
-        {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %}

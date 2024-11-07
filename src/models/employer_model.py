@@ -42,7 +42,7 @@ class Employer:
 
     def generate_verification_token(self):
         token = secrets.token_urlsafe(32)
-        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=24)  # Token valid for 24 hours
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=48)  # Token valid for 24 hours
         self.verification_token = token
         self.verification_token_expiration = expiration.isoformat()
         DynamoDB.update_item('Employers',
