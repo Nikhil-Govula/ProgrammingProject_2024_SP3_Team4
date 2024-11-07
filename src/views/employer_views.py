@@ -533,18 +533,18 @@ def stream_messages():
 
                         if new_messages:
                             for message in new_messages:
-                                # Only send message if we haven't sent it before
                                 if message.message_id not in sent_message_ids:
                                     sent_message_ids.add(message.message_id)
                                     data = {
-                                        'message_id': message.message_id,  # Include message ID
+                                        'message_id': message.message_id,
                                         'content': message.content,
                                         'timestamp': message.timestamp,
                                         'sender_type': message.sender_type,
                                         'sender_id': message.sender_id,
                                         'receiver_id': message.receiver_id,
                                         'job_id': message.job_id,
-                                        'conversation_id': f'{message.sender_id}_{message.job_id}'
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}',
+                                        'is_read': message.is_read
                                     }
                                     yield f"data: {json.dumps(data)}\n\n"
 
