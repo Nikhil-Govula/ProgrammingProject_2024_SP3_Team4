@@ -1,4 +1,7 @@
 import uuid
+
+from flask import request
+
 from ..services.database_service import DynamoDB
 import secrets
 import datetime
@@ -79,7 +82,7 @@ class User:
 
     def generate_verification_token(self):
         token = secrets.token_urlsafe(32)
-        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=24)  # Token valid for 24 hours
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=48)  # Token valid for 24 hours
         self.verification_token = token
         self.verification_token_expiration = expiration.isoformat()
         DynamoDB.update_item('Users',
@@ -106,9 +109,11 @@ class User:
             # Activate the user
             DynamoDB.update_item('Users',
                                  {'user_id': user_data['user_id']},
-                                 {'is_active': True,
-                                  'verification_token': None,
-                                  'verification_token_expiration': None})
+                                 {
+                                     'is_active': True,
+                                     'verification_token': None,
+                                     'verification_token_expiration': None
+                                 })
             return True, "Account verified successfully."
         return False, "Invalid verification token."
 

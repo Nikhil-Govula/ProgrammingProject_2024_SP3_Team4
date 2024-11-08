@@ -1,7 +1,10 @@
+# Filename: src/models/employer_model.py
+
 from ..services.database_service import DynamoDB
 import secrets
 import datetime
 import uuid
+
 
 class Employer:
     def __init__(self, employer_id, company_name, email, password, contact_person, phone_number,
@@ -42,7 +45,7 @@ class Employer:
 
     def generate_verification_token(self):
         token = secrets.token_urlsafe(32)
-        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=24)  # Token valid for 24 hours
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=48)  # Token valid for 48 hours
         self.verification_token = token
         self.verification_token_expiration = expiration.isoformat()
         DynamoDB.update_item('Employers',

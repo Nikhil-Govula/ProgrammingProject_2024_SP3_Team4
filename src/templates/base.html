@@ -45,34 +45,40 @@
         <a href="{{ url_for('landing.landing') }}" class="logo">JobTrunk</a>
     {% endif %}
 
-    <nav class="nav-links">
+<nav class="nav-links">
         {# Header links if not logged in #}
         {% if 'user/login' in request.path or 'user/register' in request.path or 'employer/login' in request.path or 'employer/register' in request.path %}
             <a href="{{ url_for('landing.landing') }}" class="dashboard-button-header">Homepage</a>
         {% endif %}
 
-        {# Header links if USER logged in #}
         {% if g.user %}
+                {# Header links if USER logged in #}
             {% if g.user_type == 'user' %}
                 <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button-header">View All Jobs</a>
                 <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button-header">Saved Jobs</a>
-                <a href="{{ url_for('user_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
-                {#<a href="{{ url_for('user_views.job_applications') }}" class="dashboard-button">My Applications</a>#}
-                {#<a href="{{ url_for('user_views.network') }}">My Network</a>#}
-                {#<a href="{{ url_for('user_views.resources') }}">Resources</a>#}
+                <a href="{{ url_for('user_views.view_all_chats') }}" class="dashboard-button-header" id="user-messages-link">
+                    Messages
+                    {% if unread_message_count and unread_message_count > 0 %}
+                        <span class="badge">{{ unread_message_count }}</span>
+                    {% endif %}
+                </a>
                 <a href="{{ url_for('user_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
                 <a href="{{ url_for('user_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if EMPLOYER logged in #}
             {% elif g.user_type == 'employer' %}
-                <a href="{{ url_for('employer_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
+                <a href="{{ url_for('employer_views.view_all_chats') }}" class="dashboard-button-header" id="employer-messages-link">
+                    Messages
+                    {% if unread_message_count and unread_message_count > 0 %}
+                        <span class="badge">{{ unread_message_count }}</span>
+                    {% endif %}
+                </a>
                 <a href="{{ url_for('employer_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
                 <a href="{{ url_for('employer_views.logout') }}" class="dashboard-button-logout">Logout</a>
 
                 {# Header links if ADMIN logged in #}
             {% elif g.user_type == 'admin' %}
-                <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
-
+                <a href="{{ url_for('admin_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
             {% endif %}
 
             {# Profile icon #}
@@ -100,12 +106,136 @@
     </footer>
 {% endblock %}
 
-<!-- Common Overlay Element -->
-<div id="overlay" style="display: none;"></div>
+    {% block scripts %}
+        <!-- Existing scripts -->
+        {% if g.user %}
+            {% if g.user_type == 'employer' %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        let unreadCount = {{ unread_message_count or 0 }};
+                        const messagesLink = document.getElementById('employer-messages-link');
 
-{% block scripts %}
-    <!-- Child templates can inject their specific JavaScript here -->
-{% endblock %}
+                        function updateBadge(count) {
+                            let badge = messagesLink.querySelector('.badge');
+                            if (count > 0) {
+                                if (badge) {
+                                    badge.textContent = count;
+                                } else {
+                                    badge = document.createElement('span');
+                                    badge.className = 'badge';
+                                    badge.textContent = count;
+                                    messagesLink.appendChild(badge);
+                                }
+                            } else {
+                                if (badge) {
+                                    badge.remove();
+                                }
+                            }
+                        }
+
+                        // Initialize EventSource for SSE
+                        const eventSource = new EventSource('{{ url_for("employer_views.stream_messages") }}');
+
+                        eventSource.onmessage = function(event) {
+                            try {
+                                const data = JSON.parse(event.data);
+
+                                if (data.error) {
+                                    console.error('Stream error:', data.error);
+                                    return;
+                                }
+
+                                // Check if the message is for this employer and is unread
+                                if (data.receiver_id === '{{ g.user.employer_id }}' && !data.is_read) {
+                                    unreadCount += 1;
+                                    updateBadge(unreadCount);
+                                }
+
+                            } catch (error) {
+                                console.error('Error processing message:', error);
+                            }
+                        };
+
+                        eventSource.onerror = function(error) {
+                            console.error('EventSource failed:', error);
+                            eventSource.close();
+                            // Attempt to reconnect after a delay
+                            setTimeout(function() {
+                                const newEventSource = new EventSource('{{ url_for("employer_views.stream_messages") }}');
+                                newEventSource.onmessage = eventSource.onmessage;
+                                newEventSource.onerror = eventSource.onerror;
+                            }, 5000);
+                        };
+
+                        // Optionally, reset the unread count when the Messages page is visited
+                        // This can be handled in the messages view by marking messages as read
+                    });
+                </script>
+            {% elif g.user_type == 'user' %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        let unreadCount = {{ unread_message_count or 0 }};
+                        const messagesLink = document.getElementById('user-messages-link');
+
+                        function updateBadge(count) {
+                            let badge = messagesLink.querySelector('.badge');
+                            if (count > 0) {
+                                if (badge) {
+                                    badge.textContent = count;
+                                } else {
+                                    badge = document.createElement('span');
+                                    badge.className = 'badge';
+                                    badge.textContent = count;
+                                    messagesLink.appendChild(badge);
+                                }
+                            } else {
+                                if (badge) {
+                                    badge.remove();
+                                }
+                            }
+                        }
+
+                        // Initialize EventSource for SSE
+                        const eventSource = new EventSource('{{ url_for("user_views.stream_messages") }}');
+
+                        eventSource.onmessage = function(event) {
+                            try {
+                                const data = JSON.parse(event.data);
+
+                                if (data.error) {
+                                    console.error('Stream error:', data.error);
+                                    return;
+                                }
+
+                                // Check if the message is for this user and is unread
+                                if (data.receiver_id === '{{ g.user.user_id }}' && !data.is_read) {
+                                    unreadCount += 1;
+                                    updateBadge(unreadCount);
+                                }
+
+                            } catch (error) {
+                                console.error('Error processing message:', error);
+                            }
+                        };
+
+                        eventSource.onerror = function(error) {
+                            console.error('EventSource failed:', error);
+                            eventSource.close();
+                            // Attempt to reconnect after a delay
+                            setTimeout(function() {
+                                const newEventSource = new EventSource('{{ url_for("user_views.stream_messages") }}');
+                                newEventSource.onmessage = eventSource.onmessage;
+                                newEventSource.onerror = eventSource.onerror;
+                            }, 5000);
+                        };
+
+                        // Optionally, reset the unread count when the Messages page is visited
+                        // This can be handled in the messages view by marking messages as read
+                    });
+                </script>
+            {% endif %}
+        {% endif %}
+    {% endblock %}
 </body>
 
 </html>

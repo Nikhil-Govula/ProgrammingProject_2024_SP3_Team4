@@ -732,8 +732,6 @@ p {
     margin-top: auto;
 }
 
-}
-
 .section {
     margin-top: 20px;
     padding-top: 10px;
@@ -1538,7 +1536,6 @@ input[type="text"], input[type="email"] {
     background-color: #2980b9;
 }
 
-
 /* ------------
 Messages section
  ------------- */
@@ -1777,4 +1774,12 @@ Messages Chat
 
 .back-link:hover {
     text-decoration: underline;
+.badge {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75em;
+    margin-left: 5px;
+    vertical-align: middle;
 }

@@ -75,16 +75,19 @@ def register_user():
     return render_template('user/register_user.html')
 
 
-@user_bp.route('/verify/<token>', methods=['GET'])
+@user_bp.route('/verify/<token>', methods=['GET', 'POST'])
 def verify_account(token):
-    success, message = User.verify_account(token)
-    if success:
-        flash("Your account has been verified successfully! You can now log in.", "success")
-        return redirect(url_for('user_views.login_user'))
+    if request.method == 'POST':
+        success, message = User.verify_account(token)
+        if success:
+            flash("Your account has been verified successfully! You can now log in.", "success")
+            return redirect(url_for('user_views.login_user'))
+        else:
+            flash(message, "error")
+            return render_template('user/verify_account.html', token=token), 400
     else:
-        flash(message, "error")
-        return render_template('user/verify_account.html'), 400
-
+        # For GET requests, render the verification confirmation page
+        return render_template('user/verify_account.html', token=token)
 
 @user_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='user')
@@ -924,14 +927,15 @@ def stream_messages():
                                 if message.message_id not in sent_message_ids:
                                     sent_message_ids.add(message.message_id)
                                     data = {
-                                        'message_id': message.message_id,  # Include message ID
+                                        'message_id': message.message_id,
                                         'content': message.content,
                                         'timestamp': message.timestamp,
                                         'sender_type': message.sender_type,
                                         'sender_id': message.sender_id,
                                         'receiver_id': message.receiver_id,
                                         'job_id': message.job_id,
-                                        'conversation_id': f'{message.sender_id}_{message.job_id}'
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}',
+                                        'is_read': message.is_read  # Add this line
                                     }
                                     yield f"data: {json.dumps(data)}\n\n"
 

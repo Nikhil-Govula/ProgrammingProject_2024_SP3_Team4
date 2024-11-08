@@ -1,5 +1,6 @@
 # src/views/employer_views.py
 import json
+import logging
 import time
 from datetime import timezone
 from datetime import datetime as dt
@@ -60,15 +61,22 @@ def register_employer():
 
     return render_template('employer/register_employer.html')
 
-@employer_bp.route('/verify/<token>', methods=['GET'])
+@employer_bp.route('/verify/<token>', methods=['GET', 'POST'])
 def verify_account(token):
-    success, message = Employer.verify_account(token)
-    if success:
-        flash("Your account has been verified successfully! You can now log in.", "success")
-        return redirect(url_for('employer_views.login_employer'))
+    if request.method == 'POST':
+        logging.info(f"Attempting to verify employer account with token: {token}")
+        success, message = Employer.verify_account(token)
+        if success:
+            logging.info(f"Employer account verified successfully for token: {token}")
+            flash("Your account has been verified successfully! You can now log in.", "success")
+            return redirect(url_for('employer_views.login_employer'))
+        else:
+            logging.warning(f"Failed to verify employer account with token: {token} - Reason: {message}")
+            flash(message, "error")
+            return render_template('employer/verify_account.html', token=token, success=False), 400
     else:
-        flash(message, "error")
-        return render_template('employer/verify_account.html'), 400
+        logging.info(f"Rendering verification page for employer with token: {token}")
+        return render_template('employer/verify_account.html', token=token, success=False)
 
 
 @employer_bp.route('/dashboard', methods=['GET'])
@@ -519,18 +527,18 @@ def stream_messages():
 
                         if new_messages:
                             for message in new_messages:
-                                # Only send message if we haven't sent it before
                                 if message.message_id not in sent_message_ids:
                                     sent_message_ids.add(message.message_id)
                                     data = {
-                                        'message_id': message.message_id,  # Include message ID
+                                        'message_id': message.message_id,
                                         'content': message.content,
                                         'timestamp': message.timestamp,
                                         'sender_type': message.sender_type,
                                         'sender_id': message.sender_id,
                                         'receiver_id': message.receiver_id,
                                         'job_id': message.job_id,
-                                        'conversation_id': f'{message.sender_id}_{message.job_id}'
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}',
+                                        'is_read': message.is_read
                                     }
                                     yield f"data: {json.dumps(data)}\n\n"
 

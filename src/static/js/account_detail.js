@@ -1,4 +1,4 @@
-// src/static/js/account_detail.js
+// Filename: src/static/js/account_detail.js
 
 $(document).ready(function() {
     // Initialize autocomplete for Location if not an employer
@@ -26,11 +26,13 @@ $(document).ready(function() {
      */
     function updateAccount(action) {
         $.ajax({
-            url: CONFIG.accountDetailUrl,
+            url: CONFIG.accountDetailUrl + '/update_field', // Ensure this points to the correct endpoint
             type: 'POST',
-            data: {
-                action: action
-            },
+            contentType: 'application/json',
+            data: JSON.stringify({
+                field: action === 'toggle_account_lock' || action === 'toggle_account_activation' ? action : null,
+                value: null
+            }),
             success: function(response) {
                 if (response.success) {
                     showNotification(response.message, 'success');
@@ -77,7 +79,7 @@ $(document).ready(function() {
 
         // Basic Validation
         if (value === "") {
-            showNotification(`${field.replace('_', ' ').capitalize()} cannot be empty.`, 'error');
+            showNotification(`${capitalizeWords(field.replace('_', ' '))} cannot be empty.`, 'error');
             return;
         }
 
@@ -103,26 +105,37 @@ $(document).ready(function() {
             }
         }
 
-        // Prepare data for AJAX
-        var data = {};
-        data[field] = value;
+        // Prepare data for AJAX in the expected format
+        var data = {
+            field: field,
+            value: value
+        };
 
         $.ajax({
-            url: CONFIG.accountDetailUrl,
+            url: CONFIG.updateFieldUrl, // Ensure this points to the correct endpoint
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
                 if (response.success) {
-                    showNotification(`${field.replace('_', ' ').capitalize()} updated successfully.`, 'success');
+                    showNotification(`${capitalizeWords(field.replace('_', ' '))} updated successfully.`, 'success');
                 } else {
                     showNotification("Error: " + response.message, 'error');
                 }
             },
             error: function(xhr, status, error) {
                 console.error(`Error updating ${field}:`, error);
-                showNotification(`An error occurred while updating ${field.replace('_', ' ')}. Please try again.`, 'error');
+                showNotification(`An error occurred while updating ${capitalizeWords(field.replace('_', ' '))}. Please try again.`, 'error');
             }
         });
     });
+
+    /**
+     * Utility function to capitalize words
+     * @param {string} str - The string to capitalize
+     * @returns {string} - The capitalized string
+     */
+    function capitalizeWords(str) {
+        return str.replace(/\b\w/g, function(char) { return char.toUpperCase(); });
+    }
 });
