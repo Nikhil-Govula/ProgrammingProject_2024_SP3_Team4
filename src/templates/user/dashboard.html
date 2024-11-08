@@ -43,9 +43,9 @@
                                     {% if job.skills %}
                                         <div class="col-12">
                                             <p style="margin-bottom: -10px;"><strong>Required Skills:</strong></p>
-                                            <ul class="skills-list row">
+                                            <ul class="skills-list" style="padding-top: 15px;">
                                                 {% for skill in job.skills %}
-                                                    <li class="col-4">
+                                                    <li>
                                                         <span class="skill-tag">{{ skill }}</span>
                                                     </li>
                                                 {% endfor %}
@@ -63,7 +63,7 @@
                                     <div class="col-12">
                                         <p style="margin-bottom: -10px;"><strong>Why This Job is Recommended:</strong>
                                         </p>
-                                        <ul>
+                                        <ul style="display: flex; flex-direction: column; gap: 10px; padding-top: 5px;">
                                             {% if reasons.skills %}
                                                 <li>
                                                     <strong>Skills Match:</strong>
@@ -115,7 +115,7 @@
                 <p>Your personalized job search dashboard</p>
             </header>
 
-            <div class="profile-summary">
+            <div class="dashboard-section">
                 <h2>Your Profile</h2>
                 <p class="profileInfo">Email: {{ user.email }}</p>
                 <div class="profile-actions">

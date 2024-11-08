@@ -32,23 +32,27 @@
 <body>
 <header class="header">
     {% if g.user_type == 'user' %}
-        <div href="{{ url_for('user_views.dashboard') }}" class="logo">JobTrunk</div>
+        <a href="{{ url_for('user_views.dashboard') }}" class="logo">JobTrunk</a>
     {% elif g.user_type == 'employer' %}
-        <div href="{{ url_for('employer_views.dashboard') }}" class="logo">JobTrunk</div>
+        <a href="{{ url_for('employer_views.dashboard') }}" class="logo">JobTrunk</a>
     {% elif g.user_type == 'admin' %}
-        <div href="{{ url_for('admin_views.dashboard') }}" class="logo">JobTrunk</div>
+        <a href="{{ url_for('admin_views.dashboard') }}" class="logo">JobTrunk</a>
+    {% elif 'user/login' in request.path or 'user/register' in request.path %}
+        <a href="{{ url_for('user_views.login_user') }}" class="logo">JobTrunk - User</a>
+    {% elif 'employer/login' in request.path or 'employer/register' in request.path %}
+        <a href="{{ url_for('employer_views.login_employer') }}" class="logo">JobTrunk - Employer</a>
+    {% else %}
+        <a href="{{ url_for('landing.landing') }}" class="logo">JobTrunk</a>
     {% endif %}
 
-
     <nav class="nav-links">
-        {#            <nav>#}
-        {#            <a href="{{ url_for('landing.landing') }}">Home</a>#}
-        {#            <a href="{{ url_for('user_views.dashboard') }}">User Dashboard</a>#}
-        {#            <a href="{{ url_for('employer_views.dashboard') }}">Employer Dashboard</a>#}
-        {#            <a href="{{ url_for('admin_views.dashboard') }}">Admin Dashboard</a>#}
-        {% if g.user %}
+        {# Header links if not logged in #}
+        {% if 'user/login' in request.path or 'user/register' in request.path or 'employer/login' in request.path or 'employer/register' in request.path %}
+            <a href="{{ url_for('landing.landing') }}" class="dashboard-button-header">Homepage</a>
+        {% endif %}
 
-            {# Header links if USER logged in #}
+        {# Header links if USER logged in #}
+        {% if g.user %}
             {% if g.user_type == 'user' %}
                 <a href="{{ url_for('user_views.view_all_jobs') }}" class="dashboard-button-header">View All Jobs</a>
                 <a href="{{ url_for('user_views.saved_jobs') }}" class="dashboard-button-header">Saved Jobs</a>
@@ -61,8 +65,6 @@
 
                 {# Header links if EMPLOYER logged in #}
             {% elif g.user_type == 'employer' %}
-                <a href="{{ url_for('employer_views.view_jobs') }}" class="dashboard-button-header">Manage Job
-                    Postings</a>
                 <a href="{{ url_for('employer_views.view_all_chats') }}" class="dashboard-button-header">Messages</a>
                 <a href="{{ url_for('employer_views.dashboard') }}" class="dashboard-button-header">Dashboard</a>
                 <a href="{{ url_for('employer_views.logout') }}" class="dashboard-button-logout">Logout</a>
@@ -70,6 +72,7 @@
                 {# Header links if ADMIN logged in #}
             {% elif g.user_type == 'admin' %}
                 <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
+
             {% endif %}
 
             {# Profile icon #}
@@ -77,8 +80,6 @@
                 <img src="{{ g.user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}"
                      alt="Profile Picture" class="nav-profile-picture">
             </a>
-        {% else %}
-            <a href="{{ url_for('landing.landing') }}" class="login-link">Login</a>
         {% endif %}
     </nav>
 </header>
