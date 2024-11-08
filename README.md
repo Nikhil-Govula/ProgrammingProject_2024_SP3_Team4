@@ -9,7 +9,7 @@ Open the root directory and run below commands in the terminal.
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-python run.py
+python application.py
 
 # Mac Commands
 
@@ -55,10 +55,6 @@ Do you wish to continue with CodeCommit? (Y/n): n as we are using github for vc
 Elastic Beanstalk CLI now fully configured and .elasticbeanstalk directory should appear with config.yml file inside
 7. Deploy project (Once configured, this will be the only prompt you need to enter)
 > eb deploy
-
-
-# Zane's personal elastic load balancing cloud deployment link
-https://awseb--awseb-iu5dngxjboe9-1543411380.ap-southeast-2.elb.amazonaws.com/
 
 # Shared elastic load balancing cloud deployment link
 https://awseb--awseb-gymdhb1jspyu-1677074321.ap-southeast-2.elb.amazonaws.com/

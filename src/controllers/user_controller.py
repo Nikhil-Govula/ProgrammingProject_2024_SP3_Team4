@@ -4,15 +4,18 @@ import uuid
 import boto3
 from botocore.exceptions import ClientError
 from dateutil import parser
+from flask import url_for
 from werkzeug.utils import secure_filename
 
 from config import Config
 from ..models.user_model import User
 from ..models.job_model import Job
 from ..models.application_model import Application
-from ..services.email_service import send_reset_email
+from ..services import DynamoDB
+from ..services.email_service import send_reset_email, send_verification_email
 import bcrypt
 import datetime
+
 
 class UserController:
     @staticmethod
@@ -20,19 +23,58 @@ class UserController:
         user = User.get_by_email(email)
         if user:
             if not user.is_active:
-                return None, "This account has been deactivated. Please contact support for assistance."
+                # Generate a new verification token
+                token = user.generate_verification_token()
+
+                # Generate the full verification link
+                verification_link = url_for('user_views.verify_account', token=token, _external=True)
+
+                # Send verification email
+                email_sent = send_verification_email(user.email, verification_link, role='user')
+
+                if email_sent:
+                    return None, (
+                        "Your account is not active. A new verification link has been sent to your email. "
+                        "Please verify your account before logging in."
+                    )
+                else:
+                    return None, "Your account is not active and failed to send a new verification email. Please try again later."
+
             if user.account_locked:
                 return None, "Account is locked. Please use the 'Forgot Password' option to unlock your account."
+
             if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                 user.reset_failed_attempts()
-                user.unlock_account()
+                user.unlock_account()  # Unlock account on successful login
                 return user, None
             else:
                 user.increment_failed_attempts()
                 if user.account_locked:
-                    return None, "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    return None, (
+                        "Too many failed attempts. Account is locked. Please use the 'Forgot Password' option to unlock your account."
+                    )
                 return None, "Invalid email or password."
         return None, "Invalid email or password."
+
+    @staticmethod
+    def resend_verification_email(email):
+        user = User.get_by_email(email)
+        if user:
+            if user.is_active:
+                return False, "Account is already active. You can log in directly."
+
+            # Generate a new verification token
+            verification_token = user.generate_verification_token()
+
+            # Send verification email
+            verification_link = url_for('user_views.verify_account', token=verification_token, _external=True)
+            email_sent = send_verification_email(email, verification_link)
+
+            if email_sent:
+                return True, "A new verification link has been sent to your email."
+            else:
+                return False, "Failed to send verification email. Please try again later."
+        return False, "No account found with this email address."
 
     @staticmethod
     def reset_password(email):
@@ -98,7 +140,7 @@ class UserController:
         if existing_user:
             return False, "A user with this email already exists."
 
-        # Create new user
+        # Create new user with is_active=False
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         new_user = User(
             user_id=None,  # Will be generated automatically
@@ -106,10 +148,22 @@ class UserController:
             password=hashed_password.decode('utf-8'),
             first_name=first_name,
             last_name=last_name,
-            phone_number=phone_number
+            phone_number=phone_number,
+            is_active=False  # User is inactive until email verification
         )
         new_user.save()
-        return True, "User registered successfully."
+
+        # Generate verification token
+        verification_token = new_user.generate_verification_token()
+
+        # Send verification email
+        verification_link = url_for('user_views.verify_account', token=verification_token, _external=True)
+        email_sent = send_verification_email(email, verification_link)
+
+        if email_sent:
+            return True, "Registration successful! Please check your email to verify your account."
+        else:
+            return False, "Registration successful, but failed to send verification email. Please contact support."
 
     @staticmethod
     def update_profile(user_id, user_type, first_name, last_name, email, phone_number, profile_picture,
@@ -202,7 +256,7 @@ class UserController:
         if user.profile_picture_url:
             try:
                 old_key = \
-                user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
+                    user.profile_picture_url.split(f"{Config.S3_BUCKET_NAME}.s3.{Config.S3_REGION}.amazonaws.com/")[1]
                 s3.delete_object(Bucket=Config.S3_BUCKET_NAME, Key=old_key)
             except Exception as e:
                 print(f"Error deleting old profile picture: {e}")
@@ -227,7 +281,6 @@ class UserController:
         except ClientError as e:
             print(f"Error uploading to S3: {e}")
             return None, "Failed to upload profile picture. Please try again."
-
 
     @staticmethod
     def allowed_certification_file(filename):
@@ -412,13 +465,252 @@ class UserController:
         return Job.get_by_id(job_id)
 
     @staticmethod
-    def apply_for_job(user_id, job_id):
-        # Check if the user has already applied for this job
+    def has_applied_for_job(user_id, job_id):
+        """
+        Check if a user has already applied for a specific job.
+        """
+        # Add debug logging
+        print(f"Checking application for user {user_id} and job {job_id}")
         existing_application = Application.get_by_user_and_job(user_id, job_id)
-        if existing_application:
-            return False, "You have already applied for this job."
+        print(f"Found application: {existing_application}")
+        return existing_application is not None
+
+    @staticmethod
+    def apply_for_job(user_id, job_id):
+        # Check if the job exists and is still active
+        job = Job.get_by_id(job_id)
+        if not job or not job.is_active:
+            return False, "This job is no longer available."
+
+        # Check if the user has already applied
+        if UserController.has_applied_for_job(user_id, job_id):
+            return False, "You have already applied for this position."
 
         # Create a new application
         application = Application(user_id=user_id, job_id=job_id)
-        success, message = application.save()
-        return success, message
+        success = application.save()
+
+        if success:
+            return True, "Your application has been submitted successfully!"
+        else:
+            return False, "There was an error submitting your application. Please try again."
+
+    @staticmethod
+    def revoke_application(user_id, job_id):
+        # Check if the job exists and is still active
+        job = Job.get_by_id(job_id)
+        if not job or not job.is_active:
+            return False, "This job is no longer available."
+
+        application = Application.get_by_user_and_job(user_id, job_id)
+        if not application:
+            return False, "Application not found."
+
+        print(f"application\n{application}")
+
+        # Delete the application
+        success = Application.delete_by_application_id(application.application_id)
+        if success:
+            return True, "Application successfully revoked."
+        else:
+            return False, "Failed to revoke the application. Please try again."
+
+    @staticmethod
+    def delete_by_application_id(application_id):
+        return Application.delete_by_application_id(application_id)
+
+    @staticmethod
+    def get_recommended_jobs(user):
+        """
+        Get personalized job recommendations based on user's profile factors:
+        - Skills match
+        - Location match
+        - Certification match
+        - Work history relevance
+
+        Returns a list of dictionaries with job details and matched reasons.
+        Only includes jobs with at least one matched reason.
+        """
+        response = DynamoDB.scan(
+            'Jobs',
+            FilterExpression='is_active = :active',
+            ExpressionAttributeValues={':active': True}
+        )
+
+        jobs = [Job(**item) for item in response.get('Items', [])]
+        scored_jobs = []
+
+        for job in jobs:
+            score = 0
+            matched_reasons = {
+                'skills': [],
+                'location': '',
+                'certifications': [],
+                'work_history': []
+            }
+
+            # Skills matching (highest weight - 40%)
+            user_skills = {skill['skill'].lower() for skill in user.skills}
+            job_skills = {skill.lower() for skill in job.skills}
+            if job_skills and user_skills:
+                matched_skills = user_skills.intersection(job_skills)
+                skills_match = len(matched_skills) / len(job_skills)
+                score += skills_match * 40
+                if matched_skills:
+                    matched_reasons['skills'] = list(matched_skills)
+
+            # Location matching (30%)
+            if user.city and user.country:
+                if job.city.lower() == user.city.lower():
+                        # and job.country.lower() == user.country.lower():
+                    score += 30
+                    matched_reasons['location'] = 'City match'
+
+            # Certification matching (20%)
+            user_certs = {cert['type'].lower() for cert in user.certifications}
+            job_certs = {cert.lower() for cert in job.certifications}
+            if job_certs and user_certs:
+                matched_certs = user_certs.intersection(job_certs)
+                cert_match = len(matched_certs) / len(job_certs)
+                score += cert_match * 20
+                if matched_certs:
+                    matched_reasons['certifications'] = list(matched_certs)
+
+            # Work history relevance (10%)
+            user_job_titles = {work['job_title'].lower() for work in user.work_history}
+            if job.job_title.lower() in user_job_titles:
+                score += 10
+                matched_reasons['work_history'].append(job.job_title.lower())
+
+            # Determine if there's at least one matched reason
+            has_match = (
+                    bool(matched_reasons['skills']) or
+                    bool(matched_reasons['location']) or
+                    bool(matched_reasons['certifications']) or
+                    bool(matched_reasons['work_history'])
+            )
+
+            if has_match:
+                scored_jobs.append({
+                    'job': job,
+                    'score': score,
+                    'matched_reasons': matched_reasons
+                })
+
+        # Sort jobs by score descending and date posted
+        scored_jobs.sort(key=lambda x: (x['score'], x['job'].date_posted), reverse=True)
+
+        # Prepare the final list with job and matched reasons
+        recommended_jobs = []
+        for entry in scored_jobs:
+            job = entry['job']
+            reasons = entry['matched_reasons']
+            recommended_jobs.append({
+                'job': job,
+                'matched_reasons': reasons,
+                'score': entry['score']
+            })
+
+        return recommended_jobs
+
+    # New method to get saved jobs for the user
+    @staticmethod
+    def get_saved_jobs(user_id):
+        user = User.get_by_id(user_id)
+        if user and user.saved_jobs:
+            saved_jobs = [Job.get_by_id(job_id) for job_id in user.saved_jobs]
+            return [job for job in saved_jobs if job is not None]
+        return []
+
+    # Method to save a job for a user
+    @staticmethod
+    def save_job(user_id, job_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        if job_id in user.saved_jobs:
+            return False, "Job already saved."
+
+        user.saved_jobs.append(job_id)
+        user.save()
+        return True, "Job saved successfully."
+
+    @staticmethod
+    def remove_saved_job(user_id, job_id):
+        user = User.get_by_id(user_id)
+        if not user:
+            return False, "User not found."
+
+        if job_id not in user.saved_jobs:
+            return False, "Job not found in saved jobs."
+
+        user.saved_jobs.remove(job_id)
+        user.save()
+        return True, "Job removed from saved jobs."
+
+    # New method for retrieving user's job applications
+    @staticmethod
+    def get_user_applications(user_id):
+        """
+        Get all applications for a user with associated job details
+        """
+        applications = Application.get_by_user_id(user_id)
+
+        # For each application, fetch and attach the associated job
+        for application in applications:
+            try:
+                job = Job.get_by_id(application.job_id)
+                if job and job.is_active:  # Make sure job exists and is active
+                    # Create a simple dictionary with required job info
+                    application.job = {
+                        'job_title': job.job_title,
+                        'company_name': job.company_name,
+                        'city': job.city,
+                        'country': job.country,
+                        'is_active': job.is_active
+                    }
+                else:
+                    application.job = None
+            except Exception as e:
+                print(f"Error fetching job for application {application.application_id}: {e}")
+                application.job = None
+
+        # Sort applications by date_applied (most recent first)
+        return sorted(applications, key=lambda x: x.date_applied, reverse=True)
+
+    @staticmethod
+    def get_application(user_id, job_id):
+        """Get the application details for a specific user and job."""
+        return Application.get_by_user_and_job(user_id, job_id)
+
+    # New method for tracking user applications
+    @staticmethod
+    def get_application_status(user_id):
+        return Application.get_by_user_id(user_id)
+
+    # New method for networking events
+    @staticmethod
+    def get_networking_events():
+        # This should ideally get events from the database or an external service
+        return [
+            {
+                'name': 'Tech Networking 2024',
+                'date': '2024-12-05',
+                'location': 'Online',
+                'description': 'Connect with industry professionals in the tech world.',
+                'registration_link': 'https://example.com/register'
+            },
+            {
+                'name': 'Women in Tech Summit',
+                'date': '2025-01-15',
+                'location': 'New York, USA',
+                'description': 'A summit focused on opportunities for women in tech.',
+                'registration_link': 'https://example.com/register'
+            }
+        ]
+
+    # New method for getting interview tips
+    @staticmethod
+    def get_interview_tips():
+        return []

@@ -1,12 +1,17 @@
+# Filename: src/models/employer_model.py
+
 from ..services.database_service import DynamoDB
 import secrets
 import datetime
 import uuid
 
+
 class Employer:
     def __init__(self, employer_id, company_name, email, password, contact_person, phone_number,
                  failed_login_attempts=0, account_locked=False,
-                 reset_token=None, token_expiration=None, is_active=True):
+                 reset_token=None, token_expiration=None,
+                 verification_token=None, verification_token_expiration=None,
+                 is_active=False):
         self.employer_id = employer_id or str(uuid.uuid4())
         self.company_name = company_name
         self.email = email
@@ -17,6 +22,8 @@ class Employer:
         self.account_locked = account_locked
         self.reset_token = reset_token
         self.token_expiration = token_expiration
+        self.verification_token = verification_token
+        self.verification_token_expiration = verification_token_expiration
         self.is_active = is_active
 
     def save(self):
@@ -35,6 +42,41 @@ class Employer:
         if item:
             return Employer(**item)
         return None
+
+    def generate_verification_token(self):
+        token = secrets.token_urlsafe(32)
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=48)  # Token valid for 48 hours
+        self.verification_token = token
+        self.verification_token_expiration = expiration.isoformat()
+        DynamoDB.update_item('Employers',
+                             {'employer_id': self.employer_id},
+                             {'verification_token': self.verification_token,
+                              'verification_token_expiration': self.verification_token_expiration})
+        return token
+
+    @staticmethod
+    def verify_account(token):
+        response = DynamoDB.scan(
+            'Employers',
+            FilterExpression='verification_token = :token AND is_active = :inactive',
+            ExpressionAttributeValues={
+                ':token': token,
+                ':inactive': False
+            }
+        )
+        if response['Items']:
+            employer_data = response['Items'][0]
+            token_expiration = datetime.datetime.fromisoformat(employer_data['verification_token_expiration'])
+            if datetime.datetime.utcnow() > token_expiration:
+                return False, "Verification token has expired."
+            # Activate the employer
+            DynamoDB.update_item('Employers',
+                                 {'employer_id': employer_data['employer_id']},
+                                 {'is_active': True,
+                                  'verification_token': None,
+                                  'verification_token_expiration': None})
+            return True, "Account verified successfully."
+        return False, "Invalid verification token."
 
     @staticmethod
     def get_all_employers():
@@ -120,7 +162,12 @@ class Employer:
             'contact_person': self.contact_person,
             'phone_number': self.phone_number,
             'is_active': self.is_active,
-            'account_locked': self.account_locked
+            'account_locked': self.account_locked,
+            'failed_login_attempts': self.failed_login_attempts,
+            'reset_token': self.reset_token,
+            'token_expiration': self.token_expiration,
+            'verification_token': self.verification_token,
+            'verification_token_expiration': self.verification_token_expiration
         }
 
     def update_fields(self, fields):

@@ -6,10 +6,11 @@ from google_auth_oauthlib.flow import Flow
 from config import Config
 import os
 
-from .controllers.index_controller import get_user
-from .services import SessionManager
+from src.controllers.index_controller import get_user
+from src.services import SessionManager
+from src.models.message_model import Message
 
-from .views import index_bp, landing_bp, user_bp, employer_bp, admin_bp
+from src.views import index_bp, landing_bp, user_bp, employer_bp, admin_bp
 # from .services.google_auth_service import GoogleAuthService
 
 # Initialize extensions without binding to app
@@ -65,8 +66,15 @@ def create_app(config_class=Config):
             g.user_type = None
             print("No session ID in cookie")  # Debug log
 
+    @app.context_processor
+    def inject_unread_message_count():
+        if g.user and g.user_type == 'employer':
+            unread_count = Message.get_unread_count(g.user.employer_id, 'employer')
+            return {'unread_message_count': unread_count}
+        return {}
+
     # Set environment variable for OAuth
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = app.config.get('OAUTHLIB_INSECURE_TRANSPORT')
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = str(app.config.get('OAUTHLIB_INSECURE_TRANSPORT', '1'))
 
     # Initialize OAuth 2.0 flow
     # app.flow = Flow.from_client_config(

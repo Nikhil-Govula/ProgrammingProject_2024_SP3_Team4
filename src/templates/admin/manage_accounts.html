@@ -2,47 +2,7 @@
 
 {% block head %}
     <title>Manage Accounts</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            function updateTable() {
-                var accountType = $('#account_type').val();
-                var searchQuery = $('#search_query').val();
-                var selectedStatuses = [];
-                $('input[name="status"]:checked').each(function() {
-                    selectedStatuses.push($(this).val());
-                });
-
-                $.ajax({
-                    url: "{{ url_for('admin_views.manage_accounts') }}",
-                    data: {
-                        account_type: accountType,
-                        account_status: selectedStatuses.join(','),
-                        search: searchQuery
-                    },
-                    success: function(data) {
-                        $('#accounts-table-body').html($(data).find('#accounts-table-body').html());
-                    }
-                });
-            }
-
-            $('#account_type').change(updateTable);
-            $('#search_query').on('input', updateTable);
-            $('input[name="status"]').change(updateTable);
-
-            var defaultAccountType = "{{ account_type }}" || "user";
-            $('#account_type').val(defaultAccountType);
-            $('#search_query').val("{{ search_query }}");
-
-            // Set initial checkbox states based on account_status
-            var initialStatuses = "{{ account_status }}".split(',');
-            initialStatuses.forEach(function(status) {
-                $('#status_' + status).prop('checked', true);
-            });
-
-            updateTable();
-        });
-    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_accounts.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -122,4 +82,30 @@
         </tbody>
     </table>
 </div>
+{% endblock %}
+
+{% block footer %}
+    <footer class="footer">
+        <p>
+            &copy; 2024 JobTrunk. All rights reserved. |
+            <a href="#">Privacy Policy</a> |
+            <a href="#">Terms & Conditions</a> |
+            <a href="#">About JobTrunk</a> |
+            <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
+        </p>
+    </footer>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Pass configuration variables to JavaScript -->
+    <script>
+        window.CONFIG = {
+            manageAccountsUrl: "{{ url_for('admin_views.manage_accounts') }}",
+            defaultAccountType: "{{ account_type if account_type else 'user' }}",
+            defaultSearchQuery: "{{ search_query if search_query else '' }}",
+            defaultAccountStatus: "{{ account_status if account_status else 'active' }}"
+        };
+    </script>
+    <!-- Include the centralized JavaScript file -->
+    <script src="{{ url_for('static', filename='js/manage_accounts.js') }}"></script>
 {% endblock %}

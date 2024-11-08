@@ -1,11 +1,15 @@
+import datetime
+from datetime import datetime, timezone
+from datetime import datetime as dt
 import json
 import uuid
 import requests
+import time
 
 import boto3
 from botocore.exceptions import ClientError
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, current_app, session, \
-    jsonify, flash
+    jsonify, flash, Response, Flask
 from google.auth.transport import requests as google_requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -14,10 +18,12 @@ from werkzeug.utils import secure_filename
 from config import store_secret, Config
 from ..controllers import UserController
 from ..decorators.auth_required import auth_required
-from ..services import SessionManager
+from ..models import User, Employer, Message, Job
+from ..services import SessionManager, DynamoDB
 from ..services.google_auth_service import GoogleAuthService
 
 user_bp = Blueprint('user_views', __name__, url_prefix='/user')
+
 
 @user_bp.route('/login', methods=['GET', 'POST'])
 def login_user():
@@ -26,6 +32,9 @@ def login_user():
         password = request.form['password']
         user, error_message = UserController.login(email, password)
         if user:
+            if not user.is_active:
+                flash("Your account is not active. Please check your email to verify your account.", "error")
+                return render_template('user/login_user.html')
             session_id = SessionManager.create_session(user.user_id, 'user')
             if session_id:
                 response = make_response(redirect(url_for('user_views.dashboard')))
@@ -37,6 +46,7 @@ def login_user():
         else:
             return render_template('user/login_user.html', error=error_message)
     return render_template('user/login_user.html')
+
 
 @user_bp.route('/register', methods=['GET', 'POST'])
 def register_user():
@@ -56,17 +66,36 @@ def register_user():
         # Register the new user
         success, message = UserController.register_user(email, password, first_name, last_name, phone_number)
         if success:
+            flash(message, 'success')  # Flash the success message
             return redirect(url_for('user_views.login_user'))
         else:
-            return render_template('user/register_user.html', error=message)
+            flash(message, 'error')  # Optionally flash error message
+            return render_template('user/register_user.html')
 
     return render_template('user/register_user.html')
+
+
+@user_bp.route('/verify/<token>', methods=['GET', 'POST'])
+def verify_account(token):
+    if request.method == 'POST':
+        success, message = User.verify_account(token)
+        if success:
+            flash("Your account has been verified successfully! You can now log in.", "success")
+            return redirect(url_for('user_views.login_user'))
+        else:
+            flash(message, "error")
+            return render_template('user/verify_account.html', token=token), 400
+    else:
+        # For GET requests, render the verification confirmation page
+        return render_template('user/verify_account.html', token=token)
 
 @user_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='user')
 def dashboard():
     user = g.user
-    return render_template('user/dashboard.html', user=user)
+    recommended_jobs = UserController.get_recommended_jobs(user)
+    return render_template('user/dashboard.html', user=user, jobs=recommended_jobs)
+
 
 @user_bp.route('/logout', methods=['GET'])
 def logout():
@@ -77,6 +106,7 @@ def logout():
     response.set_cookie('session_id', '', expires=0)
     return response
 
+
 # **New Routes for Reset Password**
 
 @user_bp.route('/reset_password', methods=['GET', 'POST'])
@@ -84,8 +114,10 @@ def reset_password():
     if request.method == 'POST':
         email = request.form['email']
         success, message, was_locked = UserController.reset_password(email)
-        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked, email=email)
+        return render_template('user/reset_password.html', success=success, message=message, was_locked=was_locked,
+                               email=email)
     return render_template('user/reset_password.html')
+
 
 @user_bp.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
@@ -138,7 +170,7 @@ def start_oauth_flow():
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'  # Force consent to receive a new refresh_token
+        # prompt='consent'  # Force consent to receive a new refresh_token
     )
 
     # Store the state in the session for validation in the callback
@@ -202,8 +234,8 @@ def revoke():
     credentials = Credentials(**session['credentials'])
 
     revoke = requests.post('https://oauth2.googleapis.com/revoke',
-        params={'token': credentials.token},
-        headers = {'content-type': 'application/x-www-form-urlencoded'})
+                           params={'token': credentials.token},
+                           headers={'content-type': 'application/x-www-form-urlencoded'})
 
     status_code = getattr(revoke, 'status_code', 500)
     if status_code == 200:
@@ -217,6 +249,7 @@ def revoke():
 def view_profile():
     user = g.user
     return render_template('user/profile.html', user=user)
+
 
 @user_bp.route('/profile/edit', methods=['GET', 'POST'])
 @auth_required(user_type='user')
@@ -250,6 +283,7 @@ def edit_profile():
 
     return render_template('user/profile_edit.html', user=user)
 
+
 @user_bp.route('/upload_profile_picture', methods=['POST'])
 @auth_required(user_type='user')
 def upload_profile_picture():
@@ -267,6 +301,7 @@ def upload_profile_picture():
         return jsonify({'success': True, 'profile_picture_url': new_profile_picture_url}), 200
     else:
         return jsonify({'success': False, 'message': 'Invalid file type for profile picture.'}), 400
+
 
 @user_bp.route('/upload_certification', methods=['POST'])
 @auth_required(user_type='user')
@@ -305,7 +340,6 @@ def upload_certification():
     }), 200
 
 
-
 @user_bp.route('/delete_certification', methods=['POST'])
 @auth_required(user_type='user')
 def delete_certification():
@@ -331,6 +365,7 @@ def delete_certification():
 
     return jsonify({'success': True, 'message': 'Certification deleted successfully.'}), 200
 
+
 @user_bp.route('/update_field', methods=['POST'])
 @auth_required(user_type='user')
 def update_profile_field():
@@ -355,6 +390,7 @@ def update_profile_field():
     else:
         return jsonify({'success': False, 'message': message}), 400
 
+
 @user_bp.route('/change_password', methods=['GET', 'POST'])
 @auth_required(user_type='user')
 def change_password():
@@ -377,6 +413,7 @@ def change_password():
             return render_template('user/change_password.html', error=message)
 
     return render_template('user/change_password.html')
+
 
 @user_bp.route('/city_suggestions', methods=['GET'])
 def city_suggestions():
@@ -413,6 +450,7 @@ def view_work_history():
 
     return render_template('user/work_history.html', user=user, work_history=sorted_work_history)
 
+
 @user_bp.route('/add_work_history', methods=['POST'])
 @auth_required(user_type='user')
 def add_work_history():
@@ -443,6 +481,7 @@ def add_work_history():
     else:
         return jsonify({'success': False, 'message': message}), 400
 
+
 @user_bp.route('/delete_work_history', methods=['POST'])
 @auth_required(user_type='user')
 def delete_work_history():
@@ -461,6 +500,7 @@ def delete_work_history():
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
 
 @user_bp.route('/get_occupation_suggestions', methods=['GET'])
 def get_occupation_suggestions():
@@ -482,6 +522,7 @@ def get_occupation_suggestions():
         current_app.logger.error(f"Error calling OccupationAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
 
+
 @user_bp.route('/certification_suggestions', methods=['GET'])
 def certification_suggestions():
     query = request.args.get('query', '').strip()
@@ -502,11 +543,13 @@ def certification_suggestions():
         current_app.logger.error(f"Error calling CertificationAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
 
+
 @user_bp.route('/skills', methods=['GET'])
 @auth_required(user_type='user')
 def view_skills():
     user = g.user
     return render_template('user/skills.html', user=user)
+
 
 @user_bp.route('/add_skill', methods=['POST'])
 @auth_required(user_type='user')
@@ -522,6 +565,7 @@ def add_skill():
     else:
         return jsonify({'success': False, 'message': error}), 400
 
+
 @user_bp.route('/delete_skill', methods=['POST'])
 @auth_required(user_type='user')
 def delete_skill():
@@ -535,6 +579,7 @@ def delete_skill():
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
 
 @user_bp.route('/skill_suggestions', methods=['GET'])
 def skill_suggestions():
@@ -555,6 +600,7 @@ def skill_suggestions():
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Error calling SkillAutocompleteAPI: {e}")
         return jsonify({'suggestions': []}), 200
+
 
 # src/views/user_views.py
 
@@ -582,26 +628,335 @@ def view_all_jobs():
         total_pages=total_pages
     )
 
+
+@user_bp.route('/job_details/<job_id>', methods=['GET'])
+@auth_required(user_type='user')
+def get_job_details(job_id):
+    job = UserController.get_job_by_id(job_id)
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    user_id = g.user.user_id
+    has_applied = UserController.has_applied_for_job(user_id, job_id)
+
+    return jsonify({
+        "job_id": job.job_id,
+        "job_title": job.job_title,
+        "company_name": job.company_name,
+        "city": job.city,
+        "country": job.country,
+        "salary": f"{job.salary:,.2f}",
+        "date_posted": job.date_posted,
+        "description": job.description,
+        "requirements": job.requirements,
+        "certifications": job.certifications or [],
+        "skills": job.skills or [],
+        "has_applied": has_applied  # Include application status
+    })
+
+
 @user_bp.route('/jobs/<job_id>', methods=['GET'])
 @auth_required(user_type='user')
 def view_job_details(job_id):
-    """
-    Render a page displaying detailed information about a specific job.
-    """
     job = UserController.get_job_by_id(job_id)
     if not job:
         flash("Job not found or is no longer available.", 'error')
         return redirect(url_for('user_views.view_all_jobs'))
-    return render_template('user/job_detail.html', job=job)
+
+    user_id = g.user.user_id
+    print(f"Checking application status for user {user_id} and job {job_id}")
+
+    # Get the application if it exists
+    application = UserController.get_application(user_id, job_id)
+    has_applied = application is not None
+
+    return render_template('user/job_detail.html',
+                           job=job,
+                           has_applied=has_applied,
+                           application=application)
+
+
+@user_bp.route('/jobs/<job_id>/bookmark', methods=['POST'])
+@auth_required(user_type='user')
+def bookmark_job(job_id):
+    print("bookmark_job")
+    user = g.user
+    success, message = UserController.save_job(user.user_id, job_id)
+    if success:
+        return '', 200
+    else:
+        return jsonify({'error': message}), 400
+
+
+@user_bp.route('/jobs/<job_id>/remove_bookmark', methods=['POST'])
+@auth_required(user_type='user')
+def remove_bookmark_job(job_id):
+    print("remove_bookmark_job")
+    user = g.user
+    success, message = UserController.remove_saved_job(user.user_id, job_id)
+    if success:
+        return '', 200
+    else:
+        return jsonify({'error': message}), 400
+
+
+@user_bp.route('/get_bookmarked_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def get_bookmarked_jobs():
+    user = g.user
+    bookmarked_jobs = user.saved_jobs  # Assuming `saved_jobs` is a list of job IDs saved by the user
+    return jsonify({'bookmarkedJobs': bookmarked_jobs}), 200
 
 
 @user_bp.route('/jobs/<job_id>/apply', methods=['POST'])
 @auth_required(user_type='user')
 def apply_for_job(job_id):
     user = g.user
+
+    if UserController.has_applied_for_job(user.user_id, job_id):
+        return jsonify({
+            'success': False,
+            'message': 'You have already applied for this position.'
+        }), 400
+
     success, message = UserController.apply_for_job(user.user_id, job_id)
-    if success:
-        flash("Your application has been submitted successfully.", "success")
-    else:
-        flash(message, "error")
-    return redirect(url_for('user_views.view_job_details', job_id=job_id))
+    print(f"apply JobID:\n{job_id}")
+
+    response_data = {
+        'success': success,
+        'message': message,
+        'reload': False  # No need for full reload, just update the status
+    }
+
+    return jsonify(response_data), 200 if success else 400
+
+
+@user_bp.route('/jobs/<job_id>/revoke', methods=['POST'])
+@auth_required(user_type='user')
+def revoke_application(job_id):
+    user = g.user
+    success, message = UserController.revoke_application(user.user_id, job_id)
+    print(f"revoke JobID:\n{job_id}")
+
+    response_data = {
+        'success': success,
+        'message': message,
+    }
+
+    return jsonify(response_data), 200 if success else 400
+# **New Routes for Recommended Jobs, Saved Jobs, Applications, and Resources**
+
+
+@user_bp.route('/recommended_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def recommended_jobs():
+    user = g.user
+    recommended_jobs = UserController.get_recommended_jobs(user)
+    print(f"Recommended Jobs for user {user.user_id}: {recommended_jobs}")
+    return render_template('user/recommended_jobs.html', jobs=recommended_jobs)
+
+
+@user_bp.route('/saved_jobs', methods=['GET'])
+@auth_required(user_type='user')
+def saved_jobs():
+    user = g.user
+    saved_jobs = UserController.get_saved_jobs(user.user_id)
+    return render_template('user/saved_jobs.html', jobs=saved_jobs)
+
+
+@user_bp.route('/view_applications', methods=['GET'])
+@auth_required(user_type='user')
+def view_applications():
+    user = g.user
+    applications = UserController.get_user_applications(user.user_id)
+    return render_template('user/view_applications.html', applications=applications)
+
+
+@user_bp.route('/interview_tips', methods=['GET'])
+@auth_required(user_type='user')
+def interview_tips():
+    tips = UserController.get_interview_tips()
+    return render_template('user/interview_tips.html', tips=tips)
+
+
+@user_bp.route('/networking_events', methods=['GET'])
+@auth_required(user_type='user')
+def networking_events():
+    events = UserController.get_networking_events()
+    return render_template('user/networking_events.html', events=events)
+
+
+@user_bp.route('/messages/<employer_id>', methods=['GET', 'POST'])
+@auth_required(user_type='user')
+def chat_with_employer(employer_id):
+    job_id = request.args.get('job_id')
+    employer = Employer.get_by_id(employer_id)
+    job = Job.get_by_id(job_id) if job_id else None
+
+    if not employer:
+        flash("Employer not found", "error")
+        return redirect(url_for('user_views.view_all_chats'))
+
+    if request.method == 'POST':
+        content = request.json.get('content')
+        if not content:
+            return jsonify({'success': False, 'message': 'Message content required'}), 400
+
+        message = Message(
+            sender_id=g.user.user_id,
+            receiver_id=employer_id,
+            sender_type='user',
+            content=content,
+            job_id=job_id
+        )
+        message.save()
+        return jsonify({
+            'success': True,
+            'message': {
+                'message_id': message.message_id,  # Add this line
+                'content': message.content,
+                'timestamp': message.timestamp,
+                'sender_type': message.sender_type
+            }
+        })
+
+    # Mark all messages in this conversation as read
+    messages = Message.get_conversation(g.user.user_id, employer_id, job_id)
+    for message in messages:
+        if message.receiver_id == g.user.user_id and not message.is_read:
+            message.mark_as_read()
+
+    return render_template(
+        'user/chat.html',
+        messages=messages,
+        employer=employer,
+        job=job,
+        job_id=job_id
+    )
+
+
+@user_bp.route('/messages', methods=['GET'])
+@auth_required(user_type='user')
+def view_all_chats():
+    user_id = g.user.user_id
+
+    # Get all messages for this user
+    response = DynamoDB.scan(
+        'Messages',
+        FilterExpression='sender_id = :user_id OR receiver_id = :user_id',
+        ExpressionAttributeValues={':user_id': user_id}
+    )
+
+    messages = response.get('Items', [])
+
+    # Create a dictionary to store the latest message for each conversation
+    conversations = {}
+    for msg in messages:
+        message = Message(**msg)
+        other_id = message.receiver_id if message.sender_id == user_id else message.sender_id
+
+        # Create a unique key combining employer_id and job_id
+        conversation_key = f"{other_id}_{message.job_id}"
+
+        if (conversation_key not in conversations or
+                message.timestamp > conversations[conversation_key]['latest_message'].timestamp):
+            # Get the employer information
+            employer = Employer.get_by_id(other_id)
+            # Get the job information
+            job = Job.get_by_id(message.job_id) if message.job_id else None
+
+            if employer:
+                conversations[conversation_key] = {
+                    'employer': employer,
+                    'latest_message': message,
+                    'unread_count': 0,
+                    'job_id': message.job_id,
+                    'job_title': job.job_title if job else 'General Discussion'
+                }
+
+    # Count unread messages for each conversation
+    for conv_key in conversations:
+        employer_id = conv_key.split('_')[0]
+        job_id = conversations[conv_key]['job_id']
+
+        unread_count = DynamoDB.scan(
+            'Messages',
+            FilterExpression=('sender_id = :other_id AND receiver_id = :user_id '
+                            'AND is_read = :is_read AND job_id = :job_id'),
+            ExpressionAttributeValues={
+                ':other_id': employer_id,
+                ':user_id': user_id,
+                ':is_read': False,
+                ':job_id': job_id
+            }
+        )
+        conversations[conv_key]['unread_count'] = len(unread_count.get('Items', []))
+
+    # Sort conversations by latest message timestamp
+    sorted_conversations = sorted(
+        conversations.values(),
+        key=lambda x: x['latest_message'].timestamp,
+        reverse=True
+    )
+
+    return render_template('user/messages.html', conversations=sorted_conversations)
+
+
+@user_bp.route('/messages/stream')
+@auth_required(user_type='user')
+def stream_messages():
+    from flask import copy_current_request_context, current_app
+
+    user_id = g.user.user_id
+    app = current_app._get_current_object()
+
+    @copy_current_request_context
+    def generate():
+        last_check = dt.now(timezone.utc).isoformat()
+        sent_message_ids = set()  # Track sent message IDs
+
+        try:
+            while True:
+                with app.app_context():
+                    try:
+                        new_messages = Message.get_new_messages(user_id, last_check, user_type='user')
+
+                        if new_messages:
+                            for message in new_messages:
+                                # Only send message if we haven't sent it before
+                                if message.message_id not in sent_message_ids:
+                                    sent_message_ids.add(message.message_id)
+                                    data = {
+                                        'message_id': message.message_id,
+                                        'content': message.content,
+                                        'timestamp': message.timestamp,
+                                        'sender_type': message.sender_type,
+                                        'sender_id': message.sender_id,
+                                        'receiver_id': message.receiver_id,
+                                        'job_id': message.job_id,
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}',
+                                        'is_read': message.is_read  # Add this line
+                                    }
+                                    yield f"data: {json.dumps(data)}\n\n"
+
+                        last_check = dt.now(timezone.utc).isoformat()
+
+                    except Exception as e:
+                        app.logger.error(f"Stream error: {str(e)}")
+                        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                        return
+
+                time.sleep(2)
+
+        except GeneratorExit:
+            pass
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        }
+    )

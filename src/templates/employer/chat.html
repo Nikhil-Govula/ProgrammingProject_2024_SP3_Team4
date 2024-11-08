@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+    <div class="chat-container">
+        <a href="{{ url_for('employer_views.view_all_chats') }}" class="back-link">← Back to Messages</a>
+
+        <div class="chat-header">
+            <div class="user-info">
+                <img src="{{ user.profile_picture_url or url_for('static', filename='images/default_profile.png') }}"
+                     alt="User Profile"
+                     class="user-profile-pic">
+                <div class="user-details">
+                    <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+                    {% if job %}
+                        <div class="job-title">Regarding: {{ job.job_title }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="message-list" id="messageList">
+            {% for message in messages %}
+                <div class="message {% if message.sender_type == 'employer' %}sent{% else %}received{% endif %}">
+                    <div class="message-content">{{ message.content }}</div>
+                    <div class="message-time" data-timestamp="{{ message.timestamp }}">
+                        {{ message.timestamp }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="message-input">
+            <textarea id="messageInput" placeholder="Type your message..."></textarea>
+        </div>
+        <div class="message-input"
+             style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: -10px;">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('messageInput');
+
+        function formatTimestamp(isoTimestamp) {
+            const now = new Date();
+            const timestamp = new Date(isoTimestamp);
+            const diffInMilliseconds = now - timestamp;
+            const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
+
+            if (isNaN(timestamp.getTime())) {
+                return isoTimestamp;
+            }
+
+            if (diffInSeconds < 60) {
+                return 'Just now';
+            }
+
+            if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+            }
+
+            if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+            }
+
+            const options = {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            };
+
+            if (timestamp.getFullYear() !== now.getFullYear()) {
+                options.year = 'numeric';
+            }
+
+            return timestamp.toLocaleString('en-US', options);
+        }
+
+        function addMessage(content, timestamp, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type === 'employer' ? 'sent' : 'received'}`;
+
+            messageDiv.innerHTML = `
+        <div class="message-content">${content}</div>
+        <div class="message-time" data-timestamp="${timestamp}">
+            ${formatTimestamp(timestamp)}
+        </div>
+    `;
+
+            messageList.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const content = messageInput.value.trim();
+            if (!content) return;
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({content})
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Add message immediately to the sender's view
+                    addMessage(
+                        data.message.content,
+                        data.message.timestamp,
+                        '{{ g.user_type }}'  // 'user' or 'employer' depending on sender
+                    );
+
+                    // Add message ID to processed set to prevent duplication from SSE
+                    processedMessageIds.add(data.message.message_id);
+
+                    // Clear input
+                    messageInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const timestamps = document.querySelectorAll('.message-time');
+            timestamps.forEach(element => {
+                const timestamp = element.getAttribute('data-timestamp');
+                element.textContent = formatTimestamp(timestamp);
+            });
+            scrollToBottom();
+        });
+
+        setInterval(function () {
+            const timestamps = document.querySelectorAll('.message-time');
+            timestamps.forEach(element => {
+                const timestamp = element.getAttribute('data-timestamp');
+                element.textContent = formatTimestamp(timestamp);
+            });
+        }, 60000);
+
+        messageInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        let processedMessageIds = new Set();
+
+        function handleNewMessage(message) {
+            // Check if we've already processed this message
+            if (processedMessageIds.has(message.message_id)) {
+                return;
+            }
+
+            // Add message ID to processed set
+            processedMessageIds.add(message.message_id);
+
+            // Get the current conversation IDs
+            const currentOtherId = '{{ employer.employer_id if g.user_type == "user" else user.user_id }}';
+            const currentJobId = '{{ job_id }}';
+
+            // Check if message belongs to current conversation
+            const isRelevantMessage =
+                (message.sender_id === currentOtherId && message.receiver_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' && message.job_id === currentJobId) ||
+                (message.receiver_id === currentOtherId && message.sender_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' && message.job_id === currentJobId);
+
+            if (isRelevantMessage) {
+                addMessage(
+                    message.content,
+                    message.timestamp,
+                    message.sender_id === '{{ g.user.user_id if g.user_type == "user" else g.user.employer_id }}' ?
+                        '{{ g.user_type }}' :
+                        '{{ "employer" if g.user_type == "user" else "user" }}'
+                );
+                scrollToBottom();
+            }
+        }
+
+        let eventSource;
+
+        function connectToMessageStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/employer/messages/stream');  // Updated URL
+
+            eventSource.onmessage = function (event) {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.error) {
+                        console.error('Stream error:', message.error);
+                        return;
+                    }
+
+                    handleNewMessage(message);
+
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                }
+            };
+
+            eventSource.onerror = function (error) {
+                console.error('EventSource failed:', error);
+                eventSource.close();
+                setTimeout(connectToMessageStream, 5000);
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', connectToMessageStream);
+
+        window.addEventListener('beforeunload', function () {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+{% endblock %}

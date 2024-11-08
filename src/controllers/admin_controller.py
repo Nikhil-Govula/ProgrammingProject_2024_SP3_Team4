@@ -213,6 +213,9 @@ class AdminController:
 
     @staticmethod
     def update_account(account_id, account_type, **kwargs):
+        """
+        Update specific fields of an account based on account_type.
+        """
         if account_type.lower() == 'admin':
             account = Admin.get_by_id(account_id)
         elif account_type.lower() == 'employer':
@@ -225,38 +228,32 @@ class AdminController:
         if not account:
             return False, f"{account_type.capitalize()} not found."
 
-        # Prepare the fields to update based on account type
-        update_fields = {}
-        if account_type.lower() in ['admin', 'user']:
-            update_fields['first_name'] = kwargs.get('first_name')
-            update_fields['last_name'] = kwargs.get('last_name')
-
-        update_fields['email'] = kwargs.get('email')
-        update_fields['phone_number'] = kwargs.get('phone_number')
-
-        if account_type.lower() == 'user':
-            update_fields['location'] = kwargs.get('location')
-        elif account_type.lower() == 'employer':
-            update_fields['company_name'] = kwargs.get('company_name')
-            update_fields['contact_person'] = kwargs.get('contact_person')
-
-        # Handle password update
-        password = kwargs.get('password')
-        if password:
-            # Validate password if necessary
-            is_valid, message = UserController.validate_password(password)
+        # Handle password hashing if password is being updated
+        if 'password' in kwargs:
+            new_password = kwargs.pop('password')
+            is_valid, message = AdminController.validate_password(new_password)
             if not is_valid:
                 return False, message
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            update_fields['password'] = hashed_password
+            hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            kwargs['password'] = hashed_password
+
+        # Handle location for users
+        if account_type.lower() == 'user' and 'location' in kwargs:
+            location = kwargs.pop('location')
+            try:
+                city, country = map(str.strip, location.split(',', 1))
+                kwargs['city'] = city
+                kwargs['country'] = country
+            except ValueError:
+                return False, "Invalid location format. Use 'City, Country'."
 
         # **Redact Password Before Logging**
-        redacted_update_fields = update_fields.copy()
+        redacted_update_fields = kwargs.copy()
         if 'password' in redacted_update_fields:
             redacted_update_fields['password'] = '[REDACTED]'
 
         # Perform the update
-        success, message = account.update_fields(update_fields)
+        success, message = account.update_fields(kwargs)
         if success:
             # Log the update action with redacted fields
             target_email = getattr(account, 'email', None)
@@ -265,7 +262,7 @@ class AdminController:
                 admin_email=g.user.email,
                 action=f'update_{account_type}',
                 target_user_id=account_id,
-                target_user_email=target_email,  # New parameter
+                target_user_email=target_email,
                 details=redacted_update_fields
             )
             return True, f"{account_type.capitalize()} account updated successfully."

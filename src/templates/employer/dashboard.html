@@ -1,15 +1,133 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block head %}
-    <title>Employer Dashboard</title>
+    <style>
+        .accounts-table {
+            width: 100%;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5em 1em;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 1em;
+        }
+
+        .dataTables_wrapper .dataTables_scrollHead {
+            background-color: #4CAF50;
+        }
+
+        .selected {
+            background-color: #d9edf7 !important;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            color: white;
+            text-decoration: none;
+            background-color: #3498db; /* Default button color */
+            border: none;
+        }
+
+        .btn[disabled],
+        .btn.btn-edit-disabled:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-    <div class="content">
-    <h2>Welcome, {{ employer.company_name }}</h2>
-    <div class="dashboard-options">
-        <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">Manage Job Postings</a>
-        <!-- Add other dashboard options as needed -->
+    <div class="view-jobs-page">
+        <div class="job-page-header" style="display: flex; justify-content: space-around;">
+            <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job!</a>
+            <button id="editSelectedJob" class="btn btn-edit-disabled" disabled>Edit Selected Job</button>
+            <button id="viewApplications" class="btn btn-edit-disabled" disabled>View Applications</button>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Job Table -->
+        <table class="display responsive nowrap accounts-table" id="jobsTable">
+            <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Salary</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>Date Posted</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for job in jobs %}
+                <tr data-job-id="{{ job.job_id }}" onclick="selectJob('{{ job.job_id }}')">
+                    <td>{{ job.job_title }}</td>
+                    {#                <td>{{ job.description }}</td>#}
+                    <td>${{ "{:,.2f}".format(job.salary) }}</td>
+                    <td>{{ job.city }}</td>
+                    <td>{{ job.country }}</td>
+                    <!-- Slice the date string to display only YYYY-MM-DD -->
+                    <td>{{ job.date_posted[:10] if job.date_posted else '' }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">No job postings found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Pass configuration variables to JavaScript -->
+    <script>
+        window.CONFIG = {
+            editJobUrlTemplate: "{{ url_for('employer_views.edit_job', job_id='__JOB_ID__') }}",
+            viewApplicationsUrlTemplate: "{{ url_for('employer_views.view_job_applications', job_id='__JOB_ID__') }}"
+        };
+    </script>
+    <!-- Include DataTables and centralized JavaScript file -->
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="{{ url_for('static', filename='js/view_jobs.js') }}"></script>
+    <script>
+        // JavaScript function to handle job selection
+        function selectJob(jobId) {
+            const rows = document.querySelectorAll('#jobsTable tbody tr');
+            rows.forEach(row => row.classList.remove('selected'));
+            const selectedRow = document.querySelector(`[data-job-id="${jobId}"]`);
+            selectedRow.classList.add('selected');
+
+            // Enable buttons and set appropriate URLs
+            document.getElementById('editSelectedJob').disabled = false;
+            document.getElementById('editSelectedJob').classList.remove('btn-edit-disabled');
+            document.getElementById('editSelectedJob').onclick = () => {
+                window.location.href = window.CONFIG.editJobUrlTemplate.replace('__JOB_ID__', jobId);
+            };
+
+            document.getElementById('viewApplications').disabled = false;
+            document.getElementById('viewApplications').classList.remove('btn-edit-disabled');
+            document.getElementById('viewApplications').onclick = () => {
+                window.location.href = window.CONFIG.viewApplicationsUrlTemplate.replace('__JOB_ID__', jobId);
+            };
+        }
+    </script>
 {% endblock %}

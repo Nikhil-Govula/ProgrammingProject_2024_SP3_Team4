@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Messages - User Dashboard</title>
+{% endblock %}
+
+{% block body %}
+<div class="messages-container">
+    <h2>Messages</h2>
+
+    {% if conversations %}
+        <div class="conversation-list">
+            {% for conv in conversations %}
+                <a href="{{ url_for('user_views.chat_with_employer', employer_id=conv.employer.employer_id, job_id=conv.job_id) }}"
+                   class="conversation-card"
+                   data-conversation-id="{{ conv.employer.employer_id }}_{{ conv.job_id }}">
+                    <img src="{{ url_for('static', filename='images/company_logo_placeholder.svg') }}"
+                         alt="Company Logo"
+                         class="company-logo">
+
+                    <div class="conversation-info">
+                        <div class="conversation-header">
+                            <div>
+                                <div class="company-name">{{ conv.employer.company_name }}</div>
+                                <div class="job-title">{{ conv.job_title }}</div>
+                            </div>
+                            <span class="timestamp" data-timestamp="{{ conv.latest_message.timestamp }}">
+                                {{ conv.latest_message.timestamp }}
+                            </span>
+                        </div>
+                        <div class="latest-message">{{ conv.latest_message.content }}</div>
+                    </div>
+
+                    {% if conv.unread_count > 0 %}
+                        <span class="unread-badge">{{ conv.unread_count }}</span>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-conversations">
+            <h3>No Messages</h3>
+            <p>You don't have any messages yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const timestamps = document.querySelectorAll('.timestamp');
+        timestamps.forEach(element => {
+            const timestamp = element.getAttribute('data-timestamp');
+            element.textContent = formatTimestamp(timestamp);
+        });
+    });
+
+    function formatTimestamp(isoTimestamp) {
+        const now = new Date();
+        const timestamp = new Date(isoTimestamp);
+        const diffInMilliseconds = now - timestamp;
+        const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
+
+        if (isNaN(timestamp.getTime())) {
+            return isoTimestamp;
+        }
+
+        if (diffInSeconds < 60) {
+            return 'Just now';
+        }
+
+        if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+        }
+
+        if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+        }
+
+        const options = {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+
+        if (timestamp.getFullYear() !== now.getFullYear()) {
+            options.year = 'numeric';
+        }
+
+        return timestamp.toLocaleString('en-US', options);
+    }
+
+let eventSource;
+
+function connectToMessageStream() {
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource('/user/messages/stream');
+
+    eventSource.onmessage = function(event) {
+        try {
+            const message = JSON.parse(event.data);
+
+            if (message.error) {
+                console.error('Stream error:', message.error);
+                return;
+            }
+
+            updateConversationList(message);
+
+        } catch (error) {
+            console.error('Error processing message:', error);
+        }
+    };
+
+    eventSource.onerror = function(error) {
+        console.error('EventSource failed:', error);
+        eventSource.close();
+        setTimeout(connectToMessageStream, 5000);
+    };
+}
+
+// Add error handling to updateConversationList
+function updateConversationList(message) {
+    try {
+        const conversationCard = document.querySelector(`[data-conversation-id="${message.conversation_id}"]`);
+
+        if (conversationCard) {
+            // Update existing conversation
+            const latestMessageElement = conversationCard.querySelector('.latest-message');
+            const timestampElement = conversationCard.querySelector('.timestamp');
+
+            // Update the latest message content and timestamp
+            latestMessageElement.textContent = message.content;
+            timestampElement.setAttribute('data-timestamp', message.timestamp);
+            timestampElement.textContent = formatTimestamp(message.timestamp);
+
+            // Update unread count
+            const unreadBadge = conversationCard.querySelector('.unread-badge');
+            if (unreadBadge) {
+                const currentCount = parseInt(unreadBadge.textContent);
+                unreadBadge.textContent = currentCount + 1;
+            } else {
+                // Add new unread badge if it doesn't exist
+                const badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                badge.textContent = '1';
+                conversationCard.appendChild(badge);
+            }
+
+            // Move conversation to top of the list
+            const conversationList = conversationCard.parentElement;
+            conversationList.insertBefore(conversationCard, conversationList.firstChild);
+        } else {
+            // Handle new conversation by reloading the page
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error updating conversation list:', error);
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', connectToMessageStream);
+
+window.addEventListener('beforeunload', function() {
+    if (eventSource) {
+        eventSource.close();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Your Applications</title>
+{% endblock %}
+
+{% block body %}
+<div class="view-applications-container">
+    <h1 class="section-heading">Your Job Applications</h1>
+    <p style="font-size: larger">Track the status of your job applications below:</p>
+    <div class="applications-list">
+        {% if applications %}
+            {% for application in applications %}
+                <div class="application-card {% if not application.job %}inactive-job{% endif %}">
+                    <h2>{{ application.job.job_title if application.job else 'Job Posting No Longer Available' }}</h2>
+                    {% if application.job %}
+                        <div class="company-info">
+                            <p><strong>Company:</strong> {{ application.job.company_name }}</p>
+                            <p><strong>Location:</strong> {{ application.job.city }}, {{ application.job.country }}</p>
+                        </div>
+                    {% else %}
+                        <div class="job-status-message">
+                            <p>This job posting has been removed or is no longer active.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="application-info-container">
+                        <div class="status-badge status-{{ application.status.lower() }}">
+                            Status: {{ application.status }}
+                        </div>
+                        <div class="application-date">
+                            Applied on: <span class="applied-date" data-date="{{ application.date_applied }}"></span>
+                        </div>
+                        {% if application.job %}
+                            <div>
+                                <a href="#" onclick="revokeApplication('{{ application.job_id }}')"
+                                   class="apply-button-revoke">Revoke Application!</a>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('user_views.view_job_details', job_id=application.job_id) }}"
+                                   class="view-job-button">View Job Details</a>
+                            </div>
+                        {% else %}
+                            <div>
+                                <a href="#" onclick="revokeApplication('{{ application.application_id }}')"
+                                   class="apply-button-revoke">Remove record!</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-applications">
+                <h3>No Applications Yet</h3>
+                <p>You haven't applied for any jobs yet.</p>
+                <p>Start your job search now!</p>
+                <a href="{{ url_for('user_views.view_all_jobs') }}" class="view-job-button">
+                    Browse Available Jobs
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Function to format date in dd/mm/yyyy format
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    function revokeApplication(jobId) {
+        console.log("jobId: " + jobId)
+        fetch(`/user/jobs/${jobId}/revoke`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                {% if csrf_token %}
+                'X-CSRFToken': '{{ csrf_token() }}'
+                {% endif %}
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Handle successful removal, e.g., reload the page
+                window.location.reload();
+            } else {
+                alert('Failed to revoke job application.');
+            }
+        })
+        .catch(error => {
+            console.error('Error revoking job application:', error);
+        });
+    }
+
+    // Format the applied dates on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateElements = document.querySelectorAll(".applied-date");
+        dateElements.forEach(element => {
+            const date = element.getAttribute("data-date");
+            element.textContent = formatDate(date);
+        });
+    });
+</script>
+
+<style>
+
+</style>
+{% endblock %}

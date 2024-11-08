@@ -1,0 +1,72 @@
+<!-- src/templates/user/recommended_jobs.html -->
+
+{% extends "base.html" %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Recommended Jobs</h1>
+        <p>Jobs matched to your profile and preferences</p>
+    </div>
+
+    {% if jobs %}
+        <div class="job-list-container">
+            {% for entry in jobs %}
+                {% set job = entry.job %}
+                {% set reasons = entry.matched_reasons %}
+                <div class="job-card">
+                    <div class="job-header">
+                        <img src="{{ job.company_logo_url|default(url_for('static', filename='images/company_logo_placeholder.svg')) }}"
+                             alt="{{ job.company_name }} logo"
+                             class="company-logo">
+                        <h2 class="job-title">{{ job.job_title }}</h2>
+                    </div>
+
+                    <div class="job-details">
+                        <p><strong>Company:</strong> {{ job.company_name }}</p>
+                        <p><strong>Location:</strong> {{ job.city }}, {{ job.country }}</p>
+                        <p><strong>Salary:</strong> ${{ job.salary }}</p>
+
+                        {% if job.skills %}
+                        <p><strong>Required Skills:</strong></p>
+                        <div class="skills-list">
+                            {% for skill in job.skills %}
+                                <span class="skill-tag">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <p><strong>Posted:</strong> {{ job.date_posted[:10] }}</p>
+                    </div>
+
+                    <div class="matched-reasons">
+                        <h4>Why This Job is Recommended:</h4>
+                        <ul>
+                            {% if reasons.skills %}
+                                <li><strong>Skills Match:</strong> {{ reasons.skills | join(', ') }}</li>
+                            {% endif %}
+                            {% if reasons.location %}
+                                <li><strong>Location Match:</strong> {{ reasons.location }}</li>
+                            {% endif %}
+                            {% if reasons.certifications %}
+                                <li><strong>Certifications Match:</strong> {{ reasons.certifications | join(', ') }}</li>
+                            {% endif %}
+                            {% if reasons.work_history %}
+                                <li><strong>Relevant Work History:</strong> {{ reasons.work_history | join(', ') }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <a href="{{ url_for('user_views.view_job_details', job_id=job.job_id) }}"
+                       class="view-details-button">View Details</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-jobs-message">
+            <p>No recommended jobs found. Please update your profile with more information to get better matches.</p>
+            <a href="{{ url_for('user_views.edit_profile') }}" class="dashboard-button">Update Profile</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

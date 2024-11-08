@@ -1,6 +1,9 @@
+# Filename: src/views/admin_views.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, jsonify, flash
 from functools import wraps
 import bcrypt
+import logging
 
 from ..controllers import AdminController
 from ..decorators.auth_required import auth_required
@@ -245,5 +248,75 @@ def toggle_account_activation(account_type, account_id):
     success, message = AdminController.toggle_account_activation(account_id, account_type)
     if success:
         return jsonify({'success': True, 'message': message})
+    else:
+        return jsonify({'success': False, 'message': message}), 400
+
+
+@admin_bp.route('/account/<account_type>/<account_id>/update_field', methods=['POST'])
+@auth_required(user_type='admin')
+def update_field(account_type, account_id):
+    """
+    Endpoint to update a single field of an account.
+    Expects JSON data with 'field' and 'value'.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'No data provided.'}), 400
+
+    field = data.get('field')
+    value = data.get('value')
+
+    if not field:
+        return jsonify({'success': False, 'message': 'No field specified.'}), 400
+
+    # Define allowed fields for each account type
+    allowed_fields = {
+        'admin': ['first_name', 'last_name', 'email', 'phone_number', 'password'],
+        'user': ['first_name', 'last_name', 'email', 'phone_number', 'location', 'password'],
+        'employer': ['company_name', 'contact_person', 'email', 'phone_number', 'password']
+    }
+
+    if field not in allowed_fields.get(account_type.lower(), []):
+        return jsonify({'success': False, 'message': 'Invalid field.'}), 400
+
+    # Additional validation based on field
+    if field == 'email':
+        import re
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, value):
+            return jsonify({'success': False, 'message': 'Invalid email format.'}), 400
+
+    if field == 'password':
+        # Implement password strength validation
+        is_valid, message = AdminController.validate_password(value)
+        if not is_valid:
+            return jsonify({'success': False, 'message': message}), 400
+
+    # Prepare update data
+    update_data = {}
+    if field == 'location' and account_type.lower() == 'user':
+        # Split location into city and country
+        try:
+            city, country = map(str.strip, value.split(',', 1))
+            update_data['location'] = value
+            update_data['city'] = city
+            update_data['country'] = country
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid location format. Use "City, Country".'}), 400
+    elif field == 'password':
+        update_data['password'] = value  # Password will be hashed in AdminController
+    else:
+        update_data[field] = value
+
+    # Update the account
+    success, message = AdminController.update_account(account_id, account_type, **update_data)
+
+    if success:
+        # If the updated field is password, do not send the hashed password back
+        updated_value = None
+        if field != 'password':
+            updated_value = value
+
+        return jsonify({'success': True, 'message': message, 'updated_value': updated_value}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400

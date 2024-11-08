@@ -1,10 +1,18 @@
 # src/views/employer_views.py
+import json
+import logging
+import time
+from datetime import timezone
+from datetime import datetime as dt
 
-from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, make_response, g, flash, jsonify, Response, \
+    Flask
+
+from config import Config
 from ..controllers import EmployerController
 from ..decorators.auth_required import auth_required
-from ..services import SessionManager
-from ..models import Job
+from ..services import SessionManager, DynamoDB
+from ..models import Job, Application, Employer, User, Message
 
 employer_bp = Blueprint('employer_views', __name__, url_prefix='/employer')
 
@@ -53,11 +61,30 @@ def register_employer():
 
     return render_template('employer/register_employer.html')
 
+@employer_bp.route('/verify/<token>', methods=['GET', 'POST'])
+def verify_account(token):
+    if request.method == 'POST':
+        logging.info(f"Attempting to verify employer account with token: {token}")
+        success, message = Employer.verify_account(token)
+        if success:
+            logging.info(f"Employer account verified successfully for token: {token}")
+            flash("Your account has been verified successfully! You can now log in.", "success")
+            return redirect(url_for('employer_views.login_employer'))
+        else:
+            logging.warning(f"Failed to verify employer account with token: {token} - Reason: {message}")
+            flash(message, "error")
+            return render_template('employer/verify_account.html', token=token, success=False), 400
+    else:
+        logging.info(f"Rendering verification page for employer with token: {token}")
+        return render_template('employer/verify_account.html', token=token, success=False)
+
+
 @employer_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='employer')
 def dashboard():
-    employer = g.user
-    return render_template('employer/dashboard.html', employer=employer)
+    employer_id = g.user.employer_id
+    all_jobs = EmployerController.list_employer_jobs(employer_id)
+    return render_template('employer/dashboard.html', jobs=all_jobs)
 
 @employer_bp.route('/logout', methods=['GET'])
 def logout():
@@ -97,13 +124,6 @@ def reset_with_token(token):
     return render_template('employer/reset_with_token.html', token=token)
 
 JOBS_PER_PAGE = 10  # Define how many jobs to display per page
-
-@employer_bp.route('/jobs', methods=['GET'])
-@auth_required(user_type='employer')
-def view_jobs():
-    employer_id = g.user.employer_id
-    all_jobs = EmployerController.list_employer_jobs(employer_id)
-    return render_template('employer/view_jobs.html', jobs=all_jobs)
 
 @employer_bp.route('/jobs/create', methods=['GET', 'POST'])
 @auth_required(user_type='employer')
@@ -167,7 +187,7 @@ def edit_job(job_id):
         if request.method == 'POST' and request.is_json:
             return jsonify({'success': False, 'message': "Job not found or unauthorized."}), 404
         flash("Job not found or you don't have permission to edit this job.", 'error')
-        return redirect(url_for('employer_views.view_jobs'))
+        return redirect(url_for('employer_views.dashboard'))
 
     if request.method == 'POST':
         if request.is_json:
@@ -201,7 +221,7 @@ def edit_job(job_id):
             success, message = EmployerController.update_job(job_id, fields)
             if success:
                 flash(message, 'success')
-                return redirect(url_for('employer_views.view_jobs'))
+                return redirect(url_for('employer_views.dashboard'))
             else:
                 flash(message, 'error')
                 return render_template('employer/edit_job.html', job=job)
@@ -315,3 +335,231 @@ def delete_job(job_id):
         return jsonify({'success': True, 'message': message}), 200
     else:
         return jsonify({'success': False, 'message': message}), 400
+
+
+@employer_bp.route('/jobs/<job_id>/applications', methods=['GET'])
+@auth_required(user_type='employer')
+def view_job_applications(job_id):
+    job = Job.get_by_id(job_id)
+    if not job:
+        flash("Job not found", 'error')
+        return redirect(url_for('employer_views.dashboard'))
+
+    if job.employer_id != g.user.employer_id:
+        flash("You don't have permission to view these applications", 'error')
+        return redirect(url_for('employer_views.dashboard'))
+
+    applications = job.get_applications()
+    return render_template('employer/view_applications.html',
+                           applications=applications,
+                           job=job)
+
+
+@employer_bp.route('/jobs/applications/<application_id>/update-status', methods=['POST'])
+@auth_required(user_type='employer')
+def update_application_status(application_id):  # Add application_id parameter here
+    data = request.get_json()
+    new_status = data.get('status')
+
+    # Get the application
+    application = Application.get_by_id(application_id)
+    if not application:
+        return jsonify({
+            'success': False,
+            'message': 'Application not found'
+        }), 404
+
+    # Verify the employer owns the job
+    job = Job.get_by_id(application.job_id)
+    if not job or job.employer_id != g.user.employer_id:
+        return jsonify({
+            'success': False,
+            'message': 'Unauthorized'
+        }), 403
+
+    # Update the status
+    success = Application.update_status(application_id, new_status)
+
+    return jsonify({
+        'success': success,
+        'message': 'Status updated successfully' if success else 'Failed to update status'
+    })
+
+
+@employer_bp.route('/messages/<user_id>', methods=['GET', 'POST'])
+@auth_required(user_type='employer')
+def chat_with_user(user_id):
+    job_id = request.args.get('job_id')
+    employer_id = g.user.employer_id  # Ensure you have access to the employer's ID
+    user = User.get_by_id(user_id)
+    job = Job.get_by_id(job_id) if job_id else None
+
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for('employer_views.dashboard'))
+
+    if request.method == 'POST':
+        content = request.json.get('content')
+        if not content:
+            return jsonify({'success': False, 'message': 'Message content required'}), 400
+
+        message = Message(
+            sender_id=employer_id,
+            receiver_id=user_id,
+            sender_type='employer',
+            content=content,
+            job_id=job_id
+        )
+        message.save()
+        return jsonify({
+            'success': True,
+            'message': {
+                'message_id': message.message_id,
+                'content': message.content,
+                'timestamp': message.timestamp,
+                'sender_type': message.sender_type
+            }
+        })
+
+    # Retrieve the conversation
+    messages = Message.get_conversation(user_id, employer_id, job_id)
+
+    # Mark all received messages in this conversation as read
+    for message in messages:
+        if message.receiver_id == employer_id and not message.is_read:
+            message.mark_as_read()
+
+    return render_template(
+        'employer/chat.html',
+        messages=messages,
+        user=user,
+        job=job,
+        job_id=job_id
+    )
+
+
+@employer_bp.route('/messages', methods=['GET'])
+@auth_required(user_type='employer')
+def view_all_chats():
+    employer_id = g.user.employer_id
+
+    # Get all unique conversations for this employer
+    response = DynamoDB.scan(
+        'Messages',
+        FilterExpression='sender_id = :employer_id OR receiver_id = :employer_id',
+        ExpressionAttributeValues={':employer_id': employer_id}
+    )
+
+    messages = response.get('Items', [])
+
+    # Create a dictionary to store the latest message for each conversation
+    # Use combination of user_id and job_id as key
+    conversations = {}
+    for msg in messages:
+        message = Message(**msg)
+        other_id = message.receiver_id if message.sender_id == employer_id else message.sender_id
+
+        # Create a unique key combining user_id and job_id
+        conversation_key = f"{other_id}_{message.job_id}"
+
+        if (conversation_key not in conversations or
+                message.timestamp > conversations[conversation_key]['latest_message'].timestamp):
+            # Get the user information
+            user = User.get_by_id(other_id)
+            # Get the job information
+            job = Job.get_by_id(message.job_id) if message.job_id else None
+
+            if user:
+                conversations[conversation_key] = {
+                    'user': user,
+                    'latest_message': message,
+                    'unread_count': 0,
+                    'job_id': message.job_id,
+                    'job_title': job.job_title if job else 'General Discussion'
+                }
+
+    # Count unread messages for each conversation
+    for conv_key in conversations:
+        user_id = conv_key.split('_')[0]
+        job_id = conversations[conv_key]['job_id']
+
+        unread_count = DynamoDB.scan(
+            'Messages',
+            FilterExpression=('sender_id = :other_id AND receiver_id = :employer_id '
+                              'AND is_read = :is_read AND job_id = :job_id'),
+            ExpressionAttributeValues={
+                ':other_id': user_id,
+                ':employer_id': employer_id,
+                ':is_read': False,
+                ':job_id': job_id
+            }
+        )
+        conversations[conv_key]['unread_count'] = len(unread_count.get('Items', []))
+
+    # Sort conversations by latest message timestamp
+    sorted_conversations = sorted(
+        conversations.values(),
+        key=lambda x: x['latest_message'].timestamp,
+        reverse=True
+    )
+
+    return render_template('employer/messages.html', conversations=sorted_conversations)
+
+
+@employer_bp.route('/messages/stream')
+@auth_required(user_type='employer')
+def stream_messages():
+    from flask import copy_current_request_context, current_app
+
+    employer_id = g.user.employer_id
+    app = current_app._get_current_object()
+
+    @copy_current_request_context
+    def generate():
+        last_check = dt.now(timezone.utc).isoformat()
+        sent_message_ids = set()  # Track sent message IDs
+
+        try:
+            while True:
+                with app.app_context():
+                    try:
+                        new_messages = Message.get_new_messages(employer_id, last_check, user_type='employer')
+
+                        if new_messages:
+                            for message in new_messages:
+                                if message.message_id not in sent_message_ids:
+                                    sent_message_ids.add(message.message_id)
+                                    data = {
+                                        'message_id': message.message_id,
+                                        'content': message.content,
+                                        'timestamp': message.timestamp,
+                                        'sender_type': message.sender_type,
+                                        'sender_id': message.sender_id,
+                                        'receiver_id': message.receiver_id,
+                                        'job_id': message.job_id,
+                                        'conversation_id': f'{message.sender_id}_{message.job_id}',
+                                        'is_read': message.is_read
+                                    }
+                                    yield f"data: {json.dumps(data)}\n\n"
+
+                        last_check = dt.now(timezone.utc).isoformat()
+
+                    except Exception as e:
+                        app.logger.error(f"Stream error: {str(e)}")
+                        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                        return
+
+                time.sleep(2)
+
+        except GeneratorExit:
+            pass
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        }
+    )

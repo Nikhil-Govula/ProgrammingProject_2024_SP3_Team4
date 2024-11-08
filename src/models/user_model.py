@@ -1,4 +1,7 @@
 import uuid
+
+from flask import request
+
 from ..services.database_service import DynamoDB
 import secrets
 import datetime
@@ -6,8 +9,9 @@ import datetime
 class User:
     def __init__(self, user_id, email, password, first_name, last_name, phone_number,
                  profile_picture_url=None, certifications=None, reset_token=None, token_expiration=None,
+                 verification_token=None, verification_token_expiration=None,
                  failed_login_attempts=0, account_locked=False, city=None, country=None,
-                 work_history=None, skills=None, is_active=True):
+                 work_history=None, skills=None, saved_jobs=None, applications=None, is_active=False):
         self.user_id = user_id or str(uuid.uuid4())
         self.email = email
         self.password = password
@@ -18,12 +22,16 @@ class User:
         self.certifications = certifications or []
         self.reset_token = reset_token
         self.token_expiration = token_expiration
+        self.verification_token = verification_token
+        self.verification_token_expiration = verification_token_expiration
         self.failed_login_attempts = failed_login_attempts
         self.account_locked = account_locked
         self.city = city
         self.country = country
         self.work_history = work_history or []
         self.skills = skills or []
+        self.saved_jobs = saved_jobs or []
+        self.applications = applications or []
         self.is_active = is_active
 
     def save(self):
@@ -71,6 +79,43 @@ class User:
         if item:
             return User(**item)
         return None
+
+    def generate_verification_token(self):
+        token = secrets.token_urlsafe(32)
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=48)  # Token valid for 24 hours
+        self.verification_token = token
+        self.verification_token_expiration = expiration.isoformat()
+        DynamoDB.update_item('Users',
+                             {'user_id': self.user_id},
+                             {'verification_token': self.verification_token,
+                              'verification_token_expiration': self.verification_token_expiration})
+        return token
+
+    @staticmethod
+    def verify_account(token):
+        response = DynamoDB.scan(
+            'Users',
+            FilterExpression='verification_token = :token AND is_active = :inactive',
+            ExpressionAttributeValues={
+                ':token': token,
+                ':inactive': False
+            }
+        )
+        if response['Items']:
+            user_data = response['Items'][0]
+            token_expiration = datetime.datetime.fromisoformat(user_data['verification_token_expiration'])
+            if datetime.datetime.utcnow() > token_expiration:
+                return False, "Verification token has expired."
+            # Activate the user
+            DynamoDB.update_item('Users',
+                                 {'user_id': user_data['user_id']},
+                                 {
+                                     'is_active': True,
+                                     'verification_token': None,
+                                     'verification_token_expiration': None
+                                 })
+            return True, "Account verified successfully."
+        return False, "Invalid verification token."
 
     def generate_reset_token(self):
         token = secrets.token_urlsafe()
@@ -153,6 +198,31 @@ class User:
             return True
         return False
 
+    # Method to get user skills
+    def get_skills(self):
+        return self.skills
+
+    def save_job(self, job_id):
+        if job_id not in self.saved_jobs:
+            self.saved_jobs.append(job_id)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'saved_jobs': self.saved_jobs})
+
+    def unsave_job(self, job_id):
+        if job_id in self.saved_jobs:
+            self.saved_jobs = [job for job in self.saved_jobs if job != job_id]
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'saved_jobs': self.saved_jobs})
+
+    def add_application(self, application_id):
+        if application_id not in self.applications:
+            self.applications.append(application_id)
+            DynamoDB.update_item('Users',
+                                 {'user_id': self.user_id},
+                                 {'applications': self.applications})
+
     def to_dict(self):
         return {
             'user_id': self.user_id,
@@ -164,11 +234,17 @@ class User:
             'profile_picture_url': self.profile_picture_url,
             'certifications': self.certifications,
             'reset_token': self.reset_token,
+            'token_expiration': self.token_expiration,
+            'verification_token': self.verification_token,
+            'verification_token_expiration': self.verification_token_expiration,
+            'failed_login_attempts': self.failed_login_attempts,
             'account_locked': self.account_locked,
             'city': self.city,
             'country': self.country,
             'work_history': self.work_history,
             'skills': self.skills,
+            'saved_jobs': self.saved_jobs,
+            'applications': self.applications,
             'is_active': self.is_active
         }
 

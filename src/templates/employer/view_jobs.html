@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <title>Your Job Postings</title>
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <!-- DataTables Responsive CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <!-- DataTables Responsive JS -->
-    <script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
-
     <style>
         .accounts-table {
             width: 100%;
@@ -49,6 +36,7 @@
         <div>
             <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job</a>
             <button id="editSelectedJob" class="btn btn-edit-disabled" disabled>Edit Selected Job</button>
+            <button id="viewApplications" class="btn btn-edit-disabled" disabled>View Applications</button>
         </div>
     </div>
 
@@ -68,7 +56,6 @@
         <thead>
             <tr>
                 <th>Job Title</th>
-                <th>Description</th>
                 <th>Salary</th>
                 <th>City</th>
                 <th>Country</th>
@@ -77,9 +64,9 @@
         </thead>
         <tbody>
         {% for job in jobs %}
-            <tr data-job-id="{{ job.job_id }}">
+            <tr data-job-id="{{ job.job_id }}" onclick="selectJob('{{ job.job_id }}')">
                 <td>{{ job.job_title }}</td>
-                <td>{{ job.description }}</td>
+{#                <td>{{ job.description }}</td>#}
                 <td>${{ "{:,.2f}".format(job.salary) }}</td>
                 <td>{{ job.city }}</td>
                 <td>{{ job.country }}</td>
@@ -94,66 +81,51 @@
         </tbody>
     </table>
 </div>
+{% endblock %}
 
-<!-- DataTables Initialization and Other Scripts -->
-<script>
-    $(document).ready(function() {
-        let selectedJobId = null;
+{% block footer %}
+    <footer class="footer">
+        <p>
+            &copy; 2024 JobTrunk. All rights reserved. |
+            <a href="#">Privacy Policy</a> |
+            <a href="#">Terms & Conditions</a> |
+            <a href="#">About JobTrunk</a> |
+            <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
+        </p>
+    </footer>
+{% endblock %}
 
-        // Initialize DataTables with responsive option
-        var table = $('#jobsTable').DataTable({
-            "paging": true,
-            "searching": true,
-            "info": false,
-            "lengthChange": false,
-            "pageLength": 10,
-            "autoWidth": true,
-            "responsive": true,
-            "columns": [
-                { "width": "20%", "responsivePriority": 1 },
-                { "width": "40%", "responsivePriority": 2 },
-                { "width": "10%", "responsivePriority": 3 },
-                { "width": "10%", "responsivePriority": 4 },
-                { "width": "10%", "responsivePriority": 5 },
-                { "width": "10%", "responsivePriority": 6 }
-            ]
-        });
+{% block scripts %}
+    <!-- Pass configuration variables to JavaScript -->
+    <script>
+        window.CONFIG = {
+            editJobUrlTemplate: "{{ url_for('employer_views.edit_job', job_id='__JOB_ID__') }}",
+            viewApplicationsUrlTemplate: "{{ url_for('employer_views.view_job_applications', job_id='__JOB_ID__') }}"
+        };
+    </script>
+    <!-- Include DataTables and centralized JavaScript file -->
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="{{ url_for('static', filename='js/view_jobs.js') }}"></script>
+    <script>
+        // JavaScript function to handle job selection
+        function selectJob(jobId) {
+            const rows = document.querySelectorAll('#jobsTable tbody tr');
+            rows.forEach(row => row.classList.remove('selected'));
+            const selectedRow = document.querySelector(`[data-job-id="${jobId}"]`);
+            selectedRow.classList.add('selected');
 
-        $(window).on('resize', function () {
-            table.columns.adjust().draw();
-        });
+            // Enable buttons and set appropriate URLs
+            document.getElementById('editSelectedJob').disabled = false;
+            document.getElementById('editSelectedJob').classList.remove('btn-edit-disabled');
+            document.getElementById('editSelectedJob').onclick = () => {
+                window.location.href = window.CONFIG.editJobUrlTemplate.replace('__JOB_ID__', jobId);
+            };
 
-        // Handle row selection
-        $('#jobsTable tbody').on('click', 'tr', function () {
-            if ($(this).hasClass('selected')) {
-                $(this).removeClass('selected');
-                selectedJobId = null;
-                $('#editSelectedJob').addClass('btn-edit-disabled').prop('disabled', true);
-            } else {
-                table.$('tr.selected').removeClass('selected');
-                $(this).addClass('selected');
-                selectedJobId = $(this).data('job-id');
-                $('#editSelectedJob').removeClass('btn-edit-disabled').prop('disabled', false);
-            }
-        });
-
-        // Handle edit button click
-        $('#editSelectedJob').click(function() {
-            if (selectedJobId) {
-                // Redirect to the edit page for the selected job
-                window.location.href = `/employer/jobs/edit/${selectedJobId}`;
-            }
-        });
-    });
-
-    // Flash Message Fade Out
-    window.onload = function() {
-        var notifications = document.querySelectorAll('.notification');
-        notifications.forEach(function(notification) {
-            setTimeout(function() {
-                notification.classList.add('fade-out');
-            }, 3000); // 3 seconds
-        });
-    };
-</script>
+            document.getElementById('viewApplications').disabled = false;
+            document.getElementById('viewApplications').classList.remove('btn-edit-disabled');
+            document.getElementById('viewApplications').onclick = () => {
+                window.location.href = window.CONFIG.viewApplicationsUrlTemplate.replace('__JOB_ID__', jobId);
+            };
+        }
+    </script>
 {% endblock %}

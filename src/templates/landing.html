@@ -1,15 +1,271 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobTrunk | Where Careers Take Root!</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom, #5cde83, #5296e7);
+        }
+        .header {
+            background-color: #283E4A;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header .logo {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        .header nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 400;
+        }
+        .header nav a:hover {
+            text-decoration: underline;
+        }
+        .main-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 50px 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            min-height: auto;
+        }
+        .main-section .content {
+            width: 40%;
+            padding-right: 20px;
+        }
+        .main-section .headline {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #283E4A;
+        }
+        .main-section .subheadline {
+            font-size: 1.5em;
+            margin-bottom: 40px;
+            font-weight: 300;
+            color: #555;
+            word-wrap: break-word;
+            white-space: normal;
+            max-width: 30ch;
+        }
+        .main-section .buttons a {
+            background-color: #0073b1;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .main-section .intro_buttons {
+            text-align: center;
+        }
+        .main-section .intro_buttons a {
+            background-color: #0073b1;
+            color: white;
+            text-decoration: none;
+            padding: 15px 150px;
+            margin: 10px;
+            border-radius: 25px;
+            font-weight: 500;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .main-section .buttons a:hover {
+            background-color: #005682;
+        }
+        .main-section .image {
+            width: 50%;
+            text-align: right;
+            overflow: visible;
+        }
+        .main-section .image img {
+            max-width: 100%;
+            height: 500px;
+            position: relative;
+            right: -50px;
+        }
+        .employer-section {
+            padding: 60px 40px;
+            text-align: center;
+            background-color: rgba(244, 244, 244, 0.23);
+        }
+        .employer-section h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .employer-section p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+        .employer-section a {
+            background-color: #283E4A;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+        .testimonials-section {
+            padding: 60px 40px;
+            background-color: rgba(244, 244, 244, 0.46);
+            text-align: center;
+        }
+        .testimonials-section h2 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            font-weight: 700;
+        }
+        .testimonials {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .testimonial {
+            width: 30%;
+            padding: 20px;
+            margin: 10px;
+            background-color: #f4f4f4;
+            border-radius: 10px;
+        }
+        .testimonial p {
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .testimonial .author {
+            font-weight: 700;
+        }
+        .highlights-section {
+            padding: 60px 40px;
+            background-color: rgba(244, 244, 244, 0.23);
+            text-align: center;
+        }
+        .highlights-section h2 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            font-weight: 700;
+        }
+        .highlights {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .highlight {
+            width: 30%;
+            padding: 20px;
+            margin: 10px;
+            background-color: #ffffff;
+            border-radius: 10px;
+        }
+        .highlight p {
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .footer {
+            background-color: #283E4A;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">JobTrunk</div>
+        <nav>
+            <a href="{{ url_for('user_views.login_user') }}">Sign In</a>
+            <a href="{{ url_for('user_views.register_user') }}">Join Now</a>
+        </nav>
+    </header>
 
-{% block head %}
-    <title>Welcome to [Project Name]</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing_style.css') }}">
-{% endblock %}
+    <section class="main-section">
+        <div class="content">
+            <div class="headline">Where careers take root!</div>
+            <div class="subheadline">Find jobs, grow your network, and discover new opportunities.</div>
+            <div class="intro_buttons">
+                <a href="{{ url_for('user_views.login_user') }}">Sign In with email</a>
+            </div>
+            <div style="text-align: center;">
+                New to JobTrunk? <a href="{{ url_for('user_views.register_user') }}">Join Now</a>
+            </div>
+        </div>
+        <div class="image">
+            <img src="{{ url_for('static', filename='images/banner_image.png') }}" alt="banner image">
+        </div>
+    </section>
 
-{% block body %}
-<div class="landing-container">
-    <h1>Select Login Type</h1>
-    <a href="{{ url_for('user_views.login_user') }}">User Login</a>
-    <a href="{{ url_for('employer_views.login_employer') }}">Employer Login</a>
-    <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
-</div>
-{% endblock %}
+    <section class="employer-section">
+        <h2>Post your job for millions of people to see</h2>
+        <p>Attract the best talent by showcasing your company and open positions.</p>
+        <a href="{{ url_for('employer_views.login_employer') }}">Post a Job</a>
+    </section>
+
+    <section class="testimonials-section">
+        <h2>What Our Users Are Saying</h2>
+        <div class="testimonials">
+            <div class="testimonial">
+                <p>"JobTrunk helped me find my dream job within weeks! The process was seamless and easy."</p>
+                <div class="author">- Jane Doe</div>
+            </div>
+            <div class="testimonial">
+                <p>"As an employer, I've never had such an easy time finding quality candidates. JobTrunk is a game changer!"</p>
+                <div class="author">- John Smith</div>
+            </div>
+            <div class="testimonial">
+                <p>"The networking opportunities on JobTrunk are fantastic. I've connected with so many professionals in my field."</p>
+                <div class="author">- Emily Davis</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="highlights-section">
+        <h2>Why Choose JobTrunk?</h2>
+        <div class="highlights">
+            <div class="highlight">
+                <p>Access thousands of job listings across various industries and locations.</p>
+            </div>
+            <div class="highlight">
+                <p>Connect with professionals and expand your network effortlessly.</p>
+            </div>
+            <div class="highlight">
+                <p>Post your job openings and reach millions of qualified candidates.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>
+            &copy; 2024 JobTrunk. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms & Conditions</a> | <a href="#">About JobTrunk</a> | <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
+        </p>
+    </footer>
+</body>
+</html>

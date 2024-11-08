@@ -1,52 +1,48 @@
-{% extends "base.html" %}
+<!-- templates/register_user.html -->
+{% extends 'base.html' %}
 
-{% block head %}
-    <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>User Registration</title>
+{% block title %}
+    User Registration | JobTrunk
 {% endblock %}
 
 {% block body %}
-<div class="registration-container">
-    <div class="form-container">
-        <div class="register-card">
-            <div class="form-group">
-                <h1>User Registration</h1>
-                <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
-            </div>
-            <form action="{{ url_for('user_views.register_user') }}" method="POST">
-                <div class="form-group split">
-                    <input type="text" name="first_name" placeholder="First name" required>
-                    <input type="text" name="last_name" placeholder="Last name" required>
+    <div class="registration-container-registration">
+        <div class="form-container-registration" style="width: 450px">
+            <div class="register-card-registration">
+                <div class="form">
+                    <h1>User Registration</h1>
+                    <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
+                    <br>
+                    <br>
                 </div>
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email address" required>
-                </div>
-                <div class="form-group">
-                    <input type="text" name="phone_number" placeholder="Phone number" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="confirm_password" placeholder="Confirm password" required>
-                </div>
+                <form action="{{ url_for('user_views.register_user') }}" method="POST">
+                    <div class="form-group-registration split">
+                        <input type="text" name="first_name" placeholder="First name" required>
+                        <input type="text" name="last_name" placeholder="Last name" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="email" name="email" placeholder="Email address" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="text" name="phone_number" placeholder="Phone number" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="password" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="password" name="confirm_password" placeholder="Confirm password" required>
+                    </div>
 
-                {% if error %}
-                    <p style="color: red;">{{ error }}</p>
-                {% endif %}
+                    {% if error %}
+                        <p style="color: red;">{{ error }}</p>
+                    {% endif %}
 
-                <button type="submit" class="register-button">Register</button>
-            </form>
-            <div class="footer-links">
-                <hr>
-                <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
+                    <button type="submit" class="register-button-registration">Register</button>
+                </form>
+                <div class="footer-links">
+                    <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
-
-{% block footer %}
-    {{ super() }}
 {% endblock %}

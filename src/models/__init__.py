@@ -4,6 +4,7 @@ from .user_model import User
 from .job_model import Job
 from .application_model import Application
 from .audit_log_model import AuditLog
+from .message_model import Message
 
 __all__ = [
     'Admin',
@@ -11,5 +12,6 @@ __all__ = [
     'User',
     'Job',
     'Application',
-    'AuditLog'
+    'AuditLog',
+    'Message'
 ]

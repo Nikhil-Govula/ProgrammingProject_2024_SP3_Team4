@@ -19,3 +19,12 @@ Flask-Mail
 awsebcli
 Flask-WTF~=1.1.0
 requests~=2.32.3
+blinker==1.8.2
+cachetools==5.5.0
+cement==2.10.14
+jmespath==1.0.1
+pathspec==0.10.1
+semantic-version==2.10.0
+greenlet==3.1.1
+itsdangerous==2.2.0
+MarkupSafe==2.1.5

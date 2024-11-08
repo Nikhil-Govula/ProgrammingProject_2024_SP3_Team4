@@ -1,6 +1,8 @@
 # src/models/job_model.py
 
 from decimal import Decimal
+
+from ..models.application_model import Application
 from ..services.database_service import DynamoDB
 import uuid
 import datetime
@@ -185,3 +187,35 @@ class Job:
         if item:
             return Job(**item)
         return None
+
+    def get_applications(self):
+        """Get all applications for this job with user details"""
+        from .user_model import User  # Import here to avoid circular imports
+
+        response = DynamoDB.scan(
+            'Applications',
+            FilterExpression='job_id = :job_id',
+            ExpressionAttributeValues={':job_id': self.job_id}
+        )
+
+        applications = []
+        for item in response.get('Items', []):
+            user = User.get_by_id(item['user_id'])
+            if user:
+                applications.append({
+                    'application': {
+                        'application_id': item['application_id'],
+                        'status': item.get('status', 'Pending'),
+                        'date_applied': item.get('date_applied'),
+                        'user_id': item['user_id']  # Make sure this is included
+                    },
+                    'user': {
+                        'user_id': user.user_id,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'email': user.email,
+                        'profile_picture_url': user.profile_picture_url,
+                        'skills': user.skills
+                    }
+                })
+        return applications
