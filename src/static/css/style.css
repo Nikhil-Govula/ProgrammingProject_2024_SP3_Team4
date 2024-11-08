@@ -180,6 +180,7 @@ p {
     top: 0;
     width: 100%;
     z-index: 1000;
+    height: 80px;
 }
 
 .header .logo {
@@ -231,11 +232,14 @@ p {
    ========================================================================== */
 .footer {
     background-color: #283E4A;
+    display: flex;
     color: white;
     padding: 20px;
-    text-align: center;
     font-size: 1.1em;
     margin-top: auto;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
 }
 
 .footer a {
@@ -1501,6 +1505,7 @@ input[type="text"], input[type="email"] {
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
+    margin: 3px;
 }
 
 .delete-cert-button i, .delete-skill-button i {

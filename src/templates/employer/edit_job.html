@@ -1,155 +1,153 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <title>Edit Job Posting</title>
+    <title>Edit Job - Professional View</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_job.css') }}">
+    <script src="https://cdn.tiny.cloud/1/ow07p4zhtnk3s4yh3m47nl9hrm4jn3n5ehjf5prbuv3m0jpa/tinymce/6/tinymce.min.js"
+            referrerpolicy="origin"></script>
+    <script>
+        tinymce.init({
+            selector: '#job_description',
+            menubar: false,
+            plugins: 'lists link',
+            toolbar: 'bold italic underline | bullist numlist | link',
+            branding: false,
+            height: 300
+        });
+        tinymce.init({
+            selector: '#job_requirements',
+            menubar: false,
+            plugins: 'lists link',
+            toolbar: 'bold italic underline | bullist numlist | link',
+            branding: false,
+            height: 150
+        });
+    </script>
 {% endblock %}
 
 {% block body %}
-<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
-<div class="content">
-    <h2>Edit Job Posting</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="notification {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    <form id="edit-job-form" method="POST">
-        <!-- Job Title -->
-        <div class="form-group">
-            <label for="job_title">Job Title</label>
-            <div class="dynamic-input-group">
-                <input type="text" name="job_title" id="job_title" value="{{ job.job_title }}" required>
-                <button type="button" class="update-field-button" data-field="job_title">Update</button>
-            </div>
+    <div id="notification-container"></div>
+    <div class="container" style="width: 70%; align-self: center">
+        <h2>Edit Job Posting</h2>
+
+        <!-- Edit Job Form -->
+        <div class="form-container">
+            <form id="edit-job-form" method="POST">
+                <!-- Job Title -->
+                <div class="form-group">
+                    <label for="job_title">Job Title<span style="color: red;">*</span>:</label>
+                    <input type="text" id="job_title" name="job_title" value="{{ job.job_title }}" required>
+                </div>
+
+                <!-- Company Name (Read-Only) -->
+                <div class="form-group">
+                    <label for="company_name">Company Name:</label>
+                    <input type="text" id="company_name" value="{{ job.company_name }}" readonly>
+                </div>
+
+                <!-- Job Description with TinyMCE -->
+                <div class="form-group">
+                    <label for="job_description">Job Description<span style="color: red;">*</span>:</label>
+                    <textarea id="job_description" name="description"
+                              style="height: 150px">{{ job.description }}</textarea>
+                </div>
+
+                <!-- Job Requirements with TinyMCE -->
+                <div class="form-group">
+                    <label for="job_requirements">Requirements:</label>
+                    <textarea id="job_requirements" name="requirements">{{ job.requirements }}</textarea>
+                </div>
+
+                <!-- Salary -->
+                <div class="form-group">
+                    <label for="salary">Salary<span style="color: red;">*</span>:</label>
+                    <input type="text" id="salary" name="salary" value="{{ job.salary }}" required>
+                </div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label for="location">Location (City, Country)<span style="color: red;">*</span>:</label>
+                    <input type="text" id="location" name="city" value="{{ job.city }}, {{ job.country }}" required>
+                </div>
+
+                <button type="submit" class="btn">Save Changes</button>
+            </form>
         </div>
 
-        <!-- Job Description -->
-        <div class="form-group">
-            <label for="description">Job Description</label>
-            <div class="dynamic-input-group">
-                <textarea name="description" id="description" required>{{ job.description }}</textarea>
-                <button type="button" class="update-field-button" data-field="description">Update</button>
-            </div>
-        </div>
+    <br>
+        <hr>
 
-        <!-- Requirements -->
-        <div class="form-group">
-            <label for="requirements">Requirements</label>
-            <div class="dynamic-input-group">
-                <textarea name="requirements" id="requirements" required>{{ job.requirements }}</textarea>
-                <button type="button" class="update-field-button" data-field="requirements">Update</button>
-            </div>
-        </div>
-
-        <!-- Salary -->
-        <div class="form-group">
-            <label for="salary">Salary</label>
-            <div class="dynamic-input-group">
-                <input type="number" name="salary" id="salary" value="{{ job.salary }}" required>
-                <button type="button" class="update-field-button" data-field="salary">Update</button>
-            </div>
-        </div>
-
-        <!-- City -->
-        <div class="form-group">
-            <label for="city">City</label>
-            <div class="dynamic-input-group">
-                <input type="text" name="city" id="city" value="{{ job.city }}, {{ job.country }}" placeholder="e.g., Perth, Australia" required>
-                <button type="button" class="update-field-button" data-field="city">Update</button>
-            </div>
-        </div>
-
-        <!-- Certifications Section -->
-        <div class="form-group">
-            <h3>Certifications</h3>
-            <div>
-                <label for="certification-input">Add a Certification:</label><br>
-                <input type="text" id="certification-input" name="certification" placeholder="e.g., AWS Certified Solutions Architect" required>
-                <button type="button" id="add-certification-button" class="add-input-button">Add Certification</button>
-            </div>
-        </div>
-
-        <!-- Existing Certifications -->
-        <div class="form-group">
-            <label>Existing Certifications:</label>
-            {% if job.certifications %}
-                <ul id="certifications-list">
-                    {% for cert in job.certifications %}
-                        <li id="certification-{{ cert | replace(' ', '_') }}">
-                            {{ cert }}
-                            <button type="button" class="delete-certification-button" data-certification="{{ cert }}">Delete</button>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p id="no-certifications-message">No certifications added.</p>
-            {% endif %}
-        </div>
-
-        <!-- Skills Section -->
-        <div class="form-group">
-            <h3>Skills</h3>
-            <div>
-                <label for="skill-input">Add a Skill:</label><br>
-                <input type="text" id="skill-input" name="skill" placeholder="e.g., Python" required>
-                <button type="button" id="add-skill-button" class="add-input-button">Add Skill</button>
-            </div>
-        </div>
-
-        <!-- Existing Skills -->
-        <div class="form-group">
-            <label>Existing Skills:</label>
-            {% if job.skills %}
+        <!-- Manage Skills and Certifications -->
+        <div class="skills-certifications-container">
+            <!-- Skills Section -->
+            <div class="skills-section">
+                <h3>Skills Required</h3>
+                <form id="add-skill-form">
+                    <input type="text" id="skill-input" placeholder="Add a skill" required>
+                    <button type="submit" class="btn">Add Skill</button>
+                </form>
                 <ul id="skills-list">
                     {% for skill in job.skills %}
-                        <li id="skill-{{ skill | replace(' ', '_') }}">
+                        <li>
                             {{ skill }}
                             <button type="button" class="delete-skill-button" data-skill="{{ skill }}">Delete</button>
                         </li>
                     {% endfor %}
                 </ul>
-            {% else %}
-                <p id="no-skills-message">No skills added.</p>
-            {% endif %}
-        </div>
-
-        <!-- Required Work History Section -->
-        <div class="form-group">
-            <h3>Required Work History</h3>
-            <div>
-                <label for="occupation-input">Occupation:</label><br>
-                <input type="text" id="occupation-input" name="occupation" placeholder="e.g., Software Engineer" required>
-                <label for="duration-input">Duration (months):</label><br>
-                <input type="number" id="duration-input" name="duration" placeholder="e.g., 24" required>
-                <button type="button" id="add-work-history-button" class="add-input-button">Add Work History</button>
             </div>
-        </div>
 
-        <!-- Existing Work History -->
-        <div class="form-group">
-            <label>Existing Work History:</label>
-            {% if job.work_history %}
-                <ul id="work-history-list">
-                    {% for entry in job.work_history %}
-                        <li id="work-history-{{ entry.occupation | replace(' ', '_') }}-{{ entry.duration }}">
-                            <strong>{{ entry.occupation }}</strong> - {{ entry.duration }} month(s)
-                            <button type="button" class="delete-work-history-button" data-occupation="{{ entry.occupation }}" data-duration="{{ entry.duration }}">Delete</button>
+        <br>
+            <hr>
+
+            <!-- Certifications Section -->
+            <div class="certifications-section">
+                <h3>Certifications Required</h3>
+                <form id="add-certification-form" enctype="multipart/form-data">
+                    <input type="text" id="certification-input" placeholder="Add a certification" required>
+                    <button type="submit" class="btn">Add Certification</button>
+                </form>
+                <ul id="certifications-list">
+                    {% for certification in job.certifications %}
+                        <li>
+                            {{ certification }}
+                            <button type="button" class="delete-skill-button" data-certification="{{ certification }}">
+                                Delete
+                            </button>
                         </li>
                     {% endfor %}
                 </ul>
-            {% else %}
-                <p id="no-work-history-message">No work history entries added.</p>
-            {% endif %}
+            </div>
         </div>
 
-        <div class="form-group">
-            <button type="button" id="delete-job-button" class="btn btn-danger">Delete Job</button>
+    <br>
+        <hr>
+
+        <!-- Work History -->
+        <div class="work-history-section">
+            <h3>Work History Requirements</h3>
+            <form id="add-work-history-form" style="display: flex">
+                <div class="form-group">
+                    <label for="occupation">Occupation:</label>
+                    <input type="text" id="occupation" name="occupation" required>
+                </div>
+                <div class="form-group" style="width: 50%">
+                    <label for="duration">Duration (in months):</label>
+                    <input type="text" id="duration" name="duration" min="1" required>
+                </div>
+            </form>
+            <button type="submit" class="btn" style="margin-top: 0">Add Work History</button>
+            <ul id="work-history-list">
+                {% for work in job.work_history %}
+                    <li style="margin-top: -7px;">
+                        {{ work.occupation }} - {{ work.duration }} months
+                        <button type="button" class="delete-skill-button" data-occupation="{{ work.occupation }}"
+                                data-duration="{{ work.duration }}" style="margin-top: 10px">Delete
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
-    </form>
-</div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -168,7 +166,7 @@
             deleteWorkHistoryUrl: "{{ url_for('employer_views.delete_work_history', job_id=job.job_id) }}",
             editJobUrl: "{{ url_for('employer_views.edit_job', job_id=job.job_id) }}",
             deleteJobUrl: "{{ url_for('employer_views.delete_job', job_id=job.job_id) }}",
-            viewJobsUrl: "{{ url_for('employer_views.view_jobs') }}"
+            viewJobsUrl: "{{ url_for('employer_views.dashboard') }}"
         };
     </script>
     <!-- Include page-specific JavaScript -->

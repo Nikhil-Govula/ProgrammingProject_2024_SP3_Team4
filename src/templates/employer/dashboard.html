@@ -27,33 +27,47 @@
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
         }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            color: white;
+            text-decoration: none;
+            background-color: #3498db; /* Default button color */
+            border: none;
+        }
+
+        .btn[disabled],
+        .btn.btn-edit-disabled:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
     </style>
 {% endblock %}
 
 {% block body %}
-<div class="view-jobs-page">
-    <div class="job-page-header">
-        <div>
-            <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job</a>
+    <div class="view-jobs-page">
+        <div class="job-page-header" style="display: flex; justify-content: space-around;">
+            <a href="{{ url_for('employer_views.create_job') }}" class="btn">Create New Job!</a>
             <button id="editSelectedJob" class="btn btn-edit-disabled" disabled>Edit Selected Job</button>
             <button id="viewApplications" class="btn btn-edit-disabled" disabled>View Applications</button>
         </div>
-    </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="notification {{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <!-- Job Table -->
-    <table class="display responsive nowrap accounts-table" id="jobsTable">
-        <thead>
+        <!-- Job Table -->
+        <table class="display responsive nowrap accounts-table" id="jobsTable">
+            <thead>
             <tr>
                 <th>Job Title</th>
                 <th>Salary</th>
@@ -61,38 +75,26 @@
                 <th>Country</th>
                 <th>Date Posted</th>
             </tr>
-        </thead>
-        <tbody>
-        {% for job in jobs %}
-            <tr data-job-id="{{ job.job_id }}" onclick="selectJob('{{ job.job_id }}')">
-                <td>{{ job.job_title }}</td>
-{#                <td>{{ job.description }}</td>#}
-                <td>${{ "{:,.2f}".format(job.salary) }}</td>
-                <td>{{ job.city }}</td>
-                <td>{{ job.country }}</td>
-                <!-- Slice the date string to display only YYYY-MM-DD -->
-                <td>{{ job.date_posted[:10] if job.date_posted else '' }}</td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="6">No job postings found.</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
-
-{% block footer %}
-    <footer class="footer">
-        <p>
-            &copy; 2024 JobTrunk. All rights reserved. |
-            <a href="#">Privacy Policy</a> |
-            <a href="#">Terms & Conditions</a> |
-            <a href="#">About JobTrunk</a> |
-            <a href="{{ url_for('admin_views.login_admin') }}">Admin Login</a>
-        </p>
-    </footer>
+            </thead>
+            <tbody>
+            {% for job in jobs %}
+                <tr data-job-id="{{ job.job_id }}" onclick="selectJob('{{ job.job_id }}')">
+                    <td>{{ job.job_title }}</td>
+                    {#                <td>{{ job.description }}</td>#}
+                    <td>${{ "{:,.2f}".format(job.salary) }}</td>
+                    <td>{{ job.city }}</td>
+                    <td>{{ job.country }}</td>
+                    <!-- Slice the date string to display only YYYY-MM-DD -->
+                    <td>{{ job.date_posted[:10] if job.date_posted else '' }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">No job postings found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% block scripts %}
