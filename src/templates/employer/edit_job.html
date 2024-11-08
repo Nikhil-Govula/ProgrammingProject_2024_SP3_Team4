@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <title>Edit Job - Professional View</title>
+    <title>Edit Job Posting</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_job.css') }}">
     <script src="https://cdn.tiny.cloud/1/ow07p4zhtnk3s4yh3m47nl9hrm4jn3n5ehjf5prbuv3m0jpa/tinymce/6/tinymce.min.js"
             referrerpolicy="origin"></script>
@@ -26,13 +26,13 @@
 {% endblock %}
 
 {% block body %}
-    <div id="notification-container"></div>
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
     <div class="container" style="width: 70%; align-self: center">
         <h2>Edit Job Posting</h2>
 
         <!-- Edit Job Form -->
         <div class="form-container">
-            <form id="edit-job-form" method="POST">
+            <form id="edit-job-form" method="POST" onsubmit="showNotification('Changes saved successfully!'); return false;">
                 <!-- Job Title -->
                 <div class="form-group">
                     <label for="job_title">Job Title<span style="color: red;">*</span>:</label>
@@ -168,7 +168,18 @@
             deleteJobUrl: "{{ url_for('employer_views.delete_job', job_id=job.job_id) }}",
             viewJobsUrl: "{{ url_for('employer_views.dashboard') }}"
         };
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification success';
+            notification.innerText = message;
+            document.getElementById('notification-container').appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
     </script>
     <!-- Include page-specific JavaScript -->
     <script src="{{ url_for('static', filename='js/edit_job.js') }}"></script>
 {% endblock %}
+
