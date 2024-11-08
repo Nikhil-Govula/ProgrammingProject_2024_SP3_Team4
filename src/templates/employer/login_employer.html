@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 
-{% block head %}
+{% block title %}
     <title>Employer Login | JobTrunk</title>
 {% endblock %}
 
 {% block body %}
-    <div class="login-container">
-        <h2>Sign in as Employer</h2>
-
-        <!-- Display Flash Messages -->
+    <div class="login-container" style="width: 450px">
+        <h1>Sign in as Employer</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -16,7 +14,6 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         <form action="{{ url_for('employer_views.login_employer') }}" method="POST">
             <input type="email" name="email" placeholder="Email address" required>
             <input type="password" name="password" placeholder="Password" required>
@@ -26,7 +23,7 @@
                 <p style="color: red;">{{ error }}</p>
             {% endif %}
         </form>
-        <div>
+        <div class="footer-links" style="font-size: 17px">
             <p>Don’t have an account? <a href="{{ url_for('employer_views.register_employer') }}">Sign up</a></p>
         </div>
     </div>
@@ -38,7 +35,7 @@
             <h2>Forgot your password?</h2>
             <p>We'll send a link to reset your password to your registered email address.</p>
             <form action="{{ url_for('employer_views.reset_password') }}" method="POST">
-                <input type="email" name="email" placeholder="Email address" required>
+                <input type="email" name="email" placeholder="Email address" required  style="margin-bottom: 20px;">
                 <button type="submit" class="register-button">Send Link</button>
             </form>
         </div>

@@ -8,6 +8,7 @@
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
+            width: 50%;
         }
 
         .application-card {
@@ -90,7 +91,7 @@
     <div class="applications-container">
         <div class="applications-header">
             <h2>Applications for {{ job.job_title }}</h2>
-            <a href="{{ url_for('employer_views.view_jobs') }}" class="back-button">
+            <a href="{{ url_for('employer_views.dashboard') }}" class="back-button">
                 Back to Job Listings
             </a>
         </div>
@@ -157,7 +158,7 @@
                     <a href="{{ url_for('employer_views.edit_job', job_id=job.job_id) }}" class="btn btn-primary">
                         Update Job Posting
                     </a>
-                    <a href="{{ url_for('employer_views.view_jobs') }}" class="btn">
+                    <a href="{{ url_for('employer_views.dashboard') }}" class="btn">
                         Return to Job Listings
                     </a>
                 </div>

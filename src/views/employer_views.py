@@ -82,8 +82,9 @@ def verify_account(token):
 @employer_bp.route('/dashboard', methods=['GET'])
 @auth_required(user_type='employer')
 def dashboard():
-    employer = g.user
-    return render_template('employer/dashboard.html', employer=employer)
+    employer_id = g.user.employer_id
+    all_jobs = EmployerController.list_employer_jobs(employer_id)
+    return render_template('employer/dashboard.html', jobs=all_jobs)
 
 @employer_bp.route('/logout', methods=['GET'])
 def logout():
@@ -123,13 +124,6 @@ def reset_with_token(token):
     return render_template('employer/reset_with_token.html', token=token)
 
 JOBS_PER_PAGE = 10  # Define how many jobs to display per page
-
-@employer_bp.route('/jobs', methods=['GET'])
-@auth_required(user_type='employer')
-def view_jobs():
-    employer_id = g.user.employer_id
-    all_jobs = EmployerController.list_employer_jobs(employer_id)
-    return render_template('employer/view_jobs.html', jobs=all_jobs)
 
 @employer_bp.route('/jobs/create', methods=['GET', 'POST'])
 @auth_required(user_type='employer')
@@ -193,7 +187,7 @@ def edit_job(job_id):
         if request.method == 'POST' and request.is_json:
             return jsonify({'success': False, 'message': "Job not found or unauthorized."}), 404
         flash("Job not found or you don't have permission to edit this job.", 'error')
-        return redirect(url_for('employer_views.view_jobs'))
+        return redirect(url_for('employer_views.dashboard'))
 
     if request.method == 'POST':
         if request.is_json:
@@ -227,7 +221,7 @@ def edit_job(job_id):
             success, message = EmployerController.update_job(job_id, fields)
             if success:
                 flash(message, 'success')
-                return redirect(url_for('employer_views.view_jobs'))
+                return redirect(url_for('employer_views.dashboard'))
             else:
                 flash(message, 'error')
                 return render_template('employer/edit_job.html', job=job)
@@ -349,11 +343,11 @@ def view_job_applications(job_id):
     job = Job.get_by_id(job_id)
     if not job:
         flash("Job not found", 'error')
-        return redirect(url_for('employer_views.view_jobs'))
+        return redirect(url_for('employer_views.dashboard'))
 
     if job.employer_id != g.user.employer_id:
         flash("You don't have permission to view these applications", 'error')
-        return redirect(url_for('employer_views.view_jobs'))
+        return redirect(url_for('employer_views.dashboard'))
 
     applications = job.get_applications()
     return render_template('employer/view_applications.html',
@@ -402,7 +396,7 @@ def chat_with_user(user_id):
 
     if not user:
         flash("User not found", "error")
-        return redirect(url_for('employer_views.view_jobs'))
+        return redirect(url_for('employer_views.dashboard'))
 
     if request.method == 'POST':
         content = request.json.get('content')

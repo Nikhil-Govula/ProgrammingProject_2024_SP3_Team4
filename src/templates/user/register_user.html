@@ -2,50 +2,47 @@
 {% extends 'base.html' %}
 
 {% block title %}
-User Registration | JobTrunk
-{% endblock %}
-
-{% block head %}
-    {{ super() }}
+    User Registration | JobTrunk
 {% endblock %}
 
 {% block body %}
-<div class="user-registration">
-    <div class="registration-container">
-        <div class="register-card">
-            <h1>Register</h1>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <form method="POST" action="{{ url_for('user_views.register_user') }}">
-                <div class="form-group">
-                    <input type="text" name="first_name" placeholder="First Name" required>
+    <div class="registration-container-registration">
+        <div class="form-container-registration" style="width: 450px">
+            <div class="register-card-registration">
+                <div class="form">
+                    <h1>User Registration</h1>
+                    <a href="{{ url_for('employer_views.login_employer') }}">Are you an employer?</a>
+                    <br>
+                    <br>
                 </div>
-                <div class="form-group">
-                    <input type="text" name="last_name" placeholder="Last Name" required>
+                <form action="{{ url_for('user_views.register_user') }}" method="POST">
+                    <div class="form-group-registration split">
+                        <input type="text" name="first_name" placeholder="First name" required>
+                        <input type="text" name="last_name" placeholder="Last name" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="email" name="email" placeholder="Email address" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="text" name="phone_number" placeholder="Phone number" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="password" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="form-group-registration">
+                        <input type="password" name="confirm_password" placeholder="Confirm password" required>
+                    </div>
+
+                    {% if error %}
+                        <p style="color: red;">{{ error }}</p>
+                    {% endif %}
+
+                    <button type="submit" class="register-button-registration">Register</button>
+                </form>
+                <div class="footer-links">
+                    <p>Already have an account? <a href="{{ url_for('user_views.login_user') }}">Log in</a></p>
                 </div>
-                <div class="form-group">
-                    <input type="email" name="email" placeholder="Email" required>
-                </div>
-                <div class="form-group">
-                    <input type="text" name="phone_number" placeholder="Phone Number" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-                </div>
-                {% if error %}
-                    <div class="error-message">{{ error }}</div>
-                {% endif %}
-                <button type="submit" class="register-button">Register</button>
-            </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

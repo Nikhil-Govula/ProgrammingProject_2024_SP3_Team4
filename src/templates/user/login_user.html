@@ -1,4 +1,3 @@
-<!-- templates/login_user.html -->
 {% extends "base.html" %}
 
 {% block head %}
@@ -9,8 +8,8 @@
 {% endblock %}
 
 {% block body %}
-    <div class="login-container">
-        <h2>Sign in as User</h2>
+    <div class="login-container" style="width: 450px">
+        <h1>Sign in as User</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -27,7 +26,7 @@
                 <p style="color: red;">{{ error }}</p>
             {% endif %}
         </form>
-        <div>
+        <div class="footer-links" style="font-size: 17px">
             <p>Don’t have an account? <a href="{{ url_for('user_views.register_user') }}">Sign up</a></p>
         </div>
     </div>
@@ -39,7 +38,7 @@
             <h2>Forgot your password?</h2>
             <p>We'll send a link to reset your password to your registered email address.</p>
             <form action="{{ url_for('user_views.reset_password') }}" method="POST">
-                <input type="email" name="email" placeholder="Email address" required>
+                <input type="email" name="email" placeholder="Email address" required  style="margin-bottom: 20px;">
                 <button type="submit" class="register-button">Send Link</button>
             </form>
         </div>

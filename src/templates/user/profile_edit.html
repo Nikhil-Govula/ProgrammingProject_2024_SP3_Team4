@@ -95,26 +95,29 @@
                         <button type="submit" class="register-button"><i class="fas fa-plus"></i> Add Certification
                         </button>
                     </form>
+
+                    <!-- Existing Certifications -->
+                    <div class="form-group existing-section"
+                         style="margin-top: 20px; margin-bottom: 0; background-color: white">
+                        <label>Existing Certifications:</label>
+                        {% if user.certifications %}
+                            <ul id="certifications-list" class="certifications-list">
+                                {% for cert in user.certifications %}
+                                    <li id="cert-{{ cert.id }}">
+                                        <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a>
+                                        ({{ cert.type }})
+                                        <button type="button" class="delete-cert-button" data-id="{{ cert.id }}"><i
+                                                class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p id="no-certs-message">No certifications uploaded.</p>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <!-- Existing Certifications -->
-                <div class="form-group existing-section">
-                    <label>Existing Certifications:</label>
-                    {% if user.certifications %}
-                        <ul id="certifications-list" class="certifications-list">
-                            {% for cert in user.certifications %}
-                                <li id="cert-{{ cert.id }}">
-                                    <a href="{{ cert.url }}" target="_blank">{{ cert.filename }}</a> ({{ cert.type }})
-                                    <button type="button" class="delete-cert-button" data-id="{{ cert.id }}"><i
-                                            class="fas fa-trash"></i> Delete
-                                    </button>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p id="no-certs-message">No certifications uploaded.</p>
-                    {% endif %}
-                </div>
 
                 <!-- New Skills Section -->
                 <div class="form-group skill-section">
@@ -126,26 +129,28 @@
                         <br>
                         <button type="submit" class="register-button"><i class="fas fa-plus"></i> Add Skill</button>
                     </form>
-                </div>
 
-                <!-- Existing Skills -->
-                <div class="form-group existing-section">
-                    <label>Existing Skills:</label>
-                    <br>
-                    {% if user.skills %}
-                        <ul id="skills-list" class="skills-list">
-                            {% for skill in user.skills %}
-                                <li id="skill-{{ skill.id }}">
-                                    {{ skill.skill }}
-                                    <button type="button" class="delete-skill-button" data-id="{{ skill.id }}"><i
-                                            class="fas fa-trash"></i> Delete
-                                    </button>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p id="no-skills-message">No skills added.</p>
-                    {% endif %}
+                    <!-- Existing Skills -->
+                    <div class="form-group existing-section"
+                         style="margin-top: 20px; margin-bottom: 0; background-color: white">
+                        <label>Existing Skills:</label>
+                        <br>
+                        {% if user.skills %}
+                            <ul id="skills-list" class="skills-list-edit">
+                                {% for skill in user.skills %}
+                                    <li id="skill-{{ skill.id }}"
+                                        style="display: flex; width: 100%; justify-content: space-between; padding: 2px; padding-left: 0">
+                                        {{ skill.skill }}
+                                        <button type="button" class="delete-skill-button" data-id="{{ skill.id }}"><i
+                                                class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p id="no-skills-message">No skills added.</p>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <hr>
